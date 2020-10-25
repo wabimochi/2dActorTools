@@ -1,5 +1,9 @@
-# 使い方
+# 2dActorTools
+Adobe Premiere Proの立ち絵編集と字幕入力をサポートするエクステンションです。
+CC2020でのみ動作確認してます。
 
+# 使い方
+https://www.nicovideo.jp/watch/sm37711233
 
 # インストール方法
 [コマンドラインツールでエクステンションをインストールする](https://helpx.adobe.com/jp/creative-cloud/kb/installingextensionsandaddons.html#Install_extensions_command_line_tool)に書いてある手順を参考にしてください。
