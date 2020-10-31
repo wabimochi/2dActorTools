@@ -907,18 +907,25 @@
 			let textList = [];
 			const OSVersion = csInterface.getOSInformation();
 			let lfRegex = /\n/g;
+			let dirSeparater = '/';
 			if(OSVersion.includes('Windows')) {
-				lfRegex = /\r\n/g
+				lfRegex = /\r\n/g;
+				dirSeparater = '\\';
 			}
 			const presetTag = $('#preset_tag').val();
 			for(let i = 0; i < mediaPathList.length; i++) {
 				const path = mediaPathList[i].slice(0, mediaPathList[i].lastIndexOf('.') + 1) + 'txt';
-				const data = fs.readFileSync(path);
-				let text = Encoding.convert(data, {from: 'SJIS', to: 'UNICODE', type: 'string'});
-				if(presetTag !== '') {
-					textList.push(text.slice(text.indexOf(presetTag) + 1).replace(lfRegex, '\\n').replace(/\//g, '').replace(/\"/g, '\\"'));
+				if(fs.existsSync(path)) {
+					const data = fs.readFileSync(path);
+					let text = Encoding.convert(data, {from: 'SJIS', to: 'UNICODE', type: 'string'});
+					if(presetTag !== '') {
+						textList.push(text.slice(text.indexOf(presetTag) + 1).replace(lfRegex, '\\n').replace(/\//g, '').replace(/\"/g, '\\"'));
+					} else {
+						textList.push(text.replace(lfRegex, '\\n').replace(/\//g, '').replace(/\"/g, '\\"'));
+					}
 				} else {
-					textList.push(text.replace(lfRegex, '\\n').replace(/\//g, '').replace(/\"/g, '\\"'));
+					const lastDirSepIndex = mediaPathList[i].lastIndexOf(dirSeparater) + 1;
+					textList.push(mediaPathList[i].slice(lastDirSepIndex, mediaPathList[i].lastIndexOf('.')).replace(/\//g, ''));
 				}
 			}
 			var mogrt = document.getElementById("select_mogrt");
