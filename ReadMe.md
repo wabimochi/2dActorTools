@@ -42,3 +42,13 @@ Aeのほうでプロパティー名が変更できるのでこの点にご注意
 ### 立ち絵構成の変更について
 グループ内でクリップの順番を変えるのは問題ありません。
 グループの順番を変えたり追加、削除したりするとちょっとおかしくなるかもしれません。
+
+# 未署名のエクステンションを使用する
+zxpファイルに取り込まれていない修正などを使用したいときは、未署名のエクステンションを使用します。参考：https://github.com/Adobe-CEP/Samples/tree/master/PProPanel
+1. PowerShellを開いて次のコマンドを入力します。
+```
+Set-ItemProperty -Path HKCU:\SOFTWARE\Adobe\CSXS.9 -Name PlayerDebugMode -Value 1
+```
+2. このページ右上のCodeと書いてある緑色のボタンを押し、Download ZIPでダウンロードする。
+3. 展開したフォルダを`C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\`に移動する。
+4. Premiere Proを再起動する。
