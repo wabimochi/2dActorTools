@@ -16,7 +16,7 @@
 	<link id="lightboxstyle" href="node_modules/lightbox2/dist/css/lightbox.css" rel="stylesheet" type="text/css">
 </head>
 
-<body onLoad="onLoaded();loadSetup();AddEventListener();mogrtUpdate();actorSelectBoxUpdate()">
+<body onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate()">
 	<a href="javascript:history.go(0)" uk-icon="icon: refresh"></a>
 	<div id="busy_notification" uk-modal='esc-close:false; bg-close:false' class="uk-modal">
 		<div class="uk-modal-dialog uk-modal-body">
@@ -738,13 +738,6 @@
 
 	function SaveActorStructure(obj, path) {
 		window.cep.fs.writeFile(path, JSON.stringify(obj));
-	}
-
-	function AddEventListener(){
-		var csInterface = new CSInterface();
-		csInterface.addEventListener("com.2dActorTools.OnProjectChanged", function (event) {
-			mogrtUpdate();
-		});
 	}
 
 	function mogrtUpdate() {

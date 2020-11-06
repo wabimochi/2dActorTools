@@ -727,17 +727,6 @@ $._PPP_={
 		return $._PPP_.shallowSearchClip(ActorBinItem, 'dummy.png');
 	},
 
-	OnProjectChanged : function (documentID) {
-		var eventObj = new CSXSEvent();
-		eventObj.type = "com.2dActorTools.OnProjectChanged";
-		eventObj.data = "";
-		eventObj.dispatch();
-	},
-
-	registerProjectChangedFxn : function () {
-		app.bind('onProjectChanged', $._PPP_.OnProjectChanged);
-	},
-
 	keepPanelLoaded : function () {
 		app.setExtensionPersistent("com.mochi.2dActorTools", 0);
 	},

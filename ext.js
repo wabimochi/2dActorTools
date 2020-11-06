@@ -6,7 +6,6 @@ function onLoaded () {
 	loadJSX();
 
 	var csInterface = new CSInterface();
-	csInterface.evalScript("$._PPP_.registerProjectChangedFxn()");
 	
 	// Good idea from our friends at Evolphin; make the ExtendScript locale match the JavaScript locale!
 	var prefix		= "$._PPP_.setLocale('";
