@@ -120,15 +120,22 @@ $._PPP_={
 				}
 				var outPoint = new Time();
 				if (VTrackIndex < seq.videoTracks.numTracks && ATrackIndex < seq.audioTracks.numTracks) {
-					var frameRate = 1.0 / seq.getSettings().videoFrameRate.seconds;
+					var epsTime = seq.getSettings().videoFrameRate.seconds;
+					var frameRate = 1.0 / epsTime;
 					var targetVideoTrack = seq.videoTracks[VTrackIndex];
 					var targetAudioTrack = seq.audioTracks[ATrackIndex];
 					var splitText = text.split('/');
 
 					for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
 						var clip = targetAudioTrack.clips[i];
-						outPoint.seconds = clip.outPoint.seconds - clip.inPoint.seconds; 
 						mgtClip.setOverrideFrameRate(frameRate);
+						outPoint.seconds = clip.outPoint.seconds - clip.inPoint.seconds; 
+						var mod = (outPoint.seconds % epsTime);
+						if(mod * 2 < epsTime) {
+							outPoint.seconds -= mod;
+						} else {
+							outPoint.seconds += epsTime - mod;
+						}
 						mgtClip.setOutPoint(outPoint.ticks, 4)
 						targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);							
 
