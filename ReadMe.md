@@ -45,7 +45,7 @@ Aeのほうでプロパティー名が変更できるのでこの点にご注意
 
 # 未署名のエクステンションを使用する
 zxpファイルに取り込まれていない修正などを使用したいときは、未署名のエクステンションを使用します。参考：https://github.com/Adobe-CEP/Samples/tree/master/PProPanel
-1. PowerShellを開いて次のコマンドを入力します。
+1. PowerShellを開いて次のコマンドを入力します。`CSXS.9`の数字はPremiereのバージョンにより異なります。14.4以降は`CSXS.10`になります。詳細は [CEP-Resources](https://github.com/Adobe-CEP/CEP-Resources)の各バージョンのDocumentationから確認してください。
 ```
 Set-ItemProperty -Path HKCU:\SOFTWARE\Adobe\CSXS.9 -Name PlayerDebugMode -Value 1
 ```
