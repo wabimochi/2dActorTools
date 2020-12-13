@@ -7,7 +7,8 @@ https://www.nicovideo.jp/watch/sm37711233
 
 # インストール方法
 [コマンドラインツールでエクステンションをインストールする](https://helpx.adobe.com/jp/creative-cloud/kb/installingextensionsandaddons.html#Install_extensions_command_line_tool)に書いてある手順を参考にしてください。
-zxpファイルはReleaseページからダウンロードできます。
+zxpファイルは[Release](https://github.com/wabimochi/2dActorTools/releases)からダウンロードできます。
+サンプルのMGTファイルは[こちら](https://github.com/wabimochi/2dActorTools/releases/tag/v1.0)
 
 # 注意事項
 このエクステンションは日本語環境でのみ動作を確認してます。
