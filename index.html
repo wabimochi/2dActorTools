@@ -29,6 +29,7 @@
 			<li id="function_property_deploy"><a href="#">プロパティコピー</a></li>
 			<li id="function_actor"><a href="#">立ち絵</a></li>
 			<li id="function_actor_setting"><a href="#">立ち絵設定</a></li>
+			<li id="function_auto_import"><a href="#">自動インポート</a></li>
 		</ul>
 
 		<ul class="uk-switcher" id='actor_functions'>
@@ -80,7 +81,7 @@
 			<li>
 				<div class='uk-margin-small' id='actor_controle_div'>
 					<select class="tdactor_selectbox uk-margin-small-left uk-width-expand uk-select" name="select_actor" id="select_actor_setting"></select>
-					<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right actor_setting_control" uk-grid>
+					<div class="uk-flex-center uk-child-width-expand@ss uk-margin-small-top uk-margin-left uk-margin-right actor_setting_control" uk-grid>
 						<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right" id="actor_setting_start" onClick="actorSettingStart()">設定開始</button>
 						<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right disable" id="actor_setting_save_button" onClick="OverwriteActorStructure()">保存</button>
 						<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right disable" id="actor_setting_initialize" onClick="InitializeActorStructure()">初期化</button>
@@ -108,12 +109,289 @@
 					</div>
 				</div>
 			</li>
+			<li>
+				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" id="auto_import_root">
+				</div>
+				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
+					<button class="uk-button uk-button-secondary uk-width-expand add_watch_dir uk-margin-bottom" onClick="addAutoImportWatchDir()">監視フォルダの追加</button>
+				</div>
+			</li>
 		</ul>
 	</div>
 </body>
 
 <script>
 	const fs = require('fs');
+	const chokidar = require('chokidar');
+
+	let audioTrackSelectBox = [];
+	let watcherId = 0;
+	let watcherList = [];
+	let importPathBuffer = [];
+	let importTrackBuffer = [];
+	let importBinBuffer = [];
+	let importExecuteId = null;
+
+	function autoImportStart(dirPath, matchingPatternList, matchingSourceList, importBinList, trackList) {
+		const _matchingPatternList = matchingPatternList;
+		const _matchingSourceList = matchingSourceList;
+		const _importBinList = importBinList;
+		const _trackList = trackList;
+		let watcher = null;
+		if(dirPath.lastIndexOf('/') != dirPath.length - 1) {
+			dirPath += '/';
+		}
+		watcher = chokidar.watch(dirPath + '*.wav', {
+			persistent:true,
+			ignoreInitial:true,
+			depth:0
+		}).on('add', (path, stat) => {
+			const filename = path.substr(path.lastIndexOf('/') + 1);
+			const length = _matchingSourceList.length;
+			for(let i = 0; i < length; i++) {
+				let match = false;
+				let text = null;
+				if(_matchingSourceList[i] == 1) {
+					const txt_filnename = path.slice(0, path.lastIndexOf('.') + 1) + 'txt';
+					text = getJSISText(txt_filnename);
+				} else {
+					text = filename;
+				}
+				if(text != null) {
+					const reg = new RegExp(_matchingPatternList[i]);
+					if(text.search(reg) != -1) {
+						if(importExecuteId != null) {
+							clearTimeout(importExecuteId);
+						}
+						importPathBuffer.push(path.replace(/\\/g, '/'));
+						importTrackBuffer.push(_trackList[i] - 1);
+						importBinBuffer.push(_importBinList[i]);
+						importExecuteId = setTimeout(importExecute, 500);
+						break;
+					}
+				}
+			}
+		});
+		watcherId++;
+		watcherList[watcherId] = watcher;
+		return watcherId;
+	}
+
+	function importExecute() {
+		const csInterface = new CSInterface();
+		csInterface.evalScript('$._PPP_.importFiles("' + importPathBuffer.join('\\\\') + '","' + importTrackBuffer.join('\\\\') + '","' + importBinBuffer.join('\\\\') + '")');
+		importPathBuffer = [];
+		importTrackBuffer = [];
+		importBinBuffer = [];
+		importExecuteId = null;
+	}
+
+	function autoImportStop (id) {
+		watcherList[id].close();
+	}
+
+	function addAutoImportWatchDir() {
+		let watch_div =  $('<div>', {'class':'watch_dir_element'});
+		let path_input = $('<input>', {'class':'uk-input uk-margin-large-left uk-padding-small uk-light uk-width-expand tdinput auto_import_dir_path' ,'type':'text', placeholder:'監視フォルダのパス'});
+			path_input[0].addEventListener('change', function(e) {
+				e.target.value = e.target.value.replace(/\\/g, '/');
+				if(fs.existsSync(e.target.value)) {
+					e.target.classList.remove('auto_import_error');
+					e.target.classList.add('auto_import_ok');
+				} else {
+					e.target.classList.add('auto_import_error');
+					e.target.classList.remove('auto_import_ok');
+				}
+			});
+		let a1 = $('<a>', {href:'#', 'class':'uk-width-auto grid_icon' ,'uk-icon':'icon: folder'});
+			a1[0].addEventListener('click', function(e) {
+				let watch_dir = window.cep.fs.showOpenDialogEx(false, true, '監視フォルダの選択', null).data;
+				if(watch_dir == '') return;
+				const pathInput = $(e.target).closest('a').prevAll('input');
+				pathInput.val(watch_dir[0]);
+				pathInput.removeClass('auto_import_error');
+				pathInput.addClass('auto_import_ok');
+			});
+		let a2 = $('<a>', {href:'#', 'class':'uk-width-auto grid_icon' ,'uk-icon':'icon: link'});
+			a2[0].addEventListener('click', function(e) {
+				const target = $(e.target).closest('a');
+				const elm = target.closest('.watch_dir_element');
+				if(target.hasClass('auto_import_ok')) {
+					autoImportStop(target.val());
+					target.removeClass('auto_import_ok');
+					elm.find('*').each(function(i, o) { 
+						$(o).removeClass('events_disable');
+					}); 
+				} else {
+					const dirPathInput = elm.find('.auto_import_dir_path');
+					const dirPath = dirPathInput.val();
+					const body = elm.find('tbody');
+
+					let invalidCheck = false;
+					if(!fs.existsSync(dirPath)) {
+						dirPathInput.addClass('auto_import_error');
+						invalidCheck = true;
+					}
+					body.find('.auto_import_bin').each(function(i, o) { 
+						const bin_button = $(o);
+						if(!bin_button.hasClass('auto_import_ok')) {
+							bin_button.addClass('auto_import_error');
+							invalidCheck = true;
+						} else {
+							bin_button.removeClass('auto_import_error');							
+						}
+					}); 
+					body.find('.auto_import_matching_pattern').each(function(i, o) { 
+						const matching_pattern = $(o);
+						if(matching_pattern.val() == '') {
+							matching_pattern.addClass('auto_import_error');
+							invalidCheck = true;
+						} else {
+							matching_pattern.removeClass('auto_import_error');
+							matching_pattern.addClass('auto_import_ok');
+						}
+					});
+
+
+					if(invalidCheck) return;
+					const matchingPatternList = [];
+					body.find('.auto_import_matching_pattern').each(function(i, o) { matchingPatternList.push($(o).val()); });
+					const matchingSourceList = [];
+					body.find('.auto_import_source').each(function(i, o) { matchingSourceList.push($(o).val()); });
+					const importBinList = [];
+					body.find('.auto_import_bin').each(function(i, o) { importBinList.push($(o).html()); });
+					const trackList = [];
+					body.find('.auto_import_track_selector').each(function(i, o) { trackList.push($(o).val()); });
+
+					const id = autoImportStart(dirPath, matchingPatternList, matchingSourceList, importBinList, trackList);				
+					target.val(id);
+					target.addClass('auto_import_ok');
+					elm.find('table').each(function(i, o) { 
+						$(o).addClass('events_disable');
+					});
+					elm.find('.auto_import_add_rule_button').addClass('events_disable');
+					const head = elm.children().eq(0);
+					head.find('a').each(function(i, o) { 
+						$(o).addClass('events_disable');
+					});
+					head.find('input').each(function(i, o) { 
+						$(o).addClass('events_disable');
+					});
+					target.removeClass('events_disable');
+				}
+			});
+		let a3 = $('<a>', {href:'#', 'class':'uk-width-auto grid_icon' ,'uk-icon':'icon: trash'});
+			a3[0].addEventListener('click', function(e) {
+				if(!confirm('この監視フォルダ設定を削除しますか？')){
+					return false;
+				} else {
+					$(e.target).closest('.watch_dir_element').remove();
+				}
+			});
+		let path_div =  $('<div>', {'class':'uk-grid uk-grid-match uk-child-width-auto@ss'});
+			path_div.append(path_input);
+			path_div.append(a1);
+			path_div.append(a2);
+			path_div.append(a3);
+		watch_div.append(path_div);
+
+		let body = $('<tbody>');
+		let table = $('<table>', {'class':'uk-table uk-table-small uk-table-middle uk-table-justify'});
+			table.append(body);
+		addAutoImportRule(body);
+		
+		let button = $('<button>', {'class':'uk-button uk-button-secondary uk-width-auto uk-flex uk-flex-center auto_import_add_rule_button'});
+			button.html('ルール追加');
+			button[0].addEventListener('click', function(e) {
+				let parent = $(e.target.parentNode);
+				let tbody = parent.prev('table').children('tbody');
+				addAutoImportRule(tbody);
+			});
+		let add_rule_div = $('<div>', {'class':'uk-flex uk-flex-center'});
+			add_rule_div.append(button);
+		let table_div = $('<div>', {'class':'uk-overflow-auto uk-margin-left'});
+			table_div.append(table);
+			table_div.append(add_rule_div);
+		watch_div.append(table_div);
+		watch_div.append($('<hr>'));
+
+		let ai_root = $("#auto_import_root");
+			ai_root.append(watch_div);
+	}
+
+	function addAutoImportRule(jqTbody) {
+		let select1 = $('<select>', {'class':'tdactor_selectbox uk-width-auto uk-select auto_import_source'});
+			let s1_option1 = $('<option>', {value:'1'})
+				s1_option1.html('.txt内容');
+			let s1_option2 = $('<option>', {value:'2'})
+				s1_option2.html('ファイル名');
+			select1.append(s1_option1);
+			select1.append(s1_option2);
+		let td1 = $('<td>', {'class':'uk-text-nowrap uk-table-shrink'});
+			td1.append(select1);
+		
+		let button1 = $('<button>', {'class':'uk-button uk-button-secondary uppercase_disable text_ellipsis uk-padding-small uk-padding-remove-vertical auto_import_bin'});
+			button1.html('選択中のビンをセット');
+			button1[0].addEventListener('click', function(e) {
+				var csInterface = new CSInterface();
+				csInterface.evalScript('$._PPP_.getSelectedBinTreePath()', function(treePath) {
+					if(treePath != '') {
+						e.target.innerHTML = treePath;
+						e.target.setAttribute('uk-tooltip', treePath);
+						e.target.classList.add('auto_import_ok');
+						e.target.classList.remove('auto_import_error');
+					}
+				});
+			});
+		let td2 = $('<td>', {'class':'uk-text-nowrap uk-table-shrink'});
+			td2.append(button1);
+		let select2 = $('<select>', {'class':'tdactor_selectbox uk-width-auto uk-select auto_import_track_selector'});
+			let s2_option = $('<option>', {value:"0"})
+			s2_option.html('トラック番号');
+			select2.append(s2_option);
+			audioTrackSelectBox.push(select2);
+
+			const csInterface = new CSInterface();
+			csInterface.evalScript('$._PPP_.sequenceStructureChanged()');
+		let td3 = $('<td>', {'class':'uk-text-nowrap uk-table-shrink'});
+			td3.append(select2);
+		let input = $('<input>', {'class':'uk-input uk-light tdinput auto_import_matching_pattern', type:'text', placeholder:'マッチングパターン'});
+			input[0].addEventListener('change', function(e) {
+				e.target.classList.remove('auto_import_ok');
+				e.target.classList.remove('auto_import_error');
+			});
+
+		let td4 = $('<td>', {'class':'uk-text-nowrap'});
+			td4.append(input);
+		let a = $('<a>', {href:'#', 'class':'icon_s', 'uk-icon':'icon: trash'})
+		let td5 = $('<td>', {'class':'uk-text-nowrap'});
+			td5.append(a);
+			td5[0].addEventListener('click', function(e) {
+				if(!confirm('振り分けルールを削除しますか？')){
+					return false;
+				} else {
+					const target_tr = $(e.target).closest('tr');
+					const track_selector = target_tr.find('.auto_import_track_selector');
+					const length = audioTrackSelectBox.length;
+					for(let i = 0; i < length; i++){
+						if(track_selector.is(audioTrackSelectBox[i])) {
+							audioTrackSelectBox.splice(i, 1);
+							break;
+						}
+					}
+					$(e.target).closest('tr').remove();
+				}
+				// TODO project settingsに書き込み
+			});
+
+		let tr = $('<tr>');
+			tr.append(td4);
+			tr.append(td1);
+			tr.append(td2);
+			tr.append(td3);
+			tr.append(td5);
+		jqTbody.append(tr);
+	}
 
 	let ActorStructure = [];
 	lightbox.option({
@@ -421,6 +699,24 @@
 		var csInterface = new CSInterface();
 		var extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
 		csInterface.evalScript('$._PPP_.Setup("' + extPath + '")');
+
+		csInterface.addEventListener('numTracksNotification', function(e) {
+			trackNum = e.data.split(',');
+			let length = audioTrackSelectBox.length;
+			for(let i = 0; i < length; i++) {
+				const selectbox = audioTrackSelectBox[i]
+				while(selectbox.children().length - 1 > trackNum[1]) {
+					selectbox.children().last().remove();
+				}
+				let value = selectbox.children().length;
+				while(selectbox.children().length <= trackNum[1]) {
+					const op = $('<option>', {'value':value});
+						op.html(value);
+					selectbox.append(op);
+					value += 1;
+				}
+			}
+		});
 
 		var cookiesList = document.cookie.split(';');
 		for(let cookie of cookiesList){
@@ -892,6 +1188,14 @@
 		+ text.value.replace(/\//g, '').replace(lfRegex, '/').replace(/\"/g, '\\"') + '")');
 	}
 
+	function getJSISText(path) {
+		if(fs.existsSync(path)) {
+			const data = fs.readFileSync(path);
+			return Encoding.convert(data, {from: 'SJIS', to: 'UNICODE', type: 'string'});
+		}
+		return null;
+	}
+
 	const Encoding = require('encoding-japanese');
 	function insertSubtitleFromTextFile() {
 		var csInterface = new CSInterface();
@@ -908,9 +1212,8 @@
 			const presetTag = $('#preset_tag').val();
 			for(let i = 0; i < mediaPathList.length; i++) {
 				const path = mediaPathList[i].slice(0, mediaPathList[i].lastIndexOf('.') + 1) + 'txt';
-				if(fs.existsSync(path)) {
-					const data = fs.readFileSync(path);
-					let text = Encoding.convert(data, {from: 'SJIS', to: 'UNICODE', type: 'string'});
+				let text = getJSISText(path);
+				if(text != null) {
 					if(presetTag !== '') {
 						textList.push(text.slice(text.indexOf(presetTag) + 1).replace(lfRegex, '\\n').replace(/\//g, '').replace(/\"/g, '\\"'));
 					} else {

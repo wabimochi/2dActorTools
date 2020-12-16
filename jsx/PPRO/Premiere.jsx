@@ -101,6 +101,17 @@ $._PPP_={
 
 			DummyClipNodeID = $._PPP_.shallowSearchClip(ActorBinItem, 'dummy.png').nodeId;
 		}
+		app.bind('onActiveSequenceStructureChanged', $._PPP_.sequenceStructureChanged);
+	},
+
+	sequenceStructureChanged : function () {
+		var seq = app.project.activeSequence;
+		if(seq) {
+			var eventObj = new CSXSEvent();
+			eventObj.type = "numTracksNotification";
+			eventObj.data = seq.videoTracks.numTracks.toString() + ',' + seq.audioTracks.numTracks.toString();
+			eventObj.dispatch();
+		}
 	},
 
 	insertSubtitle : function (mgtName, text){
@@ -780,11 +791,81 @@ $._PPP_={
 		return deepSearchClip(root, nameToFind);
 	},
 
+	searchForBinWithTreePath : function (treePath, root) {
+		var sepIndex = treePath.indexOf('/', 0);
+		var oldIndex = 0;
+		while(sepIndex !== -1){
+			var binName = treePath.slice(oldIndex, sepIndex);
+			root = $._PPP_.shallowSearchBin(root, binName);
+			if(!root) return null;
+			oldIndex = sepIndex + 1;
+			sepIndex = treePath.indexOf('/', sepIndex + 1);
+		}
+		if(root && oldIndex < treePath.length){
+			return $._PPP_.shallowSearchBin(root, treePath.slice(oldIndex));
+		}
+		return null;
+	},
+
 	importActorStructureFile : function (path, actName) {
 		if (app.project && path) {
 			var insertBin = $._PPP_.shallowSearchBin(ActorBinItem, actName);
 			return app.project.importFiles([path], true, insertBin, false);
 		}
+	},
+
+	importFiles : function (path, trackIndex, importBinTreePath) {
+		var pathList = path.split('\\');
+		var trackIndexList = trackIndex.split('\\');
+		var binTreePathList = importBinTreePath.split('\\');
+		var length = binTreePathList.length;
+		var importSet = {};
+		
+		for(var i = 0; i < length; i++) {
+			if(!importSet[binTreePathList[i]]) {
+				importSet[binTreePathList[i]] = [];
+			}
+			importSet[binTreePathList[i]].push(pathList[i]);
+		}
+		for(var key in importSet) {
+			var importBin = $._PPP_.searchForBinWithTreePath(key, app.project.rootItem);
+			if(importBin) {
+				app.project.importFiles(importSet[key], true, importBin, false);
+			}
+		}
+
+		var seq = app.project.activeSequence;
+		if(seq) {
+			length = pathList.length;
+			for(var i = 0; i < length; i++) {
+				var targetTrackIndex = trackIndexList[i];
+				if(trackIndexList[i] >= 0) {
+					var targetPath = pathList[i];
+					var importBin = $._PPP_.searchForBinWithTreePath(binTreePathList[i], app.project.rootItem);
+					var clipName = targetPath.slice(targetPath.lastIndexOf('/') + 1);
+					var projectItem = $._PPP_.shallowSearchClip(importBin, clipName);
+					var targetAudioTrack = seq.audioTracks[targetTrackIndex];
+					targetAudioTrack.overwriteClip(projectItem, seq.getPlayerPosition().seconds);
+					for (var j = 0; j < targetAudioTrack.clips.numItems; j++) {
+						var clip = targetAudioTrack.clips[j];
+						if(clip.projectItem.nodeId == projectItem.nodeId) {
+							seq.setPlayerPosition(clip.end.ticks);
+							break;
+						}
+					}
+				}
+			}
+		}
+	},
+
+	getSelectedBinTreePath : function() {
+		var treePath = app.project.getInsertionBin().treePath;
+		var index = treePath.indexOf('\\', 1);
+		if(index > 0) {
+			treePath = treePath.slice(treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
+			return treePath;
+		}
+		return '';
 	},
 
 	updateEventPanel : function (message) {

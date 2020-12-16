@@ -183,6 +183,10 @@ hr {
   pointer-events: none;
   height:2px !important;
 }
+.events_disable {
+  pointer-events: none;
+  opacity: 0.2;
+}
 .uk-thumbnav ul {
   margin-bottom: 0;
   white-space:nowrap;
@@ -401,7 +405,7 @@ summary{
   color: #eee !important;
   background-color: #333 !important;
   border-color:#555 !important;
-  margin-bottom:10px !important;
+  margin-bottom:10px;
 }
 .uk-select:not([multiple]):not([size]) option {
   color: #eee !important;
@@ -454,4 +458,37 @@ summary{
 .uk-button-secondary:active
 {
   background-color: #6CBEE4 !important; 
+}
+
+.icon_s {
+  min-width: 32px !important;
+  max-width: 32px !important;
+}
+
+.grid_icon {
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+
+.add_watch_dir {
+  border: 1px solid #555 !important;
+  padding: 5px !important;
+}
+
+.uppercase_disable {
+  text-transform: none !important;
+}
+
+.text_ellipsis {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.auto_import_ok {
+  background-color : #598059 !important;
+}
+
+.auto_import_error {
+  background-color : #835252 !important;
 }
