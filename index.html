@@ -26,7 +26,7 @@
 	<div id="mainfunc">
 		<ul class="uk-flex-center" id="function_switch" uk-tab="active: 0;">
 			<li id="function_subtitle"><a href="#">字幕</a></li>
-			<li id="function_property_deploy"><a href="#">プロパティコピー</a></li>
+			<li id="function_property_deploy"><a href="#">リファインツール</a></li>
 			<li id="function_actor"><a href="#">立ち絵</a></li>
 			<li id="function_actor_setting"><a href="#">立ち絵設定</a></li>
 			<li id="function_auto_import"><a href="#">自動インポート</a></li>
@@ -62,18 +62,79 @@
 
 			</li>
 			<li>
-				<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
-					<span class="uk-label tdactor_label">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
-					<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
-						<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyCapture()">コピー</button>
-						<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyDeploy()">ペースト</button>
+				<div class="uk-margin-left uk-width-auto" uk-toggle="target: #offcanvas-nav"><a href="#" class="uk-margin-small-right" uk-icon="icon: menu"></a></div>
+				<hr>
+				<div id="offcanvas-nav" uk-offcanvas="overlay: true">
+					<div class="uk-offcanvas-bar">
+						<button class="uk-offcanvas-close" type="button" uk-close></button>
+						<ul class="uk-nav uk-nav-default" uk-switcher="connect: .my-class">
+							<li class="uk-nav-header">ツールリスト</li>
+							<li class="uk-nav-divider"></li>
+							<li class="uk-active"><a href="#">プロパティコピー</a></li>
+							<li><a href="#">自動改行</a></li>
+						</ul>
 					</div>
 				</div>
-				<div id="capturedParameters">
-				</div>
+
+				<ul class="uk-switcher my-class uk-margin">
+					<li>
+						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
+							<span class="uk-label tdactor_label">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
+							<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
+								<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyCapture()">コピー</button>
+								<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyDeploy()">ペースト</button>
+							</div>
+						</div>
+						<div id="capturedParameters">
+						</div>
+					</li>
+					<li class="uk-active">
+						<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right">
+							<div class="uk-margin"><label><input id="auto_newline_ascii" class="uk-checkbox td_check" type="checkbox" checked> 半角英数字は0.5文字としてカウントする</label></div>
+							<div class="uk-margin"><label><input id="auto_newline_marker" class="uk-checkbox td_check" type="checkbox" checked onclick="autoNewLineMarkerUIUpdate()"> 改行対象のクリップ位置にマーカーを付ける</label></div>
+							<div class="uk-margin-left uk-flex-inline uk-flex-middle" id="auto_newline_normal_marker_color">
+								<div class="uk-margin-left"></div>
+								<div class="merker_color_selector" style="background-color: #718637;"></div>
+								<div class="merker_color_selector" style="background-color: #D22C36;"></div>
+								<div class="merker_color_selector" style="background-color: #AF8BB1;"></div>
+								<div class="merker_color_selector" style="background-color: #E96F24;"></div>
+								<div class="merker_color_selector" style="background-color: #D0A12B;"></div>
+								<div class="merker_color_selector" style="background-color: #FFFFFF;"></div>
+								<div class="merker_color_selector" style="background-color: #428DFC;"></div>
+								<div class="merker_color_selector" style="background-color: #19F4D6;"></div>
+							</div>
+							<div class="uk-margin-left uk-margin">
+								<label><input id="auto_newline_maxlinecount" class="uk-input uk-light tdinput input_num_only uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" placeholder="行数" value="3">行を超える、もしくは分割できない場合のマーカーの色</label>
+							</div>
+							<div class="uk-margin-left uk-flex-inline uk-flex-middle" id="auto_newline_warning_marker_color">
+								<div class="uk-margin-left"></div>
+								<div class="merker_color_selector" style="background-color: #718637;"></div>
+								<div class="merker_color_selector" style="background-color: #D22C36;"></div>
+								<div class="merker_color_selector" style="background-color: #AF8BB1;"></div>
+								<div class="merker_color_selector" style="background-color: #E96F24;"></div>
+								<div class="merker_color_selector" style="background-color: #D0A12B;"></div>
+								<div class="merker_color_selector" style="background-color: #FFFFFF;"></div>
+								<div class="merker_color_selector" style="background-color: #428DFC;"></div>
+								<div class="merker_color_selector" style="background-color: #19F4D6;"></div>
+							</div>
+							<div class="uk-margin"><label><input id="auto_newline_flatten" class="uk-checkbox td_check" type="checkbox" checked> 処理する前に改行を消す</label></div>
+							<div class="uk-margin"><label><input id="auto_newline_insert" class="uk-checkbox td_check" type="checkbox" checked> 自動で改行する</label></div>
+							<div class="uk-margin">
+								<label>
+									1行の文字数<input id="auto_newline_maxcount" class="uk-input uk-light tdinput input_num_only uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" value="30">
+									<a href="#" class="" onClick="countSelectedClipTextLength()" uk-icon="icon: pencil" uk-tooltip="選択中のクリップの文字数を取得"></a>
+								</label>
+							</div>
+							<span class="uk-label tdactor_label">選択中のクリップ、もしくはターゲットトラックのソーステキストを対象とします</span>
+							<div class="uk-margin">
+								<button class="uk-button uk-button-secondary uk-width-expand" onClick="autoNewLine_ExecuteButton()">実行</button>
+							</div>
+						</div>
+					</li>
+				</ul>
 			</li>
 			<li>
-				<div class="uk-thumbnav uk-padding uk-padding-small uk-padding-remove-vertical actor_linknav">
+				<div class="uk-thumbnav td-thumbnav uk-padding uk-padding-small uk-padding-remove-vertical actor_linknav">
 					<ul></ul>
 				</div>
 				<ul class="uk-switcher" id="actor_switcher"></ul>
@@ -121,6 +182,8 @@
 </body>
 
 <script>
+	const newLineReg = /\r\n|\n|\r/g;
+	const asciiReg = /[a-zA-Z0-9!-/:-@¥[-`{-~ ]/g;
 	const fs = require('fs');
 	const chokidar = require('chokidar');
 
@@ -411,7 +474,6 @@
 					$(this).removeClass('enable');
 					$(this).siblings().removeClass('enable');
 				}
-
 			} else {
 				if(e.shiftKey) {
 					$(this).parents('details').find('div').addClass('enable');
@@ -538,10 +600,10 @@
 			let lock = $(this).attr('uk-icon');
 			if(lock === 'lock'){
 				$(this).attr('uk-icon', 'unlock');
-				$(this).parents('.actor_parts').find('.uk-thumbnav').removeClass('disable');
+				$(this).parents('.actor_parts').find('.td-thumbnav').removeClass('disable');
 			} else {
 				$(this).attr('uk-icon', 'lock');
-				$(this).parents('.actor_parts').find('.uk-thumbnav').addClass('disable');
+				$(this).parents('.actor_parts').find('.td-thumbnav').addClass('disable');
 			}
 		});
 
@@ -603,6 +665,30 @@
 		$(document).on('change', '#preset_tag', function() {
 			const time = 60*60*24*30*6;
 			document.cookie = 'presettag=' + encodeURIComponent($('#preset_tag').val()) + ';max-age=' + time;
+		});
+
+		$(document).on('click', '.merker_color_selector', function() {
+			const target = $(this);
+			target.siblings('.merker_color_selector').each(function(index, element){
+				$(element).removeClass('merker_color_selected');
+				$(element).empty();
+			});
+			if(!target.hasClass('merker_color_selected')) {
+				target.addClass('merker_color_selected');
+				target.append($('<div>', {'uk-icon':'icon: check; ratio:1.5', style:'color:#232323'}))
+			}
+		});
+		$(document).on('change', '.input_num_only', function() {
+			let target = $(this);
+			let inputval = target.val().match(/[0-9０-９]+/g);
+			if(inputval) {
+				inputval = inputval.join('').replace(/[０-９]/g, function(s) {
+					return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+				});
+				target.val(inputval);
+			} else {
+				target.val('');
+			}
 		});
 	});
 
@@ -977,7 +1063,7 @@
 						partsSelector.append(checkbox_div);
 
 						var partsList = $('<div>', {'class':'uk-width-expand uk-flex uk-flex-left actor_parts_list'});
-						var thumbnav = $('<div>', {'class':'uk-thumbnav'});
+						var thumbnav = $('<div>', {'class':'td-thumbnav'});
 
 						var ul = $('<ul>');
 						var clips = actorObj.actor[i].clips;
@@ -1356,6 +1442,224 @@
 				if(callback) callback();
 			}
 		});
+	}
+
+	function tokenInsertNewLine(tokens, maxCharactorNum, asciiIsHalf) {
+		let processedText = [];
+		let tokensLength = tokens.length;
+		let wordList = [];
+		let prevWordPos = 0;
+		let prevIndex = -1;
+		let offset = 0;
+		let split_fail = 0;
+		
+		for(let i = 0; i < tokensLength; i++) {
+			if(asciiIsHalf) {
+				const arr = tokens[i].surface_form.match(asciiReg);
+				if(arr) {
+					offset = offset + arr.length * 0.5;
+				}
+			}
+			const wordLength = tokens[i].word_position + tokens[i].surface_form.length;
+			if(Math.ceil(wordLength - prevWordPos - offset) > maxCharactorNum) {
+				let j = i - 1;
+				let secondChoice = -1;
+				let thirdChoice = -1;
+				let fourthChoice = -1;
+				for(; j > prevIndex; j--) {
+					if(tokens[j + 1].pos_detail_1 !== '読点' && tokens[j + 1].pos_detail_1 !== '句点') {
+						if((tokens[j].pos === '助詞' && tokens[j + 1].pos !== '動詞') || 
+							tokens[j].pos_detail_1 === '読点' || 
+							tokens[j].pos_detail_1 === '句点' || 
+							tokens[j].pos_detail_1 === '空白') {
+							processedText.push(wordList.join(''));
+							prevWordPos = tokens[j].word_position;
+							i = j;
+							prevIndex = j;
+							break;
+						} else if(secondChoice === -1 && tokens[j].pos === '助動詞') {
+							secondChoice = j;
+						} else if(thirdChoice === -1 && tokens[j].pos === '形容詞') {
+							thirdChoice = j;
+						} else if(fourthChoice === -1 && tokens[j].pos === '助詞') {
+							fourthChoice = j;
+						}
+					}
+					wordList.pop();
+				}
+				if(wordList.length === 0) {
+					let choiceIndex = i - 1;
+					if(secondChoice !== -1) {
+						choiceIndex = secondChoice;
+					} else if(thirdChoice !== -1) {
+						choiceIndex = thirdChoice;
+					} else if(fourthChoice !== -1) {
+						choiceIndex = fourthChoice;
+					}
+					if(prevIndex !== choiceIndex) {
+						for(let k = prevIndex + 1; k <= choiceIndex; k++) {
+							wordList.push(tokens[k].surface_form);
+						}
+					} else {
+						split_fail = -1;
+						choiceIndex = prevIndex + 1;
+						wordList.push(tokens[choiceIndex].surface_form);
+					}
+					processedText.push(wordList.join(''));
+					prevWordPos = tokens[choiceIndex].word_position;
+					i = choiceIndex;
+					prevIndex = choiceIndex;
+				}
+				wordList = [];
+				offset = 0;
+			} else {
+				wordList.push(tokens[i].surface_form);
+			}
+		}
+		if(wordList.length > 0) {
+			processedText.push(wordList.join(''));
+		}
+		return [processedText, split_fail];
+	}
+
+	var kuromoji = require('kuromoji');
+	function auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMarkerColor, asciiIsHalf, initNewLine, autoNewLine) {
+		var csInterface = new CSInterface();
+		csInterface.evalScript('$._PPP_.AutoNewLine_GetSourceText()', function(result){
+			let textList = result.split('/');
+			var extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
+			var builder = kuromoji.builder({dicPath: extPath + '/node_modules/kuromoji/dict'});
+			builder.build(function(err, tokenizer) {
+				if(err){throw err}
+				let processedText = [];
+				let processedFlag = [];
+				const textListLength = textList.length;
+				if(initNewLine) {
+					for(let i = 0; i < textListLength; i++) {
+						console.log(textList[i]);
+						textList[i] = textList[i].replace(newLineReg, '');
+						console.log(textList[i]);
+					}
+				}
+				for(let i = 0; i < textListLength; i++) {
+					let oneLineTextList = textList[i].split(newLineReg);
+					let preProcessedText = [];
+					let process = -1;
+					for(let j = 0; j < oneLineTextList.length; j++) {
+						let charactorCount = oneLineTextList[j].length;
+						if(asciiIsHalf) {
+							const arr = oneLineTextList[j].match(asciiReg);
+							if(arr) {
+								charactorCount = Math.ceil(charactorCount - arr.length * 0.5);
+							}
+						}
+						if(charactorCount > maxCharactorNum) {
+							if(autoNewLine) {
+								let tokens = tokenizer.tokenize(oneLineTextList[j]);
+								let [newLineText , split_fail] = tokenInsertNewLine(tokens, maxCharactorNum, asciiIsHalf);
+								Array.prototype.push.apply(preProcessedText, newLineText);
+								if(split_fail) {
+									process = 2;
+								}
+							} else {
+								preProcessedText.push(oneLineTextList[j]);
+							}
+							if(process !== 2) {
+								process = 1;
+							}
+						} else {
+							preProcessedText.push(oneLineTextList[j]);
+						}
+					}
+
+					if (preProcessedText.length > maxLineNum) {
+						process = 2;
+					}
+					processedText.push(preProcessedText.join('\n'));
+					if(process === 1) {
+						processedFlag.push(insertMarkerColor);
+					} else if(process === 2) {
+						processedFlag.push(warningMarkerColor);
+					} else {
+						processedFlag.push(-1);
+					}
+				}
+				csInterface.evalScript('$._PPP_.AutoNewLine_Replace("'+ processedText.join('/').replace(newLineReg, '\\n').replace(/\"/g, '\\"') +'","' + processedFlag.join('/') + '")', function(result) {
+				});				
+			});
+		});
+	}
+
+	function countSelectedClipTextLength() {
+		var csInterface = new CSInterface();
+		csInterface.evalScript('$._PPP_.GetSelectedClipText()', function(result){
+			if(result) {
+				let charactorCount = result.length;
+				if($('#auto_newline_ascii').prop('checked')) {
+					const arr = result.match(asciiReg);
+					if(arr) {
+						charactorCount = Math.floor(charactorCount - arr.length * 0.5);
+					}
+				}
+				$('#auto_newline_maxcount').val(charactorCount);
+			}
+		});
+	}
+
+	function autoNewLine_ExecuteButton() {
+		let maxCharactorNum = 10;
+		let insertMarkerColor = -1;
+		let warningMarkerColor = -1;
+		let maxLineNum = 10000;
+		if($('#auto_newline_marker').prop('checked')) {
+			let marker_index = $('#auto_newline_normal_marker_color div:nth-child(2)');
+			for(insertMarkerColor = 0; insertMarkerColor < 8; insertMarkerColor++) {
+				if(marker_index.hasClass('merker_color_selected')) {
+					break;
+				}
+				marker_index = marker_index.next();
+			}
+
+			marker_index = $('#auto_newline_warning_marker_color div:nth-child(2)');
+			for(warningMarkerColor = 0; warningMarkerColor < 8; warningMarkerColor++) {
+				if(marker_index.hasClass('merker_color_selected')) {
+					break;
+				}
+				marker_index = marker_index.next();
+			}
+
+			if(insertMarkerColor >= 8) insertMarkerColor = 0;
+			if(warningMarkerColor >= 8) warningMarkerColor = 1;
+			maxLineNum = Number($('#auto_newline_maxlinecount').val());
+			if(maxLineNum < 1) maxLineNum = 1;
+		}
+		maxCharactorNum = Number($('#auto_newline_maxcount').val());
+		if(maxCharactorNum < 1) maxCharactorNum = 1;
+
+		const asciiIsHalf = $('#auto_newline_ascii').prop('checked');
+		const initNewLine = $('#auto_newline_flatten').prop('checked');
+		const autoNewLine = $('#auto_newline_insert').prop('checked');
+		auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMarkerColor, asciiIsHalf, initNewLine, autoNewLine);
+	}
+
+	function autoNewLineMarkerUIUpdate() {
+		const checkbox = $('#auto_newline_marker');
+		const parent = checkbox.closest('div')
+		if(checkbox.prop('checked')) {
+			let nextElm = parent.next();
+			nextElm.removeClass('events_disable');
+			nextElm = nextElm.next();
+			nextElm.removeClass('events_disable');
+			nextElm = nextElm.next();
+			nextElm.removeClass('events_disable');
+		} else {
+			let nextElm = parent.next();
+			nextElm.addClass('events_disable');
+			nextElm = nextElm.next();
+			nextElm.addClass('events_disable');
+			nextElm = nextElm.next();
+			nextElm.addClass('events_disable');
+		}
 	}
 
 </script>

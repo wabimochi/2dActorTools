@@ -72,6 +72,8 @@ var DummyClipNodeID = 0;
 var ActorBinItem;
 var propertiesObject = [];
 
+var OperationTargetList = [];
+
 $._PPP_={
 
 	Setup: function(extPath){
@@ -856,6 +858,104 @@ $._PPP_={
 				}
 			}
 		}
+	},
+
+	fixTimeError : function(seconds, epsTime) {
+		var mod = (seconds % epsTime);
+		if(mod * 2 < epsTime) {
+			seconds -= mod;
+		} else {
+			seconds += epsTime - mod;
+		}
+		return seconds;
+	},
+
+	AutoNewLine_GetSourceText : function() {
+		OperationTargetList = [];
+		var seq = app.project.activeSequence;
+		var textList = [];
+		if(seq) {
+			var selected_clips = seq.getSelection();
+			if(selected_clips.length > 0) {
+				var length = selected_clips.length;
+				for(var i = 0; i < length; i++) {
+					var mgtComponent = selected_clips[i].getMGTComponent();
+					if(mgtComponent) {
+						var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+						if(sourceText){
+							var textObj = JSON.parse(sourceText.getValue());
+							textList.push(textObj.textEditValue);
+							OperationTargetList.push(selected_clips[i]);
+						}
+					}
+				}
+			} else{
+				for(var trackIndex = 0; trackIndex < seq.videoTracks.numTracks; trackIndex++) {
+					if (seq.videoTracks[trackIndex].isTargeted()) {
+						var clips = seq.videoTracks[trackIndex].clips;
+						var length = clips.numItems;
+						for(var i = 0; i < length; i++){
+							var mgtComponent = clips[i].getMGTComponent();
+							if(mgtComponent) {
+								var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+								if(sourceText){
+									var textObj = JSON.parse(sourceText.getValue());
+									textList.push(textObj.textEditValue);
+									OperationTargetList.push(clips[i]);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return textList.join('/');
+	},
+
+	AutoNewLine_Replace : function(textList, markerColorIndex) {
+		var _textList = textList.split('/');
+		var _markerColorIndex = markerColorIndex.split('/');
+		var length = OperationTargetList.length;
+		var seq = app.project.activeSequence;
+		if(seq) {
+			var markers = seq.markers;
+			var epsTime = seq.getSettings().videoFrameRate.seconds;
+			for(var i = 0; i < length; i++){
+				var sourceText = OperationTargetList[i].getMGTComponent().properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+				if(sourceText) {
+					var textObj = JSON.parse(sourceText.getValue());
+					textObj.fontTextRunLength = [_textList[i].length];
+					textObj.textEditValue = _textList[i];
+					sourceText.setValue(JSON.stringify(textObj), (i === length - 1)); 
+				}
+				if(_markerColorIndex[i] !== '-1') {
+					var clipTime = OperationTargetList[i].start.seconds;
+					clipTime = $._PPP_.fixTimeError(clipTime, epsTime);
+					var marker = markers.createMarker(clipTime);
+					marker.setColorByIndex(Number(_markerColorIndex[i]));
+					marker.comments = _textList[i];
+				}
+			}
+		}
+	},
+
+	GetSelectedClipText : function() {
+		var seq = app.project.activeSequence;
+		var text = '';
+		if(seq) {
+			var selected_clips = seq.getSelection();
+			if(selected_clips.length > 0) {
+				var mgtComponent = selected_clips[0].getMGTComponent();
+				if(mgtComponent) {
+					var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+					if(sourceText){
+						var textObj = JSON.parse(sourceText.getValue());
+						text = textObj.textEditValue;
+					}
+				}
+			}
+		}
+		return text;
 	},
 
 	getSelectedBinTreePath : function() {

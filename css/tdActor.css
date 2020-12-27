@@ -174,11 +174,11 @@ hr {
   padding-left: 10px;
   padding-right: 10px;
 }
-.uk-thumbnav{
+.td-thumbnav{
   user-select: none;
   overflow-x:scroll;
 }
-.uk-thumbnav.disable{
+.td-thumbnav.disable{
   opacity: 0.2;
   pointer-events: none;
   height:2px !important;
@@ -187,25 +187,25 @@ hr {
   pointer-events: none;
   opacity: 0.2;
 }
-.uk-thumbnav ul {
+.td-thumbnav ul {
   margin-bottom: 0;
   white-space:nowrap;
 }
-.uk-thumbnav li {
+.td-thumbnav li {
   border-radius: 3px;
   cursor: default;
   display: inline-block;
   border: solid 1px transparent;
   transition: border 0.5s ease-out;
 }
-.uk-thumbnav li:hover {
+.td-thumbnav li:hover {
   border: solid 1px #7CCEF4;
   transition: border 0.1s ease-out;
 }
-.uk-thumbnav li:active{
+.td-thumbnav li:active{
   background-color: rgba(124, 206, 244, 0.1);
 }
-.uk-thumbnav>*>::after{
+.td-thumbnav>*>::after{
   background: inherit !important;
 }
 .actor_component{
@@ -398,9 +398,6 @@ summary{
   padding-left: 0px !important;
   padding-right: 0px !important;
 }
-.uk-button-secondary:hover {
-  color:#232323 !important;
-}
 .tdactor_selectbox {
   color: #eee !important;
   background-color: #333 !important;
@@ -452,7 +449,7 @@ summary{
 }
 .uk-button-secondary:hover
 {
-  color:#232323;
+  color:#232323 !important;
   background-color: #7CCEF4 !important; 
 }
 .uk-button-secondary:active
@@ -491,4 +488,34 @@ summary{
 
 .auto_import_error {
   background-color : #835252 !important;
+}
+
+input.td_check[type="checkbox"]{
+  border-color: #555;
+  background-color: rgba(0,0,0,0);
+}
+input.td_check[type="checkbox"]:checked{
+  border-color:  rgba(124, 206, 244, 0.2);
+  background-color: rgba(124, 206, 244, 0.2);
+}
+
+.merker_color_selector {
+  user-select: none;
+  width: 24px;
+  height: 24px;
+  margin-left:5px;
+  margin-right:5px;
+  border-radius: 25%;
+  border: 1px solid rgba(124, 206, 244, 0);
+  opacity: 0.2;
+  transition: opacity 0.3s ease-out;
+
+}
+.merker_color_selector:hover {
+  opacity: 1.0;
+  transition: opacity 0.2s ease-out;
+}
+
+.merker_color_selected {
+  opacity: 1.0 !important;
 }
