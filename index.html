@@ -89,6 +89,7 @@
 							<li class="uk-nav-divider"></li>
 							<li class="uk-active"><a href="#">プロパティコピー</a></li>
 							<li><a href="#">自動改行</a></li>
+							<li><a href="#">トリガークリップオーバーライド</a></li>
 						</ul>
 					</div>
 				</div>
@@ -121,7 +122,7 @@
 								<div class="merker_color_selector" style="background-color: #19F4D6;"></div>
 							</div>
 							<div class="uk-margin-left uk-margin">
-								<label><input id="auto_newline_maxlinecount" category="autonewline" class="uk-input uk-light tdinput input_num_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" placeholder="行数" value="3">行を超える、もしくは分割できない場合のマーカーの色</label>
+								<label><input id="auto_newline_maxlinecount" category="autonewline" class="uk-input uk-light tdinput input_num_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" placeholder="行数" value="2">行を超える、もしくは分割できない場合のマーカーの色</label>
 							</div>
 							<div class="uk-margin-left uk-flex-inline uk-flex-middle" id="auto_newline_warning_marker_color" category="autonewline">
 								<div class="uk-margin-left"></div>
@@ -138,7 +139,7 @@
 							<div class="uk-margin"><label><input id="auto_newline_insert" category="autonewline" class="uk-checkbox td_check save_setting_check_on_change" type="checkbox" checked> 自動で改行する</label></div>
 							<div class="uk-margin">
 								<label>
-									1行の文字数<input id="auto_newline_maxcount" category="autonewline" class="uk-input uk-light tdinput input_num_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" value="30">
+									1行の文字数<input id="auto_newline_maxcount" category="autonewline" class="uk-input uk-light tdinput input_num_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" value="35">
 									<a href="#" class="" onClick="countSelectedClipTextLength()" uk-icon="icon: pencil" uk-tooltip="選択中のクリップの文字数を取得"></a>
 								</label>
 							</div>
@@ -147,6 +148,70 @@
 								<button class="uk-button uk-button-secondary uk-width-expand" onClick="autoNewLine_ExecuteButton()">実行</button>
 							</div>
 						</div>
+					</li>
+					<li>
+						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id="overwriteclip_trigger_root">
+							<div class="uk-flex uk-flex-left uk-margin-small-top uk-margin-remove-bottom">
+								<span class="uk-label tdactor_label uk-width-expand">アクティブシーケンスのターゲットオーディオトラックにあるクリップをトリガーの対象とします</span>
+							</div>	
+							<div class="uk-flex uk-flex-left uk-margin-remove-top">
+								<span class="uk-label uk-width-expand tdactor_label">トリガー：クリップの開始</span>
+							</div>
+							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
+								<button category="trigger_clip_override" id="trigger_clipstart_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
+								<div class="uk-flex uk-flex-middle uk-width-auto insert_mode uk-margin-small-top uk-flex-nowrap" uk-grid>
+									<div category="trigger_clip_override" id="trgclp_str_ins_in" class="triggerclip_insert_setting insert_setting_icon insert_inpoint enable" style="padding-left:15px; padding-right:15px"> 
+										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="53.1" y2="50.5"/><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="34.1" y2="50.5"/><g><polygon class="insert_inpoint1" points="30.2,63.8 53.1,50.5 30.2,37.2 "/></g></g></g><rect x="56.2" y="9" class="insert_inpoint2" width="40.7" height="83.8"/><polygon class="insert_inpoint1" points="77.7,9 56.2,31.8 56.2,92.8 96.8,92.8 96.8,9 "/></svg>
+									</div>
+									<div category="trigger_clip_override" id="trgclp_str_ins_out" class="triggerclip_insert_setting insert_setting_icon insert_outpoint disable" style="padding-left:15px; padding-right:15px">
+										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="insert_outpoint4" points="14.3,92.8 85.8,92.8 85.8,9 14.2,9 "/><polygon class="insert_outpoint1" points="64.3,9 85.8,31.8 85.8,92.8 14.3,92.8 14.2,9 "/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="81.6" y2="50"/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="62.6" y2="50"/><g><polygon class="insert_outpoint3" points="58.7,63.3 81.6,50 58.7,36.7 "/></g></g></g></svg>
+									</div>
+									<div category="trigger_clip_override" id="trgclp_str_ins_mkr" class="triggerclip_insert_setting insert_setting_icon insert_marker disable" style="padding-left:15px; padding-right:15px">
+										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="marker_icon" points="23.1,58.425 23.1,18 76.57,18 76.57,58.425 49.535,83 23.1,58.425 "/></svg>
+									</div>
+									<div class="triggerclip_insert_setting insert_setting_icon trigger_clip_trash" style="padding-left:15px; padding-right:15px">
+										<a href="#" class="icon_s" uk-icon="icon: trash"></a>
+									</div>
+								</div>
+							</div>
+							<div class="uk-flex uk-flex-left uk-margin-small-top">
+								<span class="uk-label uk-width-expand tdactor_label">トリガー：クリップの終了</span>
+							</div>
+							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
+								<button category="trigger_clip_override" id="trigger_clipend_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
+								<div class="uk-flex uk-flex-middle uk-width-auto insert_mode uk-margin-small-top uk-flex-nowrap" uk-grid>
+									<div category="trigger_clip_override" id="trgclp_end_ins_in" class="triggerclip_insert_setting insert_setting_icon insert_inpoint enable" style="padding-left:15px; padding-right:15px"> 
+										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="53.1" y2="50.5"/><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="34.1" y2="50.5"/><g><polygon class="insert_inpoint1" points="30.2,63.8 53.1,50.5 30.2,37.2 "/></g></g></g><rect x="56.2" y="9" class="insert_inpoint2" width="40.7" height="83.8"/><polygon class="insert_inpoint1" points="77.7,9 56.2,31.8 56.2,92.8 96.8,92.8 96.8,9 "/></svg>
+									</div>
+									<div category="trigger_clip_override" id="trgclp_end_ins_out" class="triggerclip_insert_setting insert_setting_icon insert_outpoint disable" style="padding-left:15px; padding-right:15px">
+										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="insert_outpoint4" points="14.3,92.8 85.8,92.8 85.8,9 14.2,9 "/><polygon class="insert_outpoint1" points="64.3,9 85.8,31.8 85.8,92.8 14.3,92.8 14.2,9 "/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="81.6" y2="50"/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="62.6" y2="50"/><g><polygon class="insert_outpoint3" points="58.7,63.3 81.6,50 58.7,36.7 "/></g></g></g></svg>
+									</div>
+									<div category="trigger_clip_override" id="trgclp_end_ins_mkr" class="triggerclip_insert_setting insert_setting_icon insert_marker disable" style="padding-left:15px; padding-right:15px">
+										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="marker_icon" points="23.1,58.425 23.1,18 76.57,18 76.57,58.425 49.535,83 23.1,58.425 "/></svg>
+									</div>
+									<div class="triggerclip_insert_setting insert_setting_icon trigger_clip_trash" style="padding-left:15px; padding-right:15px">
+										<a href="#" class="icon_s" uk-icon="icon: trash"></a>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="uk-flex uk-flex-left uk-margin-small-top uk-margin-left">
+							<span class="uk-label uk-width-expand tdactor_label">クリップをオーバーライトするトラックの選択</span>
+						</div>
+						<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
+							<select class="tdactor_selectbox uk-margin-small-left uk-width-expand uk-select save_setting_value_on_change" category="trigger_clip_override" id="trigger_clip_override_target_seq" type="selectbox">
+								<option value="0">選択中のシーケンス</option>
+								<option value="1">アクティブシーケンス</option>
+							</select>
+							<select class="tdactor_selectbox uk-margin-small-left uk-width-auto uk-select save_setting_value_on_change" category="trigger_clip_override" id="trigger_clip_override_target_track" type="selectbox">
+								<option value="0">Video Track</option>
+							</select>
+						</div>
+						<div class="uk-flex uk-flex-center uk-margin-top uk-margin-left uk-margin-right">
+							<button class="uk-button uk-button-secondary uk-width-expand" onclick="triggerOverriteClip_ExecuteButton()">実行</button>
+						</div>
+
+
 					</li>
 				</ul>
 			</li>
@@ -189,11 +254,12 @@
 			</li>
 			<li>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
+					<span class="uk-label tdactor_label uk-margin-remove-bottom uppercase_disable">wav, mp3, wmvファイルが作成された際に指定のビンにインポートし、指定のトラックに並べます</span>
 					<span class="uk-label tdactor_label">設定は監視を開始したとき、またはルールを削除したときに保存されます</span>
 				</div>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" id="auto_import_root">
 				</div>
-				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
+				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right">
 					<button class="uk-button uk-button-secondary uk-width-expand add_watch_dir uk-margin-bottom" onClick="addAutoImportWatchDir()">監視フォルダの追加</button>
 				</div>
 			</li>
@@ -225,6 +291,7 @@
 	CEP_ERROR_TO_MESSAGE[window.cep.fs.DEPRECATED_API] = "[error] deprecated API.";
 
 	let audioTrackSelectBox = [];
+	let videoTrackSelectBox = [];
 	let watcherId = 0;
 	let watcherList = [];
 	let importPathBuffer = [];
@@ -233,6 +300,7 @@
 	let importExecuteId = null;
 	let ExtensionSettings = {};
 	let ExtensionSettingsFilePath = null;
+	let SetectedProjectItemTreePath = '';
 
 	function autoImportStart(dirPath, matchingPatternList, matchingSourceList, importBinList, trackList) {
 		const _matchingPatternList = matchingPatternList;
@@ -298,11 +366,11 @@
 			path_input[0].addEventListener('change', function(e) {
 				e.target.value = e.target.value.replace(/\\/g, '/');
 				if(fs.existsSync(e.target.value)) {
-					e.target.classList.remove('auto_import_error');
-					e.target.classList.add('auto_import_ok');
+					e.target.classList.remove('tdact_setting_error');
+					e.target.classList.add('tdact_setting_ok');
 				} else {
-					e.target.classList.add('auto_import_error');
-					e.target.classList.remove('auto_import_ok');
+					e.target.classList.add('tdact_setting_error');
+					e.target.classList.remove('tdact_setting_ok');
 				}
 			});
 		let a1 = $('<a>', {href:'#', 'class':'uk-width-auto grid_icon' ,'uk-icon':'icon: folder'});
@@ -311,16 +379,16 @@
 				if(watch_dir == '') return;
 				const pathInput = $(e.target).closest('a').prevAll('input');
 				pathInput.val(watch_dir[0]);
-				pathInput.removeClass('auto_import_error');
-				pathInput.addClass('auto_import_ok');
+				pathInput.removeClass('tdact_setting_error');
+				pathInput.addClass('tdact_setting_ok');
 			});
 		let a2 = $('<a>', {href:'#', 'class':'uk-width-auto grid_icon' ,'uk-icon':'icon: link'});
 			a2[0].addEventListener('click', function(e) {
 				const target = $(e.target).closest('a');
 				const elm = target.closest('.watch_dir_element');
-				if(target.hasClass('auto_import_ok')) {
+				if(target.hasClass('tdact_setting_ok')) {
 					autoImportStop(target.val());
-					target.removeClass('auto_import_ok');
+					target.removeClass('tdact_setting_ok');
 					elm.find('*').each(function(i, o) { 
 						$(o).removeClass('events_disable');
 					}); 
@@ -331,32 +399,32 @@
 
 					let invalid = false;
 					if(!fs.existsSync(dirPath)) {
-						dirPathInput.addClass('auto_import_error');
+						dirPathInput.addClass('tdact_setting_error');
 						invalid = true;
 					}
 					body.find('.auto_import_bin').each(function(i, o) { 
 						const bin_button = $(o);
-						if(!bin_button.hasClass('auto_import_ok')) {
-							bin_button.addClass('auto_import_error');
+						if(!bin_button.hasClass('tdact_setting_ok')) {
+							bin_button.addClass('tdact_setting_error');
 							invalid = true;
 						} else {
-							bin_button.removeClass('auto_import_error');							
+							bin_button.removeClass('tdact_setting_error');							
 						}
 					}); 
 					body.find('.auto_import_matching_pattern').each(function(i, o) { 
 						const matching_pattern = $(o);
 						if(matching_pattern.val() == '') {
-							matching_pattern.addClass('auto_import_error');
+							matching_pattern.addClass('tdact_setting_error');
 							invalid = true;
 						} else {
-							matching_pattern.removeClass('auto_import_error');
-							matching_pattern.addClass('auto_import_ok');
+							matching_pattern.removeClass('tdact_setting_error');
+							matching_pattern.addClass('tdact_setting_ok');
 						}
 					});
 
 					body.find('.auto_import_track_selector').each(function(i, o) { 
 						const track_selector = $(o);
-						if(track_selector.hasClass('auto_import_error')) {
+						if(track_selector.hasClass('tdact_setting_error')) {
 							invalid = true;
 						}
 					});
@@ -373,7 +441,7 @@
 
 					const id = autoImportStart(dirPath, matchingPatternList, matchingSourceList, importBinList, trackList);				
 					target.val(id);
-					target.addClass('auto_import_ok');
+					target.addClass('tdact_setting_ok');
 					elm.find('table').each(function(i, o) { 
 						$(o).addClass('events_disable');
 					});
@@ -444,13 +512,14 @@
 		let button1 = $('<button>', {'class':'uk-button uk-button-secondary uppercase_disable text_ellipsis uk-padding-small uk-padding-remove-vertical auto_import_bin'});
 			button1.html('選択中のビンをセット');
 			button1[0].addEventListener('click', function(e) {
+				const treePath = SetectedProjectItemTreePath;
 				var csInterface = new CSInterface();
-				csInterface.evalScript('$._PPP_.getSelectedBinTreePath()', function(treePath) {
-					if(treePath != '') {
+				csInterface.evalScript('$._PPP_.existBinTreePath("' + treePath + '")', function(result) {
+					if(result) {
 						e.target.innerHTML = treePath;
 						e.target.setAttribute('uk-tooltip', treePath);
-						e.target.classList.add('auto_import_ok');
-						e.target.classList.remove('auto_import_error');
+						e.target.classList.add('tdact_setting_ok');
+						e.target.classList.remove('tdact_setting_error');
 					}
 				});
 			});
@@ -463,16 +532,14 @@
 			select2[0].addEventListener('change', function(e) {
 				const selectbox = $(e.target);
 				const max_value = selectbox.attr('max_track_num');
-				if(max_value) {
-					if(selectbox.val() <= max_value) {
-						selectbox.removeClass('auto_import_error');
-						selectbox.addClass('auto_import_ok');
-						selectbox.removeAttr('uk-tooltip');
-					} else {
-						selectbox.removeClass('auto_import_ok');
-						selectbox.addClass('auto_import_error');
-						selectbox.attr('uk-tooltip', max_value + ' 以下にしてください');
-					}
+				if(max_value && selectbox.val() > max_value) {
+					selectbox.removeClass('tdact_setting_ok');
+					selectbox.addClass('tdact_setting_error');
+					selectbox.attr('uk-tooltip', max_value + ' 以下を選択してください');
+				} else {
+					selectbox.removeClass('tdact_setting_error');
+					selectbox.addClass('tdact_setting_ok');
+					selectbox.removeAttr('uk-tooltip');
 				}
 			});
 			audioTrackSelectBox.push(select2);
@@ -483,10 +550,9 @@
 			td3.append(select2);
 		let input = $('<input>', {'class':'uk-input uk-light tdinput auto_import_matching_pattern', type:'text', placeholder:'マッチングパターン'});
 			input[0].addEventListener('change', function(e) {
-				e.target.classList.remove('auto_import_ok');
-				e.target.classList.remove('auto_import_error');
+				e.target.classList.remove('tdact_setting_ok');
+				e.target.classList.remove('tdact_setting_error');
 			});
-
 		let td4 = $('<td>', {'class':'uk-text-nowrap'});
 			td4.append(input);
 		let a = $('<a>', {href:'#', 'class':'icon_s', 'uk-icon':'icon: trash'})
@@ -672,15 +738,31 @@
 		});
 
 		$(document).on('click', '.actor_insert_setting', function() {
-			let marker_enable = $(this).hasClass('enable');
-			if(marker_enable){
-				$(this).addClass('disable');
-				$(this).removeClass('enable');
-			} else {
-				$(this).addClass('enable');
-				$(this).removeClass('disable');
+			enableSwitch($(this));
+		});
+
+		$(document).on('click', '.triggerclip_insert_setting', function() {
+			const target = $(this);
+			enableSwitch(target);
+			const category = target.attr('category');
+			if(category) {
+				const id = target.attr('id');
+				let flag = 'enable';
+				if(target.hasClass('disable')) flag = 'disable';
+				SettingUpdate(category, id, flag);
 			}
 		});
+
+		function enableSwitch(jq_elm) {
+			const enable = jq_elm.hasClass('enable');
+			if(enable){
+				jq_elm.addClass('disable');
+				jq_elm.removeClass('enable');
+			} else {
+				jq_elm.addClass('enable');
+				jq_elm.removeClass('disable');
+			}
+		}
 
 		$(document).on('click', '.actor_thumb_parent', function() {
 			var linkdActor = $('.actor_sequence_link');
@@ -747,6 +829,102 @@
 			const value = parent.children().index(target);
 			SettingUpdate(category, id, value);
 		});
+
+		$(document).on('change', '#trigger_clip_override_target_seq', function() {
+			let target = $(this);
+			const trackNumSelectbox = $('#trigger_clip_override_target_track');
+			if(target.val() === '1') {
+				videoTrackSelectBox.push($('#trigger_clip_override_target_track'));
+				const csInterface = new CSInterface();
+				csInterface.evalScript('$._PPP_.sequenceStructureChanged()');
+			} else {
+				const length = videoTrackSelectBox.length;
+				for(let i = 0; i < length; i++){
+					if(target.is(videoTrackSelectBox[i])) {
+						videoTrackSelectBox.splice(i, 1);
+						break;
+					}
+				}
+				if(trackNumSelectbox.attr('max_track_num') < trackNumSelectbox.attr('select_seq_track')) {
+					trackNumSelectbox.attr('max_track_num', trackNumSelectbox.attr('select_seq_track'));
+				};
+			}
+			const videoTrackNum = trackNumSelectbox.attr('select_seq_track');
+			if(videoTrackNum != null && trackNumSelectbox.val() <= videoTrackNum && trackNumSelectbox.val() > 0) {
+				trackNumSelectbox.removeClass('tdact_setting_error');
+				trackNumSelectbox.addClass('tdact_setting_ok');
+				trackNumSelectbox.removeAttr('uk-tooltip');
+				trackNumSelectbox.removeAttr('max_track_num');
+				while(trackNumSelectbox.children().length - 1 > videoTrackNum) {
+					trackNumSelectbox.children().last().remove();
+				}
+				let value = trackNumSelectbox.children().length;
+				while(trackNumSelectbox.children().length <= videoTrackNum) {
+					const op = $('<option>', {'value':value});
+					op.html(value);
+					trackNumSelectbox.append(op);
+					value += 1;
+				}
+			} else {
+				trackNumSelectbox.removeClass('tdact_setting_ok');
+				trackNumSelectbox.addClass('tdact_setting_error');
+				if(videoTrackNum != undefined) {
+					trackNumSelectbox.attr('uk-tooltip', videoTrackNum + ' 以下を選択してください');
+					trackNumSelectbox.attr('max_track_num', videoTrackNum);
+				} else {
+					trackNumSelectbox.attr('uk-tooltip', 'シーケンスを選択してください');
+					trackNumSelectbox.attr('max_track_num', 1);
+				}
+			}
+		});
+
+		$(document).on('change', '#trigger_clip_override_target_track', function() {
+			const selectbox = $(this);
+			const max_value = selectbox.attr('max_track_num');
+			if(max_value && selectbox.val() > max_value || selectbox.val() == 0) {
+				selectbox.removeClass('tdact_setting_ok');
+				selectbox.addClass('tdact_setting_error');
+				if(selectbox.val() == 0) {
+					selectbox.attr('uk-tooltip', '1 以上を選択してください');
+				} else {	
+					selectbox.attr('uk-tooltip', max_value + ' 以下を選択してください');
+				}
+
+			} else {
+				selectbox.removeClass('tdact_setting_error');
+				selectbox.addClass('tdact_setting_ok');
+				selectbox.removeAttr(' uk-tooltip');
+			}
+		});
+
+		$(document).on('click', '.get_select_project_clip', function() {
+			const target = $(this);
+			const treePath = SetectedProjectItemTreePath;
+			const csInterface = new CSInterface();
+			csInterface.evalScript('$._PPP_.existClipTreePath("' + treePath + '")', function(result) {
+				if(result) {
+					target.html(treePath);
+					target.attr('uk-tooltip', treePath);
+					target.addClass('tdact_setting_ok');
+					target.removeClass('tdact_setting_error');
+					const category = target.attr('category');
+					const id = target.attr('id');
+					SettingUpdate(category, id, treePath);
+				}
+			});
+		});
+
+		$(document).on('click', '.trigger_clip_trash', function() {
+			const treePathButton = $(this).parent().prev();
+			treePathButton.html('選択中のクリップをセット');
+			treePathButton.removeAttr('uk-tooltip');
+			treePathButton.removeClass('tdact_setting_ok');
+			treePathButton.removeClass('tdact_setting_error');
+			const category = treePathButton.attr('category');
+			const id = treePathButton.attr('id');
+			SettingUpdate(category, id, treePathButton.html());	
+		});
+		
 
 		$(document).on('change', '.input_num_only', function() {
 			let target = $(this);
@@ -866,13 +1044,41 @@
 
 		csInterface.addEventListener('numTracksNotification', function(e) {
 			trackNum = e.data.split(',');
-			const videoTrackNum = Number(trackNum[1]);
+			const audioTrackNum = Number(trackNum[1]);
 			let length = audioTrackSelectBox.length;
 			for(let i = 0; i < length; i++) {
 				const selectbox = audioTrackSelectBox[i];
+				if(selectbox.val() <= audioTrackNum) {
+					selectbox.removeClass('tdact_setting_error');
+					selectbox.addClass('tdact_setting_ok');
+					selectbox.removeAttr('uk-tooltip');
+					selectbox.removeAttr('max_track_num');
+					while(selectbox.children().length - 1 > audioTrackNum) {
+						selectbox.children().last().remove();
+					}
+					let value = selectbox.children().length;
+					while(selectbox.children().length <= audioTrackNum) {
+						const op = $('<option>', {'value':value});
+							op.html(value);
+						selectbox.append(op);
+						value += 1;
+					}
+				} else {
+					selectbox.removeClass('tdact_setting_ok');
+					selectbox.addClass('tdact_setting_error');
+					selectbox.attr('uk-tooltip', trackNum[1] + ' 以下を選択してください');
+					selectbox.attr('max_track_num', trackNum[1]);
+				}
+				selectbox.change();
+			}
+
+			const videoTrackNum = Number(trackNum[0]);
+			length = videoTrackSelectBox.length;
+			for(let i = 0; i < length; i++) {
+				const selectbox = videoTrackSelectBox[i];
 				if(selectbox.val() <= videoTrackNum) {
-					selectbox.removeClass('auto_import_error');
-					selectbox.addClass('auto_import_ok');
+					selectbox.removeClass('tdact_setting_error');
+					selectbox.addClass('tdact_setting_ok');
 					selectbox.removeAttr('uk-tooltip');
 					selectbox.removeAttr('max_track_num');
 					while(selectbox.children().length - 1 > videoTrackNum) {
@@ -886,13 +1092,53 @@
 						value += 1;
 					}
 				} else {
-					selectbox.removeClass('auto_import_ok');
-					selectbox.addClass('auto_import_error');
-					selectbox.attr('uk-tooltip', trackNum[1] + ' 以下にしてください');
-					selectbox.attr('max_track_num', trackNum[1]);
+					selectbox.removeClass('tdact_setting_ok');
+					selectbox.addClass('tdact_setting_error');
+					selectbox.attr('uk-tooltip', trackNum[0] + ' 以下を選択してください');
+					selectbox.attr('max_track_num', trackNum[0]);
 				}
+				selectbox.change();
 			}
 		});
+
+		csInterface.addEventListener('projectItemsSelect', function(e) {
+			SetectedProjectItemTreePath = e.data;
+		});
+		csInterface.addEventListener('sequenceItemsSelectChanged', function(e) {
+			const csInterface = new CSInterface();
+			csInterface.evalScript('$._PPP_.getSelectedSequenceTrackNum()', function(result) {
+				if(result) {
+					trackNum = result.split(',');
+					const videoTrackNum = trackNum[0];
+					const trackNumSelectbox = $('#trigger_clip_override_target_track');
+					trackNumSelectbox.attr('select_seq_track', videoTrackNum);
+					if($('#trigger_clip_override_target_seq').val() == 0) {
+						if(trackNumSelectbox.val() <= videoTrackNum) {
+							trackNumSelectbox.removeClass('tdact_setting_error');
+							trackNumSelectbox.addClass('tdact_setting_ok');
+							trackNumSelectbox.removeAttr('uk-tooltip');
+							trackNumSelectbox.removeAttr('max_track_num');
+							while(trackNumSelectbox.children().length - 1 > videoTrackNum) {
+								trackNumSelectbox.children().last().remove();
+							}
+							let value = trackNumSelectbox.children().length;
+							while(trackNumSelectbox.children().length <= videoTrackNum) {
+								const op = $('<option>', {'value':value});
+								op.html(value);
+								trackNumSelectbox.append(op);
+								value += 1;
+							}
+						} else {
+							trackNumSelectbox.removeClass('tdact_setting_ok');
+							trackNumSelectbox.addClass('tdact_setting_error');
+							trackNumSelectbox.attr('uk-tooltip', videoTrackNum + ' 以下を選択してください');
+							trackNumSelectbox.attr('max_track_num', videoTrackNum);
+						}
+					}
+					trackNumSelectbox.change();
+				}
+			});
+		})
 
 		var cookiesList = document.cookie.split(';');
 		for(let cookie of cookiesList){
@@ -1135,16 +1381,16 @@
 						partsSelector.attr('uk-grid', '');
 						
 						var checkbox_div = $('<div>', {'class':'uk-width-auto uk-height-expand insert_mode'});
-						checkbox_div.append($('<div>', {'uk-icon': 'unlock', 'class': 'uk-icon actor_insert_setting insert_disable'}));
+						checkbox_div.append($('<div>', {'uk-icon': 'unlock', 'class': 'uk-icon actor_insert_setting insert_setting_icon insert_disable'}));
 						
-						let inpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_inpoint enable'});
+						let inpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_inpoint enable'});
 							inpointClipIcon.html(`<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="53.1" y2="50.5"/><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="34.1" y2="50.5"/><g><polygon class="insert_inpoint1" points="30.2,63.8 53.1,50.5 30.2,37.2 "/></g></g></g><rect x="56.2" y="9" class="insert_inpoint2" width="40.7" height="83.8"/><polygon class="insert_inpoint1" points="77.7,9 56.2,31.8 56.2,92.8 96.8,92.8 96.8,9 "/></svg>`);
 
-						let outpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_outpoint disable'});
+						let outpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_outpoint disable'});
 							outpointClipIcon.html(`<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="insert_outpoint4" points="14.3,92.8 85.8,92.8 85.8,9 14.2,9 "/><polygon class="insert_outpoint1" points="64.3,9 85.8,31.8 85.8,92.8 14.3,92.8 14.2,9 "/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="81.6" y2="50"/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="62.6" y2="50"/><g><polygon class="insert_outpoint3" points="58.7,63.3 81.6,50 58.7,36.7 "/></g></g></g></svg>`);
 
 
-						let markerIcon = $('<div>', {'class': 'actor_insert_setting insert_marker disable'});
+						let markerIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_marker disable'});
 							markerIcon.html('<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"\
 											viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">\
 										<polygon class="marker_icon" points="23.1,58.425 23.1,18 76.57,18 76.57,58.425 49.535,83 23.1,58.425 "/></svg>');
@@ -1757,7 +2003,7 @@
 	}
 
 	// AutoNewLineInitialize
-	CustomInitialize['auto_newline_settings_id'] = function () {
+	CustomInitialize['auto_newline_custum_initialize'] = function () {
 		const category = ExtensionSettings['autonewline'];
 		const normal_marker_parent = $('#auto_newline_normal_marker_color');
 		const warning_marker_parent = $('#auto_newline_warning_marker_color');
@@ -1869,7 +2115,7 @@
 	}
 	
 	// AutoImportInitialize
-	CustomInitialize['auto_import_settings_id'] = function () {
+	CustomInitialize['auto_import_custum_initialize'] = function () {
 		const category = ExtensionSettings['auto_import'];
 		if(category) {
 			const settingRoot = category['auto_import_settings_id'];
@@ -1880,9 +2126,9 @@
 				const watch_dir_input = dirElm.find('.auto_import_dir_path');
 				watch_dir_input.val(watch_dir_path);
 				if(fs.existsSync(watch_dir_path)) {
-					watch_dir_input.addClass('auto_import_ok');
+					watch_dir_input.addClass('tdact_setting_ok');
 				} else {
-					watch_dir_input.addClass('auto_import_error');
+					watch_dir_input.addClass('tdact_setting_error');
 				}
 				const tbody = dirElm.find('tbody');
 				const rules = watch_dir['rules'];
@@ -1901,9 +2147,9 @@
 					csInterface.evalScript('$._PPP_.existBinTreePath("' + binTreePath + '")', function(result) {
 						binButton.attr('uk-tooltip', binTreePath);
 						if(result) {
-							binButton.addClass('auto_import_ok');
+							binButton.addClass('tdact_setting_ok');
 						} else {
-							binButton.addClass('auto_import_error');
+							binButton.addClass('tdact_setting_error');
 						}
 					});
 					
@@ -1918,12 +2164,13 @@
 								trackSelectbox.append(op);
 							value += 1;
 						}
-						trackSelectbox.removeClass('auto_import_ok');
-						trackSelectbox.addClass('auto_import_error');
-						trackSelectbox.attr('uk-tooltip', currentTrackNum + ' 以下にしてください');
+						trackSelectbox.removeClass('tdact_setting_ok');
+						trackSelectbox.addClass('tdact_setting_error');
+						trackSelectbox.attr('uk-tooltip', currentTrackNum + ' 以下を選択してください');
 						trackSelectbox.attr('max_track_num', currentTrackNum);
 					}
 					trackSelectbox.val(trackNum);
+					trackSelectbox.change();
 				}
 			}
 		}
@@ -1951,7 +2198,7 @@
 				const target = $('#' + id);
 				if(target) {
 					const type = target.attr('type');
-					if(type === 'text') {
+					if(type === 'text' || type === 'selectbox') {
 						target.val(setting[id]);
 					} else if(type === 'checkbox') {
 						if(setting[id] == '0') {
@@ -1969,7 +2216,100 @@
 		}
 	}
 
+	function triggerOverriteClip_ExecuteButton() {
+		const trackNumElm = $('#trigger_clip_override_target_track');
+		if(!trackNumElm.hasClass('tdact_setting_ok')) return;
 
+		const startTriggerPathElm = $('#trigger_clipstart_clippath');
+		const endTriggerPathElm = $('#trigger_clipend_clippath');
+		let startTriggerClipTreePath = '';
+		let endTriggerClipTreePath = '';
+		if(startTriggerPathElm.hasClass('tdact_setting_ok')) {
+			startTriggerClipTreePath = startTriggerPathElm.html();
+		}
+		if(endTriggerPathElm.hasClass('tdact_setting_ok')) {
+			endTriggerClipTreePath = endTriggerPathElm.html();
+		}
+		const trackNum = trackNumElm.val() - 1;
+		const targetSequence = $('#trigger_clip_override_target_seq').val();
+
+		let startClipEndFlag = 0;
+		if(startTriggerPathElm.find('.insert_inpoint').hasClass('enable')) startClipEndFlag += 1;
+		if(startTriggerPathElm.find('.insert_outpoint').hasClass('enable')) startClipEndFlag += 2;
+		if(startTriggerPathElm.find('.insert_marker').hasClass('enable')) startClipEndFlag += 4;
+		let endClipEndFlag = 0;
+		if(endTriggerPathElm.find('.insert_inpoint').hasClass('enable')) endClipEndFlag += 1;
+		if(endTriggerPathElm.find('.insert_outpoint').hasClass('enable')) endClipEndFlag += 2;
+		if(endTriggerPathElm.find('.insert_marker').hasClass('enable')) endClipEndFlag += 4;
+		const csInterface = new CSInterface();
+		csInterface.evalScript('$._PPP_.triggerClipOverwrite("' + targetSequence + '","' + trackNum + '","' + startTriggerClipTreePath + '","' + endTriggerClipTreePath + '","' + startClipEndFlag + '","' + endClipEndFlag + '")', function() {});
+	}
+
+	CustomInitialize['trigger_clip_custum_initialize'] = function () {
+		const category = ExtensionSettings['trigger_clip_override'];
+		if(category) {
+			const trackIndex = category['trigger_clip_override_target_track'];
+			if(trackIndex) { 
+				const trackSelectbox = $('#trigger_clip_override_target_track');
+				let value = 1;
+				while(trackSelectbox.children().length <= trackIndex) {
+					const op = $('<option>', {'value':value});
+						op.html(value);
+						trackSelectbox.append(op);
+					value += 1;
+				}
+				trackSelectbox.removeClass('tdact_setting_ok');
+				trackSelectbox.attr('max_track_num', 1);
+				trackSelectbox.val(trackIndex);
+			}
+			const startTriggerClipPath = category['trigger_clipstart_clippath'];
+			if(startTriggerClipPath) {
+				const clipButtonElm = $('#trigger_clipstart_clippath');
+				clipButtonElm.html(startTriggerClipPath);
+				const csInterface = new CSInterface();
+				csInterface.evalScript('$._PPP_.existClipTreePath("' + startTriggerClipPath + '")', function(result) {
+					if(result) {
+						clipButtonElm.attr('uk-tooltip', startTriggerClipPath);
+						clipButtonElm.addClass('tdact_setting_ok');
+						clipButtonElm.removeClass('tdact_setting_error');
+					}
+				});
+			}
+			const endTriggerClipPath = category['trigger_clipend_clippath'];
+			if(endTriggerClipPath) {
+				const clipButtonElm = $('#trigger_clipend_clippath');
+				clipButtonElm.html(endTriggerClipPath);
+				const csInterface = new CSInterface();
+				csInterface.evalScript('$._PPP_.existClipTreePath("' + endTriggerClipPath + '")', function(result) {
+					if(result) {
+						clipButtonElm.attr('uk-tooltip', endTriggerClipPath);
+						clipButtonElm.addClass('tdact_setting_ok');
+						clipButtonElm.removeClass('tdact_setting_error');
+					}
+				});
+			}
+			const merkerInit = function(id) {
+				let insert = category[id];
+				if(insert) {
+					const icon = $('#' + id);
+					if(insert == 'enable') {
+						icon.addClass('enable');
+						icon.removeClass('disable');
+					} else {
+						icon.removeClass('enable');
+						icon.addClass('disable');
+					}
+				}
+			}
+			merkerInit('trgclp_str_ins_in');
+			merkerInit('trgclp_str_ins_out');
+			merkerInit('trgclp_str_ins_mkr');
+			merkerInit('trgclp_end_ins_in');
+			merkerInit('trgclp_end_ins_out');
+			merkerInit('trgclp_end_ins_mkr');
+		}
+		$('#trigger_clip_override_target_seq').change();
+	}
 </script>
 
 </html>

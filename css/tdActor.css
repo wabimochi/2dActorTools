@@ -32,6 +32,7 @@ body {
   color: #aaa !important;
   margin-top:10px;
   margin-bottom:10px;
+  white-space: normal !important;
 }
 .mogrt_source_summary{
   background-color: rgba(124, 206, 244, 0.1);
@@ -216,7 +217,7 @@ hr {
   width:60px;
   height:auto;
 }
-.actor_insert_setting{
+.insert_setting_icon {
   position: relative;
   top:50%;
   transform : translateY(-100%);
@@ -485,11 +486,11 @@ summary{
   white-space: nowrap !important;
 }
 
-.auto_import_ok {
+.tdact_setting_ok {
   background-color : #598059 !important;
 }
 
-.auto_import_error {
+.tdact_setting_error {
   background-color : #835252 !important;
 }
 

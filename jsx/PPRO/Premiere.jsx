@@ -73,6 +73,7 @@ var ActorBinItem;
 var propertiesObject = [];
 
 var OperationTargetList = [];
+var eventObj = new CSXSEvent();
 
 $._PPP_={
 
@@ -104,12 +105,13 @@ $._PPP_={
 			DummyClipNodeID = $._PPP_.shallowSearchClip(ActorBinItem, 'dummy.png').nodeId;
 		}
 		app.bind('onActiveSequenceStructureChanged', $._PPP_.sequenceStructureChanged);
+		app.bind("onSourceClipSelectedInProjectPanel", $._PPP_.reportProjectItemSelectionChanged);
+		app.bind('onActiveSequenceSelectionChanged', $._PPP_.reportSequenceItemSelectionChanged)
 	},
 
 	sequenceStructureChanged : function () {
 		var seq = app.project.activeSequence;
 		if(seq) {
-			var eventObj = new CSXSEvent();
 			eventObj.type = "numTracksNotification";
 			eventObj.data = seq.videoTracks.numTracks.toString() + ',' + seq.audioTracks.numTracks.toString();
 			eventObj.dispatch();
@@ -280,7 +282,7 @@ $._PPP_={
 
 		if(app.project.activeSequence) {
 			var selectClips = app.project.activeSequence.getSelection();
-			if(selectClips) {
+			if(selectClips.length) {
 				for(var i = 0; i < selectClips.length; i++) {
 					var updateUI = (i === selectClips.length - 1);
 					var components = selectClips[i].components;
@@ -424,14 +426,6 @@ $._PPP_={
 			}
 		}
 	},
-
-	// getActorMediaPathWithTreePath: function(actorName, treePath) {
-	// 	var clip = $._PPP_.getActorClipWithTreePath(actorName, treePath);
-	// 	if(clip){
-	// 		return clip.getMediaPath();
-	// 	}
-	// 	return null;
-	// },
 
 	getActorClipWithTreePath: function(actorName, treePath) {
 		var actBin = $._PPP_.shallowSearchBin(ActorBinItem, actorName);
@@ -603,21 +597,11 @@ $._PPP_={
 						}
 					}
 				}
-				// fix error
-				clip.setOverrideFrameRate(1 / epsTime);
-				var duration = new Time();
-				duration.seconds = endTime - startTime;
-				var mod = (duration.seconds % epsTime);
-				if(mod * 2 < epsTime) {
-					duration.seconds -= mod;
-				} else {
-					duration.seconds += epsTime - mod;
-				}
-				clip.setOutPoint(duration.ticks, 4);
 
+				var duration = new Time();
+				duration.seconds = $._PPP_.fixTimeError(endTime - startTime, epsTime);
+				clip.setOutPoint(duration.ticks, 4);
 				track.overwriteClip(clip, startTime);
-				// avoid the stripe
-				clip.setOverrideFrameRate(0);
 
 				if(deleteInsertClip) {
 					var serchIndex = Math.min(i + 1, track.clips.numItems - 1);
@@ -698,15 +682,8 @@ $._PPP_={
 					}
 				}
 			}
-			// fix error
 			var epsTime = seq.getSettings().videoFrameRate.seconds;
-			var mod = (minSeconds % epsTime);
-			if(mod * 2 < epsTime) {
-				minSeconds -= mod;
-			} else {
-				minSeconds += epsTime - mod;
-			}
-			currentPlayerPos.seconds = minSeconds;
+			currentPlayerPos.seconds = $._PPP_.fixTimeError(minSeconds, epsTime);
 			seq.setPlayerPosition(currentPlayerPos.ticks);
 		}
 	},
@@ -749,15 +726,9 @@ $._PPP_={
 					}
 				}
 			}
-			// fix error
+
 			var epsTime = seq.getSettings().videoFrameRate.seconds;
-			var mod = (maxSeconds % epsTime);
-			if(mod * 2 < epsTime) {
-				maxSeconds -= mod;
-			} else {
-				maxSeconds += epsTime - mod;
-			}			
-			currentPlayerPos.seconds = maxSeconds;
+			currentPlayerPos.seconds = $._PPP_.fixTimeError(maxSeconds, epsTime);
 			seq.setPlayerPosition(currentPlayerPos.ticks);
 		}
 	},
@@ -832,6 +803,22 @@ $._PPP_={
 		}
 		if(root && oldIndex < treePath.length){
 			return $._PPP_.shallowSearchBin(root, treePath.slice(oldIndex));
+		}
+		return null;
+	},
+
+	searchForClipWithTreePath : function (treePath, root) {
+		var sepIndex = treePath.indexOf('/', 0);
+		var oldIndex = 0;
+		while(sepIndex !== -1){
+			var binName = treePath.slice(oldIndex, sepIndex);
+			root = $._PPP_.shallowSearchBin(root, binName);
+			if(!root) return null;
+			oldIndex = sepIndex + 1;
+			sepIndex = treePath.indexOf('/', sepIndex + 1);
+		}
+		if(root && oldIndex < treePath.length){
+			return $._PPP_.shallowSearchClip(root, treePath.slice(oldIndex));
 		}
 		return null;
 	},
@@ -999,7 +986,193 @@ $._PPP_={
 		if($._PPP_.searchForBinWithTreePath(treePath, app.project.rootItem)) {
 			return true;
 		}
-		return false;
+		return '';
+	},
+	
+	existClipTreePath : function(treePath) {
+		if($._PPP_.searchForClipWithTreePath(treePath, app.project.rootItem)) {
+			return true;
+		}
+		return '';
+	},
+
+	reportProjectItemSelectionChanged : function (e) { // Note: This message is also triggered when the user opens or creates a new project. 
+		var projectItems = e;
+		if (projectItems){
+			if (projectItems.length) {
+				eventObj.type = "projectItemsSelect";
+				eventObj.data = projectItems[0].treePath.slice(projectItems[0].treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
+				eventObj.dispatch();
+			}
+		}
+	},
+
+	reportSequenceItemSelectionChanged : function () {
+		eventObj.type = "sequenceItemsSelectChanged";
+		eventObj.data = '';
+		eventObj.dispatch();
+	},
+
+	getSelectedSequenceTrackNum : function() {
+		var seq = app.project.activeSequence;
+		if(seq) {
+			var selection = seq.getSelection();
+			if(selection.length) {
+				if(selection[0].projectItem.isSequence) {
+					var targetSequence = selection[0];
+					for(var i = 0; i < app.project.sequences.numSequences; i++){
+						if(targetSequence.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
+							return app.project.sequences[i].videoTracks.numTracks.toString() + ',' + app.project.sequences[i].audioTracks.numTracks.toString();
+						}
+					}
+				}
+			}
+		}
+		return '';
+	},
+
+	triggerClipOverwrite : function(targetSeqFlag, trackIndex, startClipTreePath, endClipTreePath, startTriggerInsertFlag, endTriggerInsertFlag) {
+		var seq = app.project.activeSequence;
+		var activeSeq = app.project.activeSequence;
+		if(targetSeqFlag == 0) {
+			if(seq) {
+				var selection = seq.getSelection();
+				seq = null;
+				if(selection.length) {
+					if(selection[0].projectItem.isSequence) {
+						var targetSequence = selection[0];
+						for(var i = 0; i < app.project.sequences.numSequences; i++){
+							if(targetSequence.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
+								seq = app.project.sequences[i];
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		if(seq && activeSeq) {
+			if(trackIndex >= seq.videoTracks.numTracks) return;
+			var targetTrack = seq.videoTracks[trackIndex];
+			var epsTime = seq.getSettings().videoFrameRate.seconds;
+			var startClip = $._PPP_.searchForClipWithTreePath(startClipTreePath, app.project.rootItem);
+			var endClip = $._PPP_.searchForClipWithTreePath(endClipTreePath, app.project.rootItem);
+
+			var ATrackIndex = 0;
+			for(; ATrackIndex < activeSeq.audioTracks.numTracks; ATrackIndex++) {
+				if (activeSeq.audioTracks[ATrackIndex].isTargeted()) break;
+			}
+			if (ATrackIndex < activeSeq.audioTracks.numTracks) {
+				var sourceAudioTrack = activeSeq.audioTracks[ATrackIndex];
+				for (var sourceClipIndex = 0; sourceClipIndex < sourceAudioTrack.clips.numItems; sourceClipIndex++) {
+					var sourceAudioClip = sourceAudioTrack.clips[sourceClipIndex];
+					if(startClip) {
+						var clips = targetTrack.clips;
+						var endFlag = startTriggerInsertFlag;
+						var startTime = sourceAudioClip.start.seconds;
+						var endTime = startTime + 60 * 60;
+						if(seq.getOutPointAsTime().seconds > 0) {
+							endTime = seq.getOutPointAsTime().seconds;
+						}
+						var i = clips.numItems - 1;
+						if(endFlag & ACT_CLIPEND_END) {
+							for(; i >= 0 ; i--){
+								if(startTime < clips[i].end.seconds ) {
+									endTime = Math.min(endTime, clips[i].end.seconds);
+								} else {
+									i = Math.min(i + 1, clips.numItems - 1);
+									break;
+								}
+							}
+						}
+						if(endFlag & ACT_CLIPEND_START) {
+							for(; i >= 0 ; i--){
+								if(startTime < clips[i].start.seconds) {
+									endTime = Math.min(endTime, clips[i].start.seconds);
+								} else {
+									break;
+								}
+							}
+						}
+		
+						if(endFlag & ACT_CLIPEND_MARKER) {
+							for(var j = seq.markers.numMarkers - 1; j >= 0 ; j--){
+								if(startTime < seq.markers[j].start.seconds) {
+									if(startTime < seq.markers[j].start.seconds) {
+										endTime = Math.min(endTime, seq.markers[j].start.seconds);
+									} else {
+										break;
+									}
+								}
+								if(seq.markers[j].end.seconds < startTime) {
+									if(startTime < seq.markers[j].end.seconds) {
+										endTime = Math.min(endTime, seq.markers[j].end.seconds);
+									} else {
+										break;
+									}
+								}
+							}
+						}
+						var duration = new Time();
+						duration.seconds = $._PPP_.fixTimeError(endTime - startTime, epsTime);
+						startClip.setOutPoint(duration.ticks, 4);
+						targetTrack.overwriteClip(startClip, startTime);
+					}
+					if(endClip) {
+						var clips = targetTrack.clips;
+						var endFlag = endTriggerInsertFlag;
+						var startTime = sourceAudioClip.end.seconds;
+						var endTime = startTime + 60 * 60;
+						if(seq.getOutPointAsTime().seconds > 0) {
+							endTime = seq.getOutPointAsTime().seconds;
+						}
+						var i = clips.numItems - 1;
+						if(endFlag & ACT_CLIPEND_END) {
+							for(; i >= 0 ; i--){
+								if(startTime < clips[i].end.seconds ) {
+									endTime = Math.min(endTime, clips[i].end.seconds);
+								} else {
+									i = Math.min(i + 1, clips.numItems - 1);
+									break;
+								}
+							}
+						}
+						if(endFlag & ACT_CLIPEND_START) {
+							for(; i >= 0 ; i--){
+								if(startTime < clips[i].start.seconds) {
+									endTime = Math.min(endTime, clips[i].start.seconds);
+								} else {
+									break;
+								}
+							}
+						}
+		
+						if(endFlag & ACT_CLIPEND_MARKER) {
+							for(var j = seq.markers.numMarkers - 1; j >= 0 ; j--){
+								if(startTime < seq.markers[j].start.seconds) {
+									if(startTime < seq.markers[j].start.seconds) {
+										endTime = Math.min(endTime, seq.markers[j].start.seconds);
+									} else {
+										break;
+									}
+								}
+								if(seq.markers[j].end.seconds < startTime) {
+									if(startTime < seq.markers[j].end.seconds) {
+										endTime = Math.min(endTime, seq.markers[j].end.seconds);
+									} else {
+										break;
+									}
+								}
+							}
+						}
+						var duration = new Time();
+						duration.seconds = $._PPP_.fixTimeError(endTime - startTime, epsTime);
+						endClip.setOutPoint(duration.ticks, 4);
+						targetTrack.overwriteClip(endClip, startTime);
+					}
+				}
+			}
+		}
 	},
 
 	updateEventPanel : function (message) {
