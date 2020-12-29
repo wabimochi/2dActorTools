@@ -16,13 +16,30 @@
 	<link id="lightboxstyle" href="node_modules/lightbox2/dist/css/lightbox.css" rel="stylesheet" type="text/css">
 </head>
 
-<body onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate()">
-	<a href="javascript:history.go(0)" uk-icon="icon: refresh"></a>
+<body onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate();LoadSettings()">
+	
+	<div class='uk-flex-center'>
+		<a href="javascript:history.go(0)" uk-icon="icon: refresh"></a>
+		<a href="#" id='setting_file_not_exist_icon' class='uk-align-right' uk-toggle="target: #settigs_file_modal" uk-icon="icon: warning" style="color:yellow; visibility: hidden;" uk-tooltip="title: 設定ファイルがありません。ここをクリックして保存先を指定してください。; pos: bottom-right"></a>
+	</div>
+
+	<div id="settigs_file_modal" uk-modal>
+		<div class="uk-modal-dialog uk-modal-body">
+			<button class="uk-modal-close-default" id="setting_save_modal_close" type="button" uk-close></button>
+			<p>設定ファイル</p>
+			<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
+				<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="NewSettingFile()">保存</button>
+				<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="ImportSettingFile()">インポート</button>
+			</div>
+		</div>
+	</div>
+	
 	<div id="busy_notification" uk-modal='esc-close:false; bg-close:false' class="uk-modal">
 		<div class="uk-modal-dialog uk-modal-body">
 			<div style="text-align:center">サムネイル用画像の処理中</div>
 		</div>
 	</div>
+
 	<div id="mainfunc">
 		<ul class="uk-flex-center" id="function_switch" uk-tab="active: 0;">
 			<li id="function_subtitle"><a href="#">字幕</a></li>
@@ -77,7 +94,7 @@
 				</div>
 
 				<ul class="uk-switcher my-class uk-margin">
-					<li>
+					<li class="uk-active">
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
 							<span class="uk-label tdactor_label">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
 							<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
@@ -88,11 +105,11 @@
 						<div id="capturedParameters">
 						</div>
 					</li>
-					<li class="uk-active">
+					<li>
 						<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right">
-							<div class="uk-margin"><label><input id="auto_newline_ascii" class="uk-checkbox td_check" type="checkbox" checked> 半角英数字は0.5文字としてカウントする</label></div>
-							<div class="uk-margin"><label><input id="auto_newline_marker" class="uk-checkbox td_check" type="checkbox" checked onclick="autoNewLineMarkerUIUpdate()"> 改行対象のクリップ位置にマーカーを付ける</label></div>
-							<div class="uk-margin-left uk-flex-inline uk-flex-middle" id="auto_newline_normal_marker_color">
+							<div class="uk-margin"><label><input id="auto_newline_ascii" category="autonewline" class="uk-checkbox td_check save_setting_check_on_change" type="checkbox" checked> 半角英数字は0.5文字としてカウントする</label></div>
+							<div class="uk-margin"><label><input id="auto_newline_marker" category="autonewline" class="uk-checkbox td_check save_setting_check_on_change" type="checkbox" checked onclick="autoNewLineMarkerUIUpdate()"> 改行対象のクリップ位置にマーカーを付ける</label></div>
+							<div class="uk-margin-left uk-flex-inline uk-flex-middle" id="auto_newline_normal_marker_color" category="autonewline">
 								<div class="uk-margin-left"></div>
 								<div class="merker_color_selector" style="background-color: #718637;"></div>
 								<div class="merker_color_selector" style="background-color: #D22C36;"></div>
@@ -104,9 +121,9 @@
 								<div class="merker_color_selector" style="background-color: #19F4D6;"></div>
 							</div>
 							<div class="uk-margin-left uk-margin">
-								<label><input id="auto_newline_maxlinecount" class="uk-input uk-light tdinput input_num_only uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" placeholder="行数" value="3">行を超える、もしくは分割できない場合のマーカーの色</label>
+								<label><input id="auto_newline_maxlinecount" category="autonewline" class="uk-input uk-light tdinput input_num_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" placeholder="行数" value="3">行を超える、もしくは分割できない場合のマーカーの色</label>
 							</div>
-							<div class="uk-margin-left uk-flex-inline uk-flex-middle" id="auto_newline_warning_marker_color">
+							<div class="uk-margin-left uk-flex-inline uk-flex-middle" id="auto_newline_warning_marker_color" category="autonewline">
 								<div class="uk-margin-left"></div>
 								<div class="merker_color_selector" style="background-color: #718637;"></div>
 								<div class="merker_color_selector" style="background-color: #D22C36;"></div>
@@ -117,11 +134,11 @@
 								<div class="merker_color_selector" style="background-color: #428DFC;"></div>
 								<div class="merker_color_selector" style="background-color: #19F4D6;"></div>
 							</div>
-							<div class="uk-margin"><label><input id="auto_newline_flatten" class="uk-checkbox td_check" type="checkbox" checked> 処理する前に改行を消す</label></div>
-							<div class="uk-margin"><label><input id="auto_newline_insert" class="uk-checkbox td_check" type="checkbox" checked> 自動で改行する</label></div>
+							<div class="uk-margin"><label><input id="auto_newline_flatten" category="autonewline" class="uk-checkbox td_check save_setting_check_on_change" type="checkbox" checked> 処理する前に改行を消す</label></div>
+							<div class="uk-margin"><label><input id="auto_newline_insert" category="autonewline" class="uk-checkbox td_check save_setting_check_on_change" type="checkbox" checked> 自動で改行する</label></div>
 							<div class="uk-margin">
 								<label>
-									1行の文字数<input id="auto_newline_maxcount" class="uk-input uk-light tdinput input_num_only uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" value="30">
+									1行の文字数<input id="auto_newline_maxcount" category="autonewline" class="uk-input uk-light tdinput input_num_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" value="30">
 									<a href="#" class="" onClick="countSelectedClipTextLength()" uk-icon="icon: pencil" uk-tooltip="選択中のクリップの文字数を取得"></a>
 								</label>
 							</div>
@@ -171,6 +188,9 @@
 				</div>
 			</li>
 			<li>
+				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
+					<span class="uk-label tdactor_label">設定は監視を開始したとき、またはルールを削除したときに保存されます</span>
+				</div>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" id="auto_import_root">
 				</div>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
@@ -186,6 +206,23 @@
 	const asciiReg = /[a-zA-Z0-9!-/:-@¥[-`{-~ ]/g;
 	const fs = require('fs');
 	const chokidar = require('chokidar');
+	const SettingApplyEvent = new CustomEvent('setting_apply');
+	let CustomInitialize = {};
+	let CEP_ERROR_TO_MESSAGE = {};
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.NO_ERROR] = "No error";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_UNKNOWN] = "[error] Unknown error occurred.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_INVALID_PARAMS] = "[error] Invalid parameters passed to function.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_NOT_FOUND] = "[error] File or directory was not found.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_CANT_READ] = "[error] File or directory could not be read.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_UNSUPPORTED_ENCODING] = "[error] An unsupported encoding value was specified.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_CANT_WRITE] = "[error] File could not be written.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_OUT_OF_SPACE] = "[error] Target directory is out of space. File could not be written.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_NOT_FILE] = "[error] Specified path does not point to a file.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_NOT_DIRECTORY] = "[error] Specified path does not point to a directory.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_FILE_EXISTS] = "[error] Specified file already exists.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_EXCEED_MAX_NUM_PROCESS] = "[error]  The maximum number of processes has been exceeded.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_INVALID_URL] = "[error] Invalid URL.";
+	CEP_ERROR_TO_MESSAGE[window.cep.fs.DEPRECATED_API] = "[error] deprecated API.";
 
 	let audioTrackSelectBox = [];
 	let watcherId = 0;
@@ -194,6 +231,8 @@
 	let importTrackBuffer = [];
 	let importBinBuffer = [];
 	let importExecuteId = null;
+	let ExtensionSettings = {};
+	let ExtensionSettingsFilePath = null;
 
 	function autoImportStart(dirPath, matchingPatternList, matchingSourceList, importBinList, trackList) {
 		const _matchingPatternList = matchingPatternList;
@@ -204,7 +243,7 @@
 		if(dirPath.lastIndexOf('/') != dirPath.length - 1) {
 			dirPath += '/';
 		}
-		watcher = chokidar.watch(dirPath + '*.wav', {
+		watcher = chokidar.watch(dirPath + '*.{wav,mp3,wmv}', {
 			persistent:true,
 			ignoreInitial:true,
 			depth:0
@@ -290,16 +329,16 @@
 					const dirPath = dirPathInput.val();
 					const body = elm.find('tbody');
 
-					let invalidCheck = false;
+					let invalid = false;
 					if(!fs.existsSync(dirPath)) {
 						dirPathInput.addClass('auto_import_error');
-						invalidCheck = true;
+						invalid = true;
 					}
 					body.find('.auto_import_bin').each(function(i, o) { 
 						const bin_button = $(o);
 						if(!bin_button.hasClass('auto_import_ok')) {
 							bin_button.addClass('auto_import_error');
-							invalidCheck = true;
+							invalid = true;
 						} else {
 							bin_button.removeClass('auto_import_error');							
 						}
@@ -308,15 +347,21 @@
 						const matching_pattern = $(o);
 						if(matching_pattern.val() == '') {
 							matching_pattern.addClass('auto_import_error');
-							invalidCheck = true;
+							invalid = true;
 						} else {
 							matching_pattern.removeClass('auto_import_error');
 							matching_pattern.addClass('auto_import_ok');
 						}
 					});
 
+					body.find('.auto_import_track_selector').each(function(i, o) { 
+						const track_selector = $(o);
+						if(track_selector.hasClass('auto_import_error')) {
+							invalid = true;
+						}
+					});
 
-					if(invalidCheck) return;
+					if(invalid) return;
 					const matchingPatternList = [];
 					body.find('.auto_import_matching_pattern').each(function(i, o) { matchingPatternList.push($(o).val()); });
 					const matchingSourceList = [];
@@ -341,6 +386,7 @@
 						$(o).addClass('events_disable');
 					});
 					target.removeClass('events_disable');
+					SaveAutoImportSettings();
 				}
 			});
 		let a3 = $('<a>', {href:'#', 'class':'uk-width-auto grid_icon' ,'uk-icon':'icon: trash'});
@@ -349,6 +395,7 @@
 					return false;
 				} else {
 					$(e.target).closest('.watch_dir_element').remove();
+					SaveAutoImportSettings();
 				}
 			});
 		let path_div =  $('<div>', {'class':'uk-grid uk-grid-match uk-child-width-auto@ss'});
@@ -361,7 +408,6 @@
 		let body = $('<tbody>');
 		let table = $('<table>', {'class':'uk-table uk-table-small uk-table-middle uk-table-justify'});
 			table.append(body);
-		addAutoImportRule(body);
 		
 		let button = $('<button>', {'class':'uk-button uk-button-secondary uk-width-auto uk-flex uk-flex-center auto_import_add_rule_button'});
 			button.html('ルール追加');
@@ -380,6 +426,8 @@
 
 		let ai_root = $("#auto_import_root");
 			ai_root.append(watch_div);
+
+		return watch_div;
 	}
 
 	function addAutoImportRule(jqTbody) {
@@ -412,6 +460,21 @@
 			let s2_option = $('<option>', {value:"0"})
 			s2_option.html('トラック番号');
 			select2.append(s2_option);
+			select2[0].addEventListener('change', function(e) {
+				const selectbox = $(e.target);
+				const max_value = selectbox.attr('max_track_num');
+				if(max_value) {
+					if(selectbox.val() <= max_value) {
+						selectbox.removeClass('auto_import_error');
+						selectbox.addClass('auto_import_ok');
+						selectbox.removeAttr('uk-tooltip');
+					} else {
+						selectbox.removeClass('auto_import_ok');
+						selectbox.addClass('auto_import_error');
+						selectbox.attr('uk-tooltip', max_value + ' 以下にしてください');
+					}
+				}
+			});
 			audioTrackSelectBox.push(select2);
 
 			const csInterface = new CSInterface();
@@ -443,8 +506,8 @@
 						}
 					}
 					$(e.target).closest('tr').remove();
+					SaveAutoImportSettings();
 				}
-				// TODO project settingsに書き込み
 			});
 
 		let tr = $('<tr>');
@@ -454,6 +517,7 @@
 			tr.append(td3);
 			tr.append(td5);
 		jqTbody.append(tr);
+		return tr;
 	}
 
 	let ActorStructure = [];
@@ -677,7 +741,13 @@
 				target.addClass('merker_color_selected');
 				target.append($('<div>', {'uk-icon':'icon: check; ratio:1.5', style:'color:#232323'}))
 			}
+			const parent = target.parent();
+			const category = parent.attr('category');
+			const id = parent.attr('id');
+			const value = parent.children().index(target);
+			SettingUpdate(category, id, value);
 		});
+
 		$(document).on('change', '.input_num_only', function() {
 			let target = $(this);
 			let inputval = target.val().match(/[0-9０-９]+/g);
@@ -690,6 +760,14 @@
 				target.val('');
 			}
 		});
+
+		$(document).on('change', '.save_setting_value_on_change', function() {
+			SaveSettingValueFromElement($(this));
+		});
+		$(document).on('change', '.save_setting_check_on_change', function() {
+			SaveSettingCheckFromElement($(this));
+		});
+
 	});
 
 	function propertyCapture() {
@@ -788,18 +866,30 @@
 
 		csInterface.addEventListener('numTracksNotification', function(e) {
 			trackNum = e.data.split(',');
+			const videoTrackNum = Number(trackNum[1]);
 			let length = audioTrackSelectBox.length;
 			for(let i = 0; i < length; i++) {
-				const selectbox = audioTrackSelectBox[i]
-				while(selectbox.children().length - 1 > trackNum[1]) {
-					selectbox.children().last().remove();
-				}
-				let value = selectbox.children().length;
-				while(selectbox.children().length <= trackNum[1]) {
-					const op = $('<option>', {'value':value});
-						op.html(value);
-					selectbox.append(op);
-					value += 1;
+				const selectbox = audioTrackSelectBox[i];
+				if(selectbox.val() <= videoTrackNum) {
+					selectbox.removeClass('auto_import_error');
+					selectbox.addClass('auto_import_ok');
+					selectbox.removeAttr('uk-tooltip');
+					selectbox.removeAttr('max_track_num');
+					while(selectbox.children().length - 1 > videoTrackNum) {
+						selectbox.children().last().remove();
+					}
+					let value = selectbox.children().length;
+					while(selectbox.children().length <= videoTrackNum) {
+						const op = $('<option>', {'value':value});
+							op.html(value);
+						selectbox.append(op);
+						value += 1;
+					}
+				} else {
+					selectbox.removeClass('auto_import_ok');
+					selectbox.addClass('auto_import_error');
+					selectbox.attr('uk-tooltip', trackNum[1] + ' 以下にしてください');
+					selectbox.attr('max_track_num', trackNum[1]);
 				}
 			}
 		});
@@ -852,7 +942,10 @@
 					csInterface.evalScript('$._PPP_.getActorStructureMediaPath("' + actorName + '")', function(result) {
 						let mediaPathList = result.split(',');
 						if(result !== '' && mediaPathList.length == 1) {
-							SaveActorStructure(ActorStructure[seqIndex], mediaPathList[0]);
+							const err = SaveJson(ActorStructure[seqIndex], mediaPathList[0]);
+							if(err != window.cep.fs.NO_ERROR) {
+								alert(CEP_ERROR_TO_MESSAGE[err]);
+							}
 						}
 					});
 				});
@@ -982,7 +1075,6 @@
 				var actor = LoadActorStructure(mediaPathList[0]);
 				_ActorStructureSave(mediaPathList[0], actor);
 				clearActorSettingPanel();
-
 			}
 			else {
 				SaveNewActorStructure();
@@ -1108,7 +1200,7 @@
 	function LoadActorStructure(path)	{
 		json = window.cep.fs.readFile(path);
 		if(json.err){
-			if(json.err == cep.fs.ERR_NOT_FOUND) {
+			if(json.err == window.cep.fs.ERR_NOT_FOUND) {
 				alert('"' + path + '"が見つかりません。');
 				return null;
 			} else {
@@ -1118,8 +1210,8 @@
 		return JSON.parse(json.data);
 	}
 
-	function SaveActorStructure(obj, path) {
-		window.cep.fs.writeFile(path, JSON.stringify(obj));
+	function SaveJson(obj, path) {
+		return window.cep.fs.writeFile(path, JSON.stringify(obj)).err;
 	}
 
 	function mogrtUpdate() {
@@ -1395,7 +1487,10 @@
 		} else {
 			wrapper['clipset'] = {};
 		}
-		SaveActorStructure(wrapper, save_structure_file_path);
+		const err = SaveJson(wrapper, save_structure_file_path);
+		if(err != window.cep.fs.NO_ERROR) {
+			alert(CEP_ERROR_TO_MESSAGE[err]);
+		}
 		$('#actor_setting_save_button').addClass('disable');
 		$('#actor_setting_initialize').addClass('disable');
 
@@ -1536,9 +1631,7 @@
 				const textListLength = textList.length;
 				if(initNewLine) {
 					for(let i = 0; i < textListLength; i++) {
-						console.log(textList[i]);
 						textList[i] = textList[i].replace(newLineReg, '');
-						console.log(textList[i]);
 					}
 				}
 				for(let i = 0; i < textListLength; i++) {
@@ -1602,6 +1695,7 @@
 					}
 				}
 				$('#auto_newline_maxcount').val(charactorCount);
+				$('#auto_newline_maxcount').change();
 			}
 		});
 	}
@@ -1661,6 +1755,220 @@
 			nextElm.addClass('events_disable');
 		}
 	}
+
+	// AutoNewLineInitialize
+	CustomInitialize['auto_newline_settings_id'] = function () {
+		const category = ExtensionSettings['autonewline'];
+		const normal_marker_parent = $('#auto_newline_normal_marker_color');
+		const warning_marker_parent = $('#auto_newline_warning_marker_color');
+		if(category) {
+			let marker_color = category['auto_newline_normal_marker_color'];
+			if(marker_color) {
+				normal_marker_parent.children().eq(Number(marker_color)).click();
+			} else {
+				normal_marker_parent.children().eq(1).click();
+			}
+			marker_color = category['auto_newline_warning_marker_color'];
+			if(marker_color) {
+				warning_marker_parent.children().eq(Number(marker_color)).click();
+			} else {
+				warning_marker_parent.children().eq(2).click();
+			}
+		} else {
+			normal_marker_parent.children().eq(1).click();
+			warning_marker_parent.children().eq(2).click();
+		}
+		autoNewLineMarkerUIUpdate();
+	}
+
+	function LoadSettings()	{
+		var csInterface = new CSInterface();
+		csInterface.evalScript('$._PPP_.getSettingsMediaPath()', function(result){
+			if(result) {
+				json = window.cep.fs.readFile(result);
+				if(json.err){
+					$('#setting_file_not_exist_icon').css('visibility','visible');
+					if(json.err != window.cep.fs.ERR_NOT_FOUND) {
+						alert(CEP_ERROR_TO_MESSAGE[json.err]);
+					}
+				} else {
+					$('#setting_file_not_exist_icon').css('visibility','hidden');
+					ExtensionSettingsFilePath = result;
+					ExtensionSettings = JSON.parse(json.data);
+				}
+			} else {
+				$('#setting_file_not_exist_icon').css('visibility','visible');
+			}
+			SettingApply();
+		});
+	}
+
+	function NewSettingFile() {
+		const savedir = window.cep.fs.showOpenDialogEx(false, true, '設定の保存先フォルダの選択', null).data[0];
+		if(savedir) {
+			ExtensionSettingsFilePath = savedir + '/2dActorTools_settings.txt';
+			const err = SaveSetting();
+			if(err == window.cep.fs.NO_ERROR){
+				const csInterface = new CSInterface();
+				csInterface.evalScript('$._PPP_.importSettingsFile("' + ExtensionSettingsFilePath + '")');
+				$('#setting_file_not_exist_icon').css('visibility','hidden');
+				$('#setting_save_modal_close').click();
+			} else {
+				alert(CEP_ERROR_TO_MESSAGE[err]);
+			}
+		}
+	}
+
+	function ImportSettingFile() {
+		var settingFilePath = window.cep.fs.showOpenDialog(false, false, '2dActorTools setting file', '', ['.txt']).data;
+		if(settingFilePath != '') {
+			var csInterface = new CSInterface();
+			csInterface.evalScript('$._PPP_.importSettingsFile("' + settingFilePath + '")', function(e) {
+				LoadSettings();
+			});
+			$('#setting_file_not_exist_icon').css('visibility','hidden');
+			$('#setting_save_modal_close').click();
+		}
+	}
+
+	function SettingUpdate(category, id, value) {
+		if(!ExtensionSettings[category]) {
+			ExtensionSettings[category] = {};
+		}
+		ExtensionSettings[category][id] = value;
+		SaveSetting();
+	}
+
+	function SaveSetting() {
+		if(ExtensionSettingsFilePath) {
+			return SaveJson(ExtensionSettings, ExtensionSettingsFilePath);
+		}
+	}
+
+	function SaveAutoImportSettings() {
+		let autoImportSettings = {}
+		$('#auto_import_root').children('.watch_dir_element').each(function(i, o) {
+			let watch_dir = {}; 
+			watch_dir['import_dir_path'] = $(o).find('.auto_import_dir_path').val();
+			const tbody = $(o).find('tbody');
+			let rules = [];
+			tbody.children('tr').each(function(tr_i, tr_o) {
+				const tdList = $(tr_o).children('td');
+				let rule = {};
+				const selectbox = tdList.children('select');
+				rule['pattern'] = tdList.children('input').eq(0).val();
+				rule['source'] = selectbox.eq(0).val();
+				rule['import_bin'] = tdList.children('button').eq(0).html();
+				rule['track_number'] = selectbox.eq(1).val();
+				rules.push(rule);
+			});
+			watch_dir['rules'] = rules;
+			autoImportSettings[i] = watch_dir;
+		});
+		SettingUpdate('auto_import', 'auto_import_settings_id', autoImportSettings);
+	}
+	
+	// AutoImportInitialize
+	CustomInitialize['auto_import_settings_id'] = function () {
+		const category = ExtensionSettings['auto_import'];
+		if(category) {
+			const settingRoot = category['auto_import_settings_id'];
+			for(index in settingRoot) {
+				const dirElm = addAutoImportWatchDir();
+				const watch_dir = settingRoot[index];
+				const watch_dir_path = watch_dir['import_dir_path'];
+				const watch_dir_input = dirElm.find('.auto_import_dir_path');
+				watch_dir_input.val(watch_dir_path);
+				if(fs.existsSync(watch_dir_path)) {
+					watch_dir_input.addClass('auto_import_ok');
+				} else {
+					watch_dir_input.addClass('auto_import_error');
+				}
+				const tbody = dirElm.find('tbody');
+				const rules = watch_dir['rules'];
+				const rulesLength = rules.length;
+				for(let i = 0; i < rulesLength; i++) {
+					const rule = rules[i];
+					const tr = addAutoImportRule(tbody);
+					const tdList = tr.children('td');
+					const selectbox = tdList.children('select');
+					tdList.children('input').eq(0).val(rule['pattern']);
+					selectbox.eq(0).val(rule['source']);
+					const binTreePath = rule['import_bin'];
+					const binButton = tdList.children('button').eq(0);
+					binButton.html(binTreePath);
+					const csInterface = new CSInterface();
+					csInterface.evalScript('$._PPP_.existBinTreePath("' + binTreePath + '")', function(result) {
+						binButton.attr('uk-tooltip', binTreePath);
+						if(result) {
+							binButton.addClass('auto_import_ok');
+						} else {
+							binButton.addClass('auto_import_error');
+						}
+					});
+					
+					const trackNum = rule['track_number'];
+					const trackSelectbox = selectbox.eq(1);
+					const currentTrackNum = trackSelectbox.children().length;
+					if(currentTrackNum < trackNum) {
+						let value = currentTrackNum;
+						while(trackSelectbox.children().length <= trackNum) {
+							const op = $('<option>', {'value':value});
+								op.html(value);
+								trackSelectbox.append(op);
+							value += 1;
+						}
+						trackSelectbox.removeClass('auto_import_ok');
+						trackSelectbox.addClass('auto_import_error');
+						trackSelectbox.attr('uk-tooltip', currentTrackNum + ' 以下にしてください');
+						trackSelectbox.attr('max_track_num', currentTrackNum);
+					}
+					trackSelectbox.val(trackNum);
+				}
+			}
+		}
+	}
+
+	function SaveSettingValueFromElement(jq_target) {
+		const value = jq_target.val();
+		const category = jq_target.attr('category');
+		const id = jq_target.attr('id');
+		SettingUpdate(category, id, value);
+	}
+
+	function SaveSettingCheckFromElement(jq_checkbox) {
+		let value = 0;
+		if(jq_checkbox.prop('checked')) value = 1;		
+		const category = jq_checkbox.attr('category');
+		const id = jq_checkbox.attr('id');
+		SettingUpdate(category, id, value);
+	}
+
+	function SettingApply() {
+		for(category in ExtensionSettings) {
+			let setting = ExtensionSettings[category];
+			for(id in setting) {
+				const target = $('#' + id);
+				if(target) {
+					const type = target.attr('type');
+					if(type === 'text') {
+						target.val(setting[id]);
+					} else if(type === 'checkbox') {
+						if(setting[id] == '0') {
+							target.prop('checked', false);
+						} else {
+							target.prop('checked', true);
+						}
+					}
+				}
+			}
+		}
+
+		for(id in CustomInitialize) {
+			CustomInitialize[id]();
+		}
+	}
+
 
 </script>
 

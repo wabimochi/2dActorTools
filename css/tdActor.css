@@ -433,6 +433,9 @@ summary{
 #busy_notification>.uk-modal-body{
   background-color:#232323;
 }
+#settigs_file_modal>.uk-modal-body{
+  background-color:#232323;
+}
 @media (min-width: 320px) {
   .uk-child-width-expand\@ss > :not([class*='uk-width']) {
     flex: 1;

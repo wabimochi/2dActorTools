@@ -469,6 +469,24 @@ $._PPP_={
 		return mediaPathList.join(',');
 	},
 
+	getSettingsMediaPath: function() {
+		var mediaPath = "";
+		if(ActorBinItem) {
+			var file = $._PPP_.shallowSearchFile(ActorBinItem, SETTINGS_FILENAME);
+			if(file) {
+				mediaPath = file.getMediaPath();
+			}
+		}
+		return mediaPath;
+	},
+
+	importSettingsFile: function(path) {
+		if(ActorBinItem) {
+			return app.project.importFiles([path], true, ActorBinItem, false);
+		}
+		return false;
+	},
+
 	setLinkSequence: function(index) {
 		var seq = app.project.activeSequence;
 		if(seq) {
@@ -629,6 +647,15 @@ $._PPP_={
 	shallowSearchClip: function(root, name) {
 		for(var i = 0; i < root.children.numItems; i++) {
 			if(root.children[i].type === ProjectItemType.CLIP && root.children[i].name === name) {
+				return root.children[i];
+			}
+		}
+		return null;
+	},
+
+	shallowSearchFile: function(root, name) {
+		for(var i = 0; i < root.children.numItems; i++) {
+			if(root.children[i].type === ProjectItemType.FILE && root.children[i].name === name) {
 				return root.children[i];
 			}
 		}
@@ -966,6 +993,13 @@ $._PPP_={
 			return treePath;
 		}
 		return '';
+	},
+
+	existBinTreePath : function(treePath) {
+		if($._PPP_.searchForBinWithTreePath(treePath, app.project.rootItem)) {
+			return true;
+		}
+		return false;
 	},
 
 	updateEventPanel : function (message) {
