@@ -54,21 +54,27 @@
 				<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id='actor_controle_div'>
 					<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right" onClick="importMGT()">mogrtのインポート</button>
 					<hr>
-					<span class="uk-label tdactor_label">トラックに並べるMOGRTを選択</span>
-					<select class="tdactor_selectbox uk-margin-small-left uk-width-expand uk-select" id="select_mogrt"></select>
+					<span class="uk-label tdactor_label uk-width-auto">トラックに並べるMOGRTを選択</span>
+					<select class="tdactor_selectbox uk-width-expand uk-select" id="select_mogrt"></select>
+					<span class="uk-label tdactor_label uk-width-auto">プリセットタグ</span>
+					<input class="uk-input uk-light tdinput" type="text" id="preset_tag" value="＞" placeholder="preset tag...">
+					<span class="uk-label tdactor_label uk-width-auto uppercase_disable">Replace（正規表現）</span>
+					<div class='uk-flex-inline'>
+						<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace" value="" placeholder="マッチングパターン">
+						<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace_flag" value="" placeholder="フラグ">
+						<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace_after" value="" placeholder="Replace後">
+					</div>
 					<details open>
 						<summary class="mogrt_source_summary">ソース：Audioと同じフォルダにあるtxtファイル</summary>
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id='actor_controle_div'>
-							<span class="uk-label tdactor_label">プリセットタグ</span>
-							<input class="uk-input uk-light tdinput" type="text" id="preset_tag" value="＞" placeholder="preset tag...">
-							<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right" style='margin-top:8px;' onClick="insertSubtitleFromTextFile()">ターゲットトラックにMOGRTを並べる</button>
+							<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-right" style='margin-top:8px;' onClick="insertSubtitleFromTextFile()">ターゲットトラックにMOGRTを並べる</button>
 						</div>
 					</details>
 
 					<details style="margin-top:10px;padding-bottom:10px;">
 						<summary class="mogrt_source_summary">ソース：テキストエリア</summary>
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id='actor_controle_div'>
-							<span class="uk-label tdactor_label">トラックに並べるテキストを入力</span>
+							<span class="uk-label tdactor_label uk-width-auto">トラックに並べるテキストを入力</span>
 							<textarea id="subtitles" rows="12" wrap="off" placeholder="input subtitles"></textarea>
 							<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right" style='margin-top:8px;' onClick="insertSubtitleFromTextarea()">ターゲットトラックにMOGRTを並べる</button>
 						</div>
@@ -97,7 +103,7 @@
 				<ul class="uk-switcher my-class uk-margin">
 					<li class="uk-active">
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
-							<span class="uk-label tdactor_label">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
+							<span class="uk-label tdactor_label uk-width-auto">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
 							<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
 								<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyCapture()">コピー</button>
 								<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyDeploy()">ペースト</button>
@@ -143,7 +149,7 @@
 									<a href="#" class="" onClick="countSelectedClipTextLength()" uk-icon="icon: pencil" uk-tooltip="選択中のクリップの文字数を取得"></a>
 								</label>
 							</div>
-							<span class="uk-label tdactor_label">選択中のクリップ、もしくはターゲットトラックのソーステキストを対象とします</span>
+							<span class="uk-label tdactor_label uk-width-expand">選択中のクリップ、もしくはターゲットトラックにあるソーステキストを対象とします</span>
 							<div class="uk-margin">
 								<button class="uk-button uk-button-secondary uk-width-expand" onClick="autoNewLine_ExecuteButton()">実行</button>
 							</div>
@@ -155,7 +161,7 @@
 								<span class="uk-label tdactor_label uk-width-expand">アクティブシーケンスのターゲットオーディオトラックにあるクリップをトリガーの対象とします</span>
 							</div>	
 							<div class="uk-flex uk-flex-left uk-margin-remove-top">
-								<span class="uk-label uk-width-expand tdactor_label">トリガー：クリップの開始</span>
+								<span class="uk-label tdactor_label uk-width-auto">トリガー：クリップの開始</span>
 							</div>
 							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
 								<button category="trigger_clip_override" id="trigger_clipstart_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
@@ -175,7 +181,7 @@
 								</div>
 							</div>
 							<div class="uk-flex uk-flex-left uk-margin-small-top">
-								<span class="uk-label uk-width-expand tdactor_label">トリガー：クリップの終了</span>
+								<span class="uk-label  tdactor_label uk-width-auto">トリガー：クリップの終了</span>
 							</div>
 							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
 								<button category="trigger_clip_override" id="trigger_clipend_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
@@ -196,7 +202,7 @@
 							</div>
 						</div>
 						<div class="uk-flex uk-flex-left uk-margin-small-top uk-margin-left">
-							<span class="uk-label uk-width-expand tdactor_label">クリップをオーバーライトするトラックの選択</span>
+							<span class="uk-label uk-width-auto tdactor_label">クリップをオーバーライトするトラックの選択</span>
 						</div>
 						<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
 							<select class="tdactor_selectbox uk-margin-small-left uk-width-expand uk-select save_setting_value_on_change" category="trigger_clip_override" id="trigger_clip_override_target_seq" type="selectbox">
@@ -802,7 +808,7 @@
 			}
 		});
 
-		$(document).on('change', '#select_actor_setting', function(e) {
+		$('#select_actor_setting').on('change', function(e) {
 			$('#actor_setting_save_button').addClass('disable');
 			$('#actor_setting_initialize').addClass('disable');
 			clearActorSettingPanel();
@@ -830,7 +836,7 @@
 			SettingUpdate(category, id, value);
 		});
 
-		$(document).on('change', '#trigger_clip_override_target_seq', function() {
+		$('#trigger_clip_override_target_seq').on('change', function() {
 			let target = $(this);
 			const trackNumSelectbox = $('#trigger_clip_override_target_track');
 			if(target.val() === '1') {
@@ -878,7 +884,7 @@
 			}
 		});
 
-		$(document).on('change', '#trigger_clip_override_target_track', function() {
+		$('#trigger_clip_override_target_track').on('change', function() {
 			const selectbox = $(this);
 			const max_value = selectbox.attr('max_track_num');
 			if(max_value && selectbox.val() > max_value || selectbox.val() == 0) {
@@ -936,6 +942,15 @@
 				target.val(inputval);
 			} else {
 				target.val('');
+			}
+		});
+
+		$('#subtitle_replace_flag').on('change', function() {
+			const val = $(this).val().match(/[gimuys]+/);
+			if(val) {
+				$(this).val(val.join(''));
+			} else {
+				$(this).val('');
 			}
 		});
 
@@ -1605,11 +1620,19 @@
 	function insertSubtitleFromTextarea() {
 		var mogrt = document.getElementById("select_mogrt");
 		var text = document.getElementById("subtitles");
-
+		const presetTag = $('#preset_tag').val();
+		let replaceReg = null;
+		if(('#subtitle_replace').val() != '') {
+			try {
+				replaceReg = new RegExp($('#subtitle_replace').val(), $('#subtitle_replace_flag').val());
+			} catch (e) {
+				alert(e);
+			}
+		}
+		const replaceAfter = $('#subtitle_replace_after').val();
 		var csInterface = new CSInterface();
-		let lfRegex = /\n/g;
 		csInterface.evalScript('$._PPP_.insertSubtitle("' + mogrt.value + '","'
-		+ text.value.replace(/\//g, '').replace(lfRegex, '/').replace(/\"/g, '\\"') + '")');
+		+ text.value.slice(text.value.indexOf(presetTag) + 1).replace(/\//g, '').replace(newLineReg, '/').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter) + '")');
 	}
 
 	function getJSISText(path) {
@@ -1624,13 +1647,20 @@
 	function insertSubtitleFromTextFile() {
 		var csInterface = new CSInterface();
 		csInterface.evalScript('$._PPP_.getTragetAudioClipMediaPath()', function(result){
+			let replaceReg = null;
+			if($('#subtitle_replace').val() != '') {
+				try {
+					replaceReg = new RegExp($('#subtitle_replace').val(), $('#subtitle_replace_flag').val());
+				} catch (e) {
+					alert(e);
+				}
+			}
+			const replaceAfter = $('#subtitle_replace_after').val();
 			let mediaPathList = result.split(',');
 			let textList = [];
 			const OSVersion = csInterface.getOSInformation();
-			let lfRegex = /\n/g;
 			let dirSeparater = '/';
 			if(OSVersion.includes('Windows')) {
-				lfRegex = /\r\n/g;
 				dirSeparater = '\\';
 			}
 			const presetTag = $('#preset_tag').val();
@@ -1639,9 +1669,9 @@
 				let text = getJSISText(path);
 				if(text != null) {
 					if(presetTag !== '') {
-						textList.push(text.slice(text.indexOf(presetTag) + 1).replace(lfRegex, '\\n').replace(/\//g, '').replace(/\"/g, '\\"'));
+						textList.push(text.slice(text.indexOf(presetTag) + 1).replace(newLineReg, '\\n').replace(/\//g, '').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
 					} else {
-						textList.push(text.replace(lfRegex, '\\n').replace(/\//g, '').replace(/\"/g, '\\"'));
+						textList.push(text.replace(newLineReg, '\\n').replace(/\//g, '').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
 					}
 				} else {
 					const lastDirSepIndex = mediaPathList[i].lastIndexOf(dirSeparater) + 1;
