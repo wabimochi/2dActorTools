@@ -95,7 +95,7 @@
 							<li class="uk-nav-divider"></li>
 							<li class="uk-active"><a href="#">プロパティコピー</a></li>
 							<li><a href="#">自動改行</a></li>
-							<li><a href="#">トリガークリップオーバーライド</a></li>
+							<li><a href="#">トリガークリップオーバーライト</a></li>
 						</ul>
 					</div>
 				</div>
@@ -149,10 +149,10 @@
 									<a href="#" class="" onClick="countSelectedClipTextLength()" uk-icon="icon: pencil" uk-tooltip="選択中のクリップの文字数を取得"></a>
 								</label>
 							</div>
+						</div>
+						<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right">
 							<span class="uk-label tdactor_label uk-width-expand">選択中のクリップ、もしくはターゲットトラックにあるソーステキストを対象とします</span>
-							<div class="uk-margin">
-								<button class="uk-button uk-button-secondary uk-width-expand" onClick="autoNewLine_ExecuteButton()">実行</button>
-							</div>
+							<button class="uk-button uk-button-secondary uk-width-expand uk-margin-bottom" onClick="autoNewLine_ExecuteButton()">実行</button>
 						</div>
 					</li>
 					<li>
@@ -214,10 +214,8 @@
 							</select>
 						</div>
 						<div class="uk-flex uk-flex-center uk-margin-top uk-margin-left uk-margin-right">
-							<button class="uk-button uk-button-secondary uk-width-expand" onclick="triggerOverriteClip_ExecuteButton()">実行</button>
+							<button class="uk-button uk-button-secondary uk-width-expand uk-margin-bottom" onclick="triggerOverriteClip_ExecuteButton()">実行</button>
 						</div>
-
-
 					</li>
 				</ul>
 			</li>
@@ -537,8 +535,8 @@
 			select2.append(s2_option);
 			select2[0].addEventListener('change', function(e) {
 				const selectbox = $(e.target);
-				const max_value = selectbox.attr('max_track_num');
-				if(max_value && selectbox.val() > max_value) {
+				const max_value = Number(selectbox.attr('max_track_num'));
+				if(max_value && Number(selectbox.val()) > max_value) {
 					selectbox.removeClass('tdact_setting_ok');
 					selectbox.addClass('tdact_setting_error');
 					selectbox.attr('uk-tooltip', max_value + ' 以下を選択してください');
@@ -851,7 +849,7 @@
 						break;
 					}
 				}
-				if(trackNumSelectbox.attr('max_track_num') < trackNumSelectbox.attr('select_seq_track')) {
+				if(Number(trackNumSelectbox.attr('max_track_num')) < Number(trackNumSelectbox.attr('select_seq_track'))) {
 					trackNumSelectbox.attr('max_track_num', trackNumSelectbox.attr('select_seq_track'));
 				};
 			}
@@ -886,16 +884,16 @@
 
 		$('#trigger_clip_override_target_track').on('change', function() {
 			const selectbox = $(this);
-			const max_value = selectbox.attr('max_track_num');
-			if(max_value && selectbox.val() > max_value || selectbox.val() == 0) {
+			const max_value = Number(selectbox.attr('max_track_num'));
+			const select_value = Number(selectbox.val());
+			if(max_value && select_value > max_value || select_value === 0) {
 				selectbox.removeClass('tdact_setting_ok');
 				selectbox.addClass('tdact_setting_error');
-				if(selectbox.val() == 0) {
+				if(select_value === 0) {
 					selectbox.attr('uk-tooltip', '1 以上を選択してください');
 				} else {	
 					selectbox.attr('uk-tooltip', max_value + ' 以下を選択してください');
 				}
-
 			} else {
 				selectbox.removeClass('tdact_setting_error');
 				selectbox.addClass('tdact_setting_ok');
@@ -1124,11 +1122,11 @@
 			csInterface.evalScript('$._PPP_.getSelectedSequenceTrackNum()', function(result) {
 				if(result) {
 					trackNum = result.split(',');
-					const videoTrackNum = trackNum[0];
+					const videoTrackNum = Number(trackNum[0]);
 					const trackNumSelectbox = $('#trigger_clip_override_target_track');
 					trackNumSelectbox.attr('select_seq_track', videoTrackNum);
-					if($('#trigger_clip_override_target_seq').val() == 0) {
-						if(trackNumSelectbox.val() <= videoTrackNum) {
+					if(Number($('#trigger_clip_override_target_seq').val()) === 0) {
+						if(Number(trackNumSelectbox.val()) <= videoTrackNum) {
 							trackNumSelectbox.removeClass('tdact_setting_error');
 							trackNumSelectbox.addClass('tdact_setting_ok');
 							trackNumSelectbox.removeAttr('uk-tooltip');
@@ -2183,10 +2181,10 @@
 						}
 					});
 					
-					const trackNum = rule['track_number'];
+					const trackNum = Number(rule['track_number']);
 					const trackSelectbox = selectbox.eq(1);
 					const currentTrackNum = trackSelectbox.children().length;
-					if(currentTrackNum < trackNum) {
+					if(currentTrackNum <= trackNum) {
 						let value = currentTrackNum;
 						while(trackSelectbox.children().length <= trackNum) {
 							const op = $('<option>', {'value':value});
