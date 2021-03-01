@@ -47,6 +47,7 @@
 			<li id="function_actor"><a href="#">立ち絵</a></li>
 			<li id="function_actor_setting"><a href="#">立ち絵設定</a></li>
 			<li id="function_auto_import"><a href="#">自動インポート</a></li>
+			<li id="extention_setting"><a href="#">設定</a></li>
 		</ul>
 
 		<ul class="uk-switcher" id='actor_functions'>
@@ -267,6 +268,20 @@
 					<button class="uk-button uk-button-secondary uk-width-expand add_watch_dir uk-margin-bottom" onClick="addAutoImportWatchDir()">監視フォルダの追加</button>
 				</div>
 			</li>
+			<li>
+				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
+					<span class="uk-label tdactor_label uk-width-auto">テキストファイルの文字コード</span>
+					<select type="selectbox" class="tdactor_selectbox uk-width-expand uk-select save_setting_value_on_change" category="general" id="select_encoding">
+						<option value="SJIS">Shift-JIS</option>
+						<option value="UTF8">UTF-8</option>
+						<option value="UTF16">UTF-16</option>
+						<option value="UTF16BE">UTF-16BE</option>
+						<option value="UTF16LE">UTF-16LE</option>
+						<option value="EUCJP">EUCJP</option>
+						<option value="AUTO">AUTO</option>
+					</select>
+				</div>
+			</li>
 		</ul>
 	</div>
 </body>
@@ -320,6 +335,7 @@
 			ignoreInitial:true,
 			depth:0
 		}).on('add', (path, stat) => {
+			const encode = $('#select_encoding').val();
 			const filename = path.substr(path.lastIndexOf('/') + 1);
 			const length = _matchingSourceList.length;
 			for(let i = 0; i < length; i++) {
@@ -327,7 +343,7 @@
 				let text = null;
 				if(_matchingSourceList[i] == 1) {
 					const txt_filnename = path.slice(0, path.lastIndexOf('.') + 1) + 'txt';
-					text = getJSISText(txt_filnename);
+					text = getJSISText(txt_filnename, encode);
 				} else {
 					text = filename;
 				}
@@ -1633,10 +1649,10 @@
 		+ text.value.slice(text.value.indexOf(presetTag) + 1).replace(/\//g, '').replace(newLineReg, '/').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter) + '")');
 	}
 
-	function getJSISText(path) {
+	function getJSISText(path, encode='AUTO') {
 		if(fs.existsSync(path)) {
 			const data = fs.readFileSync(path);
-			return Encoding.convert(data, {from: 'SJIS', to: 'UNICODE', type: 'string'});
+			return Encoding.convert(data, {from: encode, to: 'UNICODE', type: 'string'});
 		}
 		return null;
 	}
@@ -1662,9 +1678,10 @@
 				dirSeparater = '\\';
 			}
 			const presetTag = $('#preset_tag').val();
+			const encode = $('#select_encoding').val();
 			for(let i = 0; i < mediaPathList.length; i++) {
 				const path = mediaPathList[i].slice(0, mediaPathList[i].lastIndexOf('.') + 1) + 'txt';
-				let text = getJSISText(path);
+				let text = getJSISText(path, encode);
 				if(text != null) {
 					if(presetTag !== '') {
 						textList.push(text.slice(text.indexOf(presetTag) + 1).replace(newLineReg, '\\n').replace(/\//g, '').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
