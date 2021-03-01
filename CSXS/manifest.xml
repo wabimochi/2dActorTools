@@ -3,7 +3,7 @@
 ExtensionBundleName="2D Actor Tools" 
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<ExtensionList>
-		<Extension Id="com.mochi.2dActorTools" Version="1.1.1" />
+		<Extension Id="com.mochi.2dActorTools" Version="1.1.2" />
 	</ExtensionList>
 	<ExecutionEnvironment>
 		<HostList>
