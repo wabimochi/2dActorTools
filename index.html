@@ -54,6 +54,7 @@
 			<li id="function_actor"><a href="#">立ち絵</a></li>
 			<li id="function_actor_setting"><a href="#">立ち絵設定</a></li>
 			<li id="function_auto_import"><a href="#">自動インポート</a></li>
+			<li id="extention_setting"><a href="#">設定</a></li>
 		</ul>
 
 		<ul class="uk-switcher" id='actor_functions'>
@@ -272,6 +273,20 @@
 				</div>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right">
 					<button class="uk-button uk-button-secondary uk-width-expand add_watch_dir uk-margin-bottom" onClick="addAutoImportWatchDir()">監視フォルダの追加</button>
+				</div>
+			</li>
+			<li>
+				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
+					<span class="uk-label tdactor_label uk-width-auto">テキストファイルの文字コード</span>
+					<select type="selectbox" class="tdactor_selectbox uk-width-expand uk-select save_setting_value_on_change" category="general" id="select_encoding">
+						<option value="SJIS">Shift-JIS</option>
+						<option value="UTF8">UTF-8</option>
+						<option value="UTF16">UTF-16</option>
+						<option value="UTF16BE">UTF-16BE</option>
+						<option value="UTF16LE">UTF-16LE</option>
+						<option value="EUCJP">EUCJP</option>
+						<option value="AUTO">AUTO</option>
+					</select>
 				</div>
 			</li>
 		</ul>
