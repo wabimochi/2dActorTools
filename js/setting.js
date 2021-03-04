@@ -5,10 +5,9 @@ function SaveSettings() {
 }
 
 function LoadSettings()	{
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.getSettingsMediaPath()', function(result){
         if(result) {
-            json = window.cep.fs.readFile(result);
+            const json = window.cep.fs.readFile(result);
             if(json.err){
                 $('#setting_file_not_exist_icon').css('visibility','visible');
                 if(json.err != window.cep.fs.ERR_NOT_FOUND) {
@@ -28,7 +27,7 @@ function LoadSettings()	{
 
 function ApplySettings() {
     for(category in ExtensionSettings) {
-        let setting = ExtensionSettings[category];
+        const setting = ExtensionSettings[category];
         for(id in setting) {
             const target = $('#' + id);
             if(target) {
@@ -57,7 +56,6 @@ function NewSettingFile() {
         ExtensionSettingsFilePath = savedir + '/2dActorTools_settings.txt';
         const err = SaveSettings();
         if(err == window.cep.fs.NO_ERROR){
-            const csInterface = new CSInterface();
             csInterface.evalScript('$._PPP_.importSettingsFile("' + ExtensionSettingsFilePath + '")');
             $('#setting_file_not_exist_icon').css('visibility','hidden');
             $('#setting_save_modal_close').click();
@@ -68,9 +66,8 @@ function NewSettingFile() {
 }
 
 function ImportSettingFile() {
-    var settingFilePath = window.cep.fs.showOpenDialog(false, false, '2dActorTools setting file', '', ['.txt']).data;
+    const settingFilePath = window.cep.fs.showOpenDialog(false, false, '2dActorTools setting file', '', ['.txt']).data;
     if(settingFilePath != '') {
-        var csInterface = new CSInterface();
         csInterface.evalScript('$._PPP_.importSettingsFile("' + settingFilePath + '")', function(e) {
             LoadSettings();
         });

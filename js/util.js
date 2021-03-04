@@ -18,6 +18,7 @@ CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_FILE_EXISTS] = "[error] Specified file al
 CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_EXCEED_MAX_NUM_PROCESS] = "[error]  The maximum number of processes has been exceeded.";
 CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_INVALID_URL] = "[error] Invalid URL.";
 CEP_ERROR_TO_MESSAGE[window.cep.fs.DEPRECATED_API] = "[error] deprecated API.";
+const csInterface = new CSInterface();
 
 let audioTrackSelectBox = [];
 let videoTrackSelectBox = [];
@@ -27,7 +28,7 @@ let SetectedProjectItemTreePath = '';
 
 function GetUUID() {
     let uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".split("");
-    let length = uuid.length;
+    const length = uuid.length;
     for (let i = 0; i < length; i++) {
         switch (uuid[i]) {
             case "x":
@@ -42,7 +43,7 @@ function GetUUID() {
 }
 
 const Encoding = require('encoding-japanese');
-function getText(path, encode = 'AUTO') {
+function getFileText(path, encode = 'AUTO') {
     if(fs.existsSync(path)) {
         const data = fs.readFileSync(path);
         return Encoding.convert(data, {from: encode, to: 'UNICODE', type: 'string'});
@@ -55,7 +56,7 @@ function SaveJson(obj, path) {
 }
 
 $(document).on('change', '.input_num_only', function() {
-    let target = $(this);
+    const target = $(this);
     let inputval = target.val().match(/[0-9０-９]+/g);
     if(inputval) {
         inputval = inputval.join('').replace(/[０-９]/g, function(s) {
@@ -84,31 +85,60 @@ $(document).on('click', '.merker_color_selector', function() {
     SettingUpdate(category, id, value);
 });
 
-function enableSwitch(jq_elm) {
-    const enable = jq_elm.hasClass('enable');
-    if(enable){
-        jq_elm.addClass('disable');
-        jq_elm.removeClass('enable');
-    } else {
-        jq_elm.addClass('enable');
-        jq_elm.removeClass('disable');
-    }
-}
-
 $(document).on('click', '.get_select_project_clip', function() {
     const target = $(this);
     const treePath = SetectedProjectItemTreePath;
-    console.log(treePath);
-    const csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.existClipTreePath("' + treePath + '")', function(result) {
         if(result) {
             target.html(treePath);
             target.attr('uk-tooltip', treePath);
-            target.addClass('tdact_setting_ok');
-            target.removeClass('tdact_setting_error');
+            setSettingOK(target);
             const category = target.attr('category');
             const id = target.attr('id');
             SettingUpdate(category, id, treePath);
         }
     });
 });
+
+function getClipEndFlag(root_jq_elm) {
+    let clipEndFlag = 0;
+    if(root_jq_elm.find('.insert_inpoint').hasClass('enable')) clipEndFlag += 1;
+    if(root_jq_elm.find('.insert_outpoint').hasClass('enable')) clipEndFlag += 2;
+    if(root_jq_elm.find('.insert_marker').hasClass('enable')) clipEndFlag += 4;
+    return clipEndFlag;
+}
+function enableSwitch(jq_elm) {
+    const enable = jq_elm.hasClass('enable');
+    if(enable){
+        setDisable(jq_elm);
+    } else {
+        setEnable(jq_elm);
+    }
+}
+function setEnable(jq_elm) {
+    jq_elm.removeClass('disable');
+    jq_elm.addClass('enable');
+}
+function setDisable(jq_elm) {
+    jq_elm.removeClass('enable');
+    jq_elm.addClass('disable');
+}
+function setSettingFlag(jq_elm, ok = true) {
+    if(ok) {
+        setSettingOK(jq_elm);
+    } else {
+        setSettingError(jq_elm);
+    }
+}
+function setSettingOK(jq_elm) {
+    jq_elm.removeClass('tdact_setting_error');
+    jq_elm.addClass('tdact_setting_ok');    
+}
+function setSettingError(jq_elm) {
+    jq_elm.removeClass('tdact_setting_ok');
+    jq_elm.addClass('tdact_setting_error');  
+}
+function resetSettingFlag(jq_elm) {
+    jq_elm.removeClass('tdact_setting_ok');
+    jq_elm.removeClass('tdact_setting_error');
+}

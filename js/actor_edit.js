@@ -23,7 +23,6 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
     var target_actor_component = $('#actor_switcher').find("[sequence='" + index + "']");
     var actor_root = $('.actor_component[sequence="' + index + '"]');
     
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.getActorStructureMediaPath("' + actorName + '")', function(actorStructPath) {
         if(actorStructPath === '') {
             alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
@@ -134,29 +133,26 @@ $(document).on('click', '.actor_insert_setting', function() {
 });
 
 $(document).on('click', '.actor_thumb_parent', function() {
-    var linkdActor = $('.actor_sequence_link');
+    const linkdActor = $('.actor_sequence_link');
     let actorName = '';
     for(var i = 0; i < linkdActor.length; i++) {
         if(linkdActor.eq(i).hasClass('enable'))
             actorName = linkdActor.eq(i).children('.actor_sequence_link_label').html();
     }
-    let tree_path = $(this).attr('tree_path');
-    let group_index = $(this).attr('group_index');
-    let seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
-    let insert_mode = $(this).parents('.parts_selector');
-    let flag = 0;
-    if(insert_mode.find('.insert_inpoint').hasClass('enable')) flag += 1;
-    if(insert_mode.find('.insert_outpoint').hasClass('enable')) flag += 2;
-    if(insert_mode.find('.insert_marker').hasClass('enable')) flag += 4;
+    const tree_path = $(this).attr('tree_path');
+    const group_index = $(this).attr('group_index');
+    const seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
+    const insert_mode = $(this).parents('.parts_selector');
+    const flag = getClipEndFlag(insert_mode);
     insertActorClip(actorName, seq_index, group_index, tree_path, flag);
 });
 
 $(document).on('mouseenter', '.actor_thumb_parent', function() {
-    let actor_label = $(this).parents('.actor_parts').find('.select_actor_label');
+    const actor_label = $(this).parents('.actor_parts').find('.select_actor_label');
     actor_label.html($(this).attr('name'));
 });
 $(document).on('mouseleave ', '.actor_thumb_parent', function() {
-    let actor_label = $(this).parents('.actor_parts').find('.select_actor_label');
+    const actor_label = $(this).parents('.actor_parts').find('.select_actor_label');
     actor_label.html('');
 });
 
@@ -164,32 +160,30 @@ $(document).on("click", ".group_trash", function(e) {
     if(!confirm('グループを削除しますか?')){
         return false;
     }else{
-        let group = $(this).parents('.container');
-        let child = group.children('.dragitem');
+        const group = $(this).parents('.container');
         group.children('.dragitem').appendTo($('#actor_not_use'));
         group.remove();
     }
 });
 
 function actorSelectBoxUpdate() {
-    let select_actor = $('#select_actor_setting');
-    let actor_linknav = $('.actor_linknav ul');
-    let actor_switcher = $('#actor_switcher');
+    const select_actor = $('#select_actor_setting');
+    const actor_linknav = $('.actor_linknav ul');
+    const actor_switcher = $('#actor_switcher');
     actor_linknav.empty();
     actor_switcher.empty();
 
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.getActorBinName()', function(names) {
         select_actor.each(function() {
-            var nameList = names.split(',');
+            const nameList = names.split(',');
             for(let i = 0; i < nameList.length; i++) {
-                var act_switch = $('<li>', {'class':'', sequence:i});
+                const act_switch = $('<li>', {'class':'', sequence:i});
                 act_switch.append($('<div>', {'class':'actor_component', sequence:i}));
                 actor_switcher.append(act_switch);
 
-                var li = $('<li>', {'class': 'actor_sequence_link uk-width-auto unlink', sequence : i});
-                var div_icon = $('<div>', {'class':'actor_sequence_link_icon', 'uk-icon':'ban'});
-                var div_label = $('<div>', {'class':'actor_sequence_link_label'});
+                const li = $('<li>', {'class': 'actor_sequence_link uk-width-auto unlink', sequence : i});
+                const div_icon = $('<div>', {'class':'actor_sequence_link_icon', 'uk-icon':'ban'});
+                const div_label = $('<div>', {'class':'actor_sequence_link_label'});
                     div_label.html(nameList[i]);
                 li.append(div_icon);
                 li.append(div_label);
@@ -199,7 +193,7 @@ function actorSelectBoxUpdate() {
                     this.childNodes[i].innerHTML = nameList[i];
                     this.childNodes[i].value =  nameList[i];
                 } else {
-                    let option = document.createElement('option');
+                    const option = document.createElement('option');
                     option.setAttribute('value', nameList[i]);
                     option.innerHTML = nameList[i];
                     this.appendChild(option);
@@ -213,7 +207,7 @@ function actorSelectBoxUpdate() {
 }
 
 function clearActorSettingPanel() {
-    var notuse = $('#actor_not_use');
+    const notuse = $('#actor_not_use');
     notuse.empty();
     notuse.html('<summary>Not use</summary>');
     $('#root_container').empty();
@@ -222,7 +216,7 @@ function clearActorSettingPanel() {
 function addActorSettingPanel() {
     SortableSet();
     $('#add_group').change(function(e) {
-        let name = $(this).val();
+        const name = $(this).val();
         if(name !== ''){
             AddGroup(name);
             $(this).val('');
@@ -233,27 +227,26 @@ function addActorSettingPanel() {
 function actorSettingStart(force_initialize) {
     clearActorSettingPanel();
     addActorSettingPanel();
-    var actor = document.getElementById("select_actor_setting");
-    var csInterface = new CSInterface();
+    const actor = document.getElementById("select_actor_setting");
 
     csInterface.evalScript('$._PPP_.getActorStructureMediaPath("' + actor.value + '")', function(result) {
-        let mediaPathList = result.split(',');
+        const mediaPathList = result.split(',');
         if(result !== '' && mediaPathList.length == 1 && !force_initialize) {
             $('#actor_setting_save_button.disable').removeClass('disable');
             $('#actor_setting_initialize.disable').removeClass('disable');
-            var actorObj = LoadActorStructure(mediaPathList[0]);
+            const actorObj = LoadActorStructure(mediaPathList[0]);
             for(var i = 0; i < actorObj.actor.length - 1; i++) {
-                var group = AddGroup(actorObj.actor[i].group);
-                var clips = actorObj.actor[i].clips;
-                for(var j = 0; j < clips.length; j++) {
+                const group = AddGroup(actorObj.actor[i].group);
+                const clips = actorObj.actor[i].clips;
+                for(let j = 0; j < clips.length; j++) {
                     if(fs.existsSync(clips[j].src_path) ) {
                         AddActorClip(group, clips[j].clip, clips[j].src_path, clips[j].tree_path, clips[j].crop_path);
                     }
                 }
             }
-            var group = $('#actor_not_use');
-            var clips = actorObj.actor[actorObj.actor.length - 1].clips;
-            for(var j = 0; j < clips.length; j++) {
+            const group = $('#actor_not_use');
+            const clips = actorObj.actor[actorObj.actor.length - 1].clips;
+            for(let j = 0; j < clips.length; j++) {
                 AddActorClip(group, clips[j].clip, clips[j].src_path, clips[j].tree_path, clips[j].crop_path);
             }
         } else {
@@ -261,11 +254,11 @@ function actorSettingStart(force_initialize) {
                 if(struct) {
                     $('#actor_setting_save_button.disable').removeClass('disable');
                     $('#actor_setting_initialize.disable').removeClass('disable');
-                    let elmNum = 4;
-                    var structList = struct.split(',');
-                    let length = structList.length / elmNum;
-                    var prevGroupName = ""
-                    var prevGroup = null;
+                    const elmNum = 4;
+                    const structList = struct.split(',');
+                    const length = structList.length / elmNum;
+                    let prevGroupName = ""
+                    let prevGroup = null;
                     for(let i = 0; i < length; i++) {
                         let currentGroupName = structList[i * elmNum + 1];
                         if(currentGroupName !== prevGroupName){
@@ -284,20 +277,17 @@ function actorSettingStart(force_initialize) {
 }
 
 function setActorClipSet(shortcutKey) {
-    var linkdActor = $('.actor_sequence_link');
-    for(var i = 0; i < linkdActor.length; i++) {
+    const linkdActor = $('.actor_sequence_link');
+    for(let i = 0; i < linkdActor.length; i++) {
         if(linkdActor.eq(i).hasClass('enable')) {
-            let seqIndex = linkdActor.eq(i).attr('sequence');
-            var actorName = linkdActor.eq(i).children('.actor_sequence_link_label').html();
-            let actorFlagList = $('#actor_switcher').children('[sequence=' + seqIndex + ']').find('.parts_selector');
-            var treePathList = ActorStructure[seqIndex].clipset[shortcutKey].split(',');
-            for(var j = 0; j < treePathList.length; j++) {
-                let flag = 0;
-                let insert_mode = actorFlagList.eq(actorFlagList.length - 1 - j);
+            const seqIndex = linkdActor.eq(i).attr('sequence');
+            const actorName = linkdActor.eq(i).children('.actor_sequence_link_label').html();
+            const actorFlagList = $('#actor_switcher').children('[sequence=' + seqIndex + ']').find('.parts_selector');
+            const treePathList = ActorStructure[seqIndex].clipset[shortcutKey].split(',');
+            for(let j = 0; j < treePathList.length; j++) {
+                const insert_mode = actorFlagList.eq(actorFlagList.length - 1 - j);
                 if(!insert_mode.find('.insert_disable').hasClass('enable')) {
-                    if(insert_mode.find('.insert_inpoint').hasClass('enable')) flag += 1;
-                    if(insert_mode.find('.insert_outpoint').hasClass('enable')) flag += 2;
-                    if(insert_mode.find('.insert_marker').hasClass('enable')) flag += 4;
+                    const flag = getClipEndFlag(insert_mode);
                     insertActorClip(actorName, seqIndex, j, treePathList[j], flag);
                 }
             }
@@ -306,19 +296,18 @@ function setActorClipSet(shortcutKey) {
 }
 
 function getActorClipSet(shortcutKey) {
-    var linkdActor = $('.actor_sequence_link');
-    for(var i = 0; i < linkdActor.length; i++) {
+    const linkdActor = $('.actor_sequence_link');
+    for(let i = 0; i < linkdActor.length; i++) {
         if(linkdActor.eq(i).hasClass('enable')) {
-            let seqIndex = linkdActor.eq(i).attr('sequence');
-            var actorName = linkdActor.eq(i).children('.actor_sequence_link_label').html();
-            var csInterface = new CSInterface();
+            const seqIndex = linkdActor.eq(i).attr('sequence');
+            const actorName = linkdActor.eq(i).children('.actor_sequence_link_label').html();
             csInterface.evalScript('$._PPP_.getCurrentActorClipTreePath(' + seqIndex + ',-1)', function(treePathList) {
                 if(!('clipset' in ActorStructure[seqIndex])){
                     ActorStructure[seqIndex].clipset = {};
                 } 
                 ActorStructure[seqIndex].clipset[shortcutKey] = treePathList;
                 csInterface.evalScript('$._PPP_.getActorStructureMediaPath("' + actorName + '")', function(result) {
-                    let mediaPathList = result.split(',');
+                    const mediaPathList = result.split(',');
                     if(result !== '' && mediaPathList.length == 1) {
                         const err = SaveJson(ActorStructure[seqIndex], mediaPathList[0]);
                         if(err != window.cep.fs.NO_ERROR) {
@@ -333,12 +322,11 @@ function getActorClipSet(shortcutKey) {
 }
 
 function insertActorClip(actor_name, seq_index, group_index, tree_path, flag) {
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.insertActorClip("' + actor_name + '",' + seq_index + ','+ group_index + ',"' + tree_path + '",-1,' + flag + ')');	
 }
 
 function SortableSet() {
-    var root_container = document.querySelector('.root_container');
+    const root_container = document.querySelector('.root_container');
     new Sortable.create(root_container, {
         group: 'root',
         multiDrag: false,
@@ -352,9 +340,9 @@ function SortableSet() {
         swapThreshold: 0.65,
         dragoverBubble: false});
         
-    var containers = null;
+    let containers = null;
     containers = document.querySelectorAll('.container');
-    for (var i = 0; i < containers.length; i++) {
+    for (let i = 0; i < containers.length; i++) {
         new Sortable.create(containers[i], {
             group: 'nested',
             multiDrag: true,
@@ -371,9 +359,9 @@ function SortableSet() {
 }
 
 function AddGroup(name) {
-    var summary = $('<summary>', {class:'group_label'});
+    const summary = $('<summary>', {class:'group_label'});
     summary.html(name + ' <a href="#" class="group_trash" uk-icon="icon: trash"></a>');
-    var details = $('<details>', {class:'container dragitem', group:name});
+    const details = $('<details>', {class:'container dragitem', group:name});
     details.append(summary);
     if($('.container.dragitem:last').length){
         $('.container.dragitem:last').after(details);
@@ -397,7 +385,7 @@ function AddGroup(name) {
 }
 
 function AddActorClip(rootNode, name, img_path, tree_path, crop_path) {
-    var item = $(document.createElement('div'));
+    const item = $(document.createElement('div'));
     item.addClass('dragitem');
     item.html(name);
     item.attr('clip', name);
@@ -407,9 +395,8 @@ function AddActorClip(rootNode, name, img_path, tree_path, crop_path) {
     rootNode.append(item);
 }
 
-function setupCropImageSet(base64) 
-{
-    var zoom = $('#actor_setup_zoom');
+function setupCropImageSet(base64) {
+    const zoom = $('#actor_setup_zoom');
     zoom.attr('href', base64);
 }
 
@@ -417,7 +404,6 @@ function SaveNewActorStructure() {
     const path = _ActorStructureSave();
     if(path) {
         const actorName = $("#select_actor_setting").val();
-        var csInterface = new CSInterface();
         csInterface.evalScript('$._PPP_.importActorStructureFile("' + path.replace(/\\/g, '/') + '","'+ actorName + '")', function(result) {
             if(!result) {
                 alert('構成ファイルのインポートに失敗しました');
@@ -429,19 +415,18 @@ function SaveNewActorStructure() {
 
 function OverwriteActorStructure() {
     const actorName = $("#select_actor_setting").val();
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.getActorStructureMediaPath("' + actorName + '")', function(result) {
-        let mediaPathList = result.split(',');
+        const mediaPathList = result.split(',');
         if(result !== '' && mediaPathList.length == 1) {
-            var index = $(this).attr('sequence');
-            var actor_root = $('.actor_component[sequence="' + index + '"]');
+            const index = $(this).attr('sequence');
+            const actor_root = $('.actor_component[sequence="' + index + '"]');
             actor_root.empty();
 
             let linklabel = $('.actor_sequence_link_label');
             for(var i = 0; i < linklabel.length; i++) {
                 if(linklabel.eq(i).html() === actorName) {
                     $('.actor_sequence_link').removeClass('enable');
-                    let root = linklabel.eq(i).parents('.actor_sequence_link');
+                    const root = linklabel.eq(i).parents('.actor_sequence_link');
                     root.removeClass('linked');
                     root.addClass('unlink');
                     root.find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
@@ -450,7 +435,7 @@ function OverwriteActorStructure() {
                 }
             }
 
-            var actor = LoadActorStructure(mediaPathList[0]);
+            const actor = LoadActorStructure(mediaPathList[0]);
             _ActorStructureSave(mediaPathList[0], actor);
             clearActorSettingPanel();
         }
@@ -469,20 +454,19 @@ function InitializeActorStructure() {
 }
 
 function SetupActorComponent(index, actorName){
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.getActorStructureMediaPath("' + actorName + '")', function(result) {
         if(result) {
             ActorStructure[index] = LoadActorStructure(result);
-            var actorObj = ActorStructure[index];
+            const actorObj = ActorStructure[index];
             if(actorObj) {
                 actor_root = $('.actor_component[sequence="' + index + '"]');
-                for(var i = 0; i < actorObj.actor.length - 1; i++) {
-                    var actor = $('<div>', {'class':'actor_parts'});
+                for(let i = 0; i < actorObj.actor.length - 1; i++) {
+                    const actor = $('<div>', {'class':'actor_parts'});
 
-                    var label = $('<div>');
+                    const label = $('<div>');
                     label.attr('uk-grid', '');
 
-                    var group = $('<div>');
+                    const group = $('<div>');
                     group.addClass('uk-width-expand select_actor_group');
                     group.html(actorObj.actor[i].group);
                     label.append(group);
@@ -492,38 +476,33 @@ function SetupActorComponent(index, actorName){
 
                     actor.append(label);
 
-                    var partsSelector = $('<div>', {'class':'uk-text-center uk-padding uk-padding-small uk-padding-remove-vertical remove-top-margine parts_selector'});
+                    const partsSelector = $('<div>', {'class':'uk-text-center uk-padding uk-padding-small uk-padding-remove-vertical remove-top-margine parts_selector'});
                     partsSelector.attr('uk-grid', '');
                     
-                    var checkbox_div = $('<div>', {'class':'uk-width-auto uk-height-expand insert_mode'});
+                    const checkbox_div = $('<div>', {'class':'uk-width-auto uk-height-expand insert_mode'});
                     checkbox_div.append($('<div>', {'uk-icon': 'unlock', 'class': 'uk-icon actor_insert_setting insert_setting_icon insert_disable'}));
                     
-                    let inpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_inpoint enable'});
-                        inpointClipIcon.html(`<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="53.1" y2="50.5"/><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="34.1" y2="50.5"/><g><polygon class="insert_inpoint1" points="30.2,63.8 53.1,50.5 30.2,37.2 "/></g></g></g><rect x="56.2" y="9" class="insert_inpoint2" width="40.7" height="83.8"/><polygon class="insert_inpoint1" points="77.7,9 56.2,31.8 56.2,92.8 96.8,92.8 96.8,9 "/></svg>`);
-
-                    let outpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_outpoint disable'});
-                        outpointClipIcon.html(`<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="insert_outpoint4" points="14.3,92.8 85.8,92.8 85.8,9 14.2,9 "/><polygon class="insert_outpoint1" points="64.3,9 85.8,31.8 85.8,92.8 14.3,92.8 14.2,9 "/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="81.6" y2="50"/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="62.6" y2="50"/><g><polygon class="insert_outpoint3" points="58.7,63.3 81.6,50 58.7,36.7 "/></g></g></g></svg>`);
-
-
-                    let markerIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_marker disable'});
-                        markerIcon.html('<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"\
-                                        viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">\
-                                    <polygon class="marker_icon" points="23.1,58.425 23.1,18 76.57,18 76.57,58.425 49.535,83 23.1,58.425 "/></svg>');
-
+                    const inpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_inpoint enable'});
+                        inpointClipIcon.html(SVG_INPOINT_CLIP_ICON);
+                    const outpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_outpoint disable'});
+                        outpointClipIcon.html(SVG_OUTPOINT_CLIP_ICON);
+                    const markerIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_marker disable'});
+                        markerIcon.html(SVG_MARKER_ICON);
+                        
                     checkbox_div.append(inpointClipIcon);
                     checkbox_div.append(outpointClipIcon);
                     checkbox_div.append(markerIcon);
                     partsSelector.append(checkbox_div);
 
-                    var partsList = $('<div>', {'class':'uk-width-expand uk-flex uk-flex-left actor_parts_list'});
-                    var thumbnav = $('<div>', {'class':'td-thumbnav'});
+                    const partsList = $('<div>', {'class':'uk-width-expand uk-flex uk-flex-left actor_parts_list'});
+                    const thumbnav = $('<div>', {'class':'td-thumbnav'});
 
-                    var ul = $('<ul>');
-                    var clips = actorObj.actor[i].clips;
-                    for(var j = 0; j < clips.length; j++){
-                        var li = $('<li>', {'class':'actor_thumb_parent', name:clips[j].clip, tree_path:clips[j].tree_path, group_index: actorObj.actor.length - 2 - i});
-                        var img = $('<img>', {'class':'actor_thumb'});
-                        var crop = clips[j].crop_path;
+                    const ul = $('<ul>');
+                    const clips = actorObj.actor[i].clips;
+                    for(let j = 0; j < clips.length; j++){
+                        const li = $('<li>', {'class':'actor_thumb_parent', name:clips[j].clip, tree_path:clips[j].tree_path, group_index: actorObj.actor.length - 2 - i});
+                        const img = $('<img>', {'class':'actor_thumb'});
+                        const crop = clips[j].crop_path;
                         if (crop && fs.existsSync(crop)) {
                             img.attr('src', crop);
                             li.append(img);
@@ -532,8 +511,8 @@ function SetupActorComponent(index, actorName){
                         }
                         ul.append(li);
                     }
-                    var li = $('<li>', {'class':'actor_thumb_parent', name:'このクリップを消す', tree_path:'delete', group_index: actorObj.actor.length - 2 - i});
-                    var dummy = $('<span>', {'uk-icon':'icon: trash; ratio:2'});
+                    const li = $('<li>', {'class':'actor_thumb_parent', name:'このクリップを消す', tree_path:'delete', group_index: actorObj.actor.length - 2 - i});
+                    const dummy = $('<span>', {'uk-icon':'icon: trash; ratio:2'});
                     li.append(dummy);
                     ul.append(li);
                     thumbnav[0].addEventListener('mousewheel', function(e) {
@@ -559,7 +538,7 @@ function SetupActorComponent(index, actorName){
 }
 
 function LoadActorStructure(path)	{
-    json = window.cep.fs.readFile(path);
+    const json = window.cep.fs.readFile(path);
     if(json.err){
         if(json.err == window.cep.fs.ERR_NOT_FOUND) {
             alert('"' + path + '"が見つかりません。');
@@ -581,20 +560,20 @@ function _ActorStructureSave(save_structure_file_path, currentActorObj)
         if(!save_structure_file_path) return;
     }
 
-    var obj = [];	
-    var crop_dir = '';
-    var crop_list = [];
+    const obj = [];	
+    let crop_dir = '';
+    const crop_list = [];
 
-    let groupList = $('.container.dragitem');
+    const groupList = $('.container.dragitem');
     for(var i = 0; i < groupList.length; i++) {
-        var group_obj = { 
+        const group_obj = { 
             group : groupList[i].getAttribute('group'),
             clips : []
         };
-        var clips = $(groupList[i]).children('.dragitem');
+        const clips = $(groupList[i]).children('.dragitem');
         for(var j = 0; j < clips.length; j++){
-            let crop_path = clips[j].getAttribute('crop_path');
-            let clip_name = clips[j].getAttribute('clip');
+            const crop_path = clips[j].getAttribute('crop_path');
+            const clip_name = clips[j].getAttribute('clip');
             if(crop_path === '' || !fs.existsSync(crop_path)) {
                 if(!crop_dir){
                     crop_dir = window.cep.fs.showOpenDialogEx(false, true, 'サムネイルの保存先', null).data;
@@ -606,7 +585,7 @@ function _ActorStructureSave(save_structure_file_path, currentActorObj)
                 crop_path = crop_dir + clip_name + GetUUID() + src_path.substr(lastIndex);
                 crop_list.push({src:src_path, dst:crop_path});
             }
-            var clip_pbj = {
+            const clip_pbj = {
                 clip: clip_name,
                 src_path: clips[j].getAttribute('src'),
                 tree_path: clips[j].getAttribute('tree_path'),
@@ -617,14 +596,14 @@ function _ActorStructureSave(save_structure_file_path, currentActorObj)
         obj.push(group_obj);
     }
 
-    var group_obj = { 
+    const group_obj = { 
         group : 'notuse',
         clips : []
     };
-    var clips = $('#actor_not_use').children('.dragitem');
-    for(var j = 0; j < clips.length; j++){
+    const clips = $('#actor_not_use').children('.dragitem');
+    for(let j = 0; j < clips.length; j++){
         let crop_path =  clips[j].getAttribute('crop_path');
-        let clip_name = clips[j].getAttribute('clip');
+        const clip_name = clips[j].getAttribute('clip');
         if(crop_path === '' || !fs.existsSync(crop_path)) {
             if(!crop_dir) {
                 crop_dir = window.cep.fs.showOpenDialog(false, true, 'サムネイルの保存先', '').data;
@@ -645,7 +624,7 @@ function _ActorStructureSave(save_structure_file_path, currentActorObj)
         group_obj.clips.push(clip_pbj);
     }
     obj.push(group_obj);
-    var wrapper = {actor: obj};
+    const wrapper = {actor: obj};
     if(currentActorObj) {
         wrapper['clipset'] = currentActorObj.clipset;
     } else {
@@ -664,7 +643,7 @@ function _ActorStructureSave(save_structure_file_path, currentActorObj)
         $('#mainfunc').addClass('disable');
         $('#busy_notification').addClass('uk-open');
         $('#busy_notification').attr('style', 'display: block;');
-        for(var i = 0; i < cropImageSize; i++) {
+        for(let i = 0; i < cropImageSize; i++) {
             save_transparent_crop(crop_list[i].src, crop_list[i].dst, cropImageCallback);
         }
     }
@@ -683,7 +662,6 @@ function cropImageCallback(){
 const Jimp = require('jimp');
 const autocrop = require('autocropmodule/autocropmodule.js');
 function transparent_crop_async(path, callback)	{
-    console.log(path);
     Jimp.read(path, (err, image) => {
         if (!err) {
             image.autocrop = autocrop;

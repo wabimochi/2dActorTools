@@ -6,21 +6,16 @@ function autoNewLine_ExecuteButton() {
     let warningMarkerColor = -1;
     let maxLineNum = 10000;
     if($('#auto_newline_marker').prop('checked')) {
-        let marker_index = $('#auto_newline_normal_marker_color div:nth-child(2)');
-        for(insertMarkerColor = 0; insertMarkerColor < 8; insertMarkerColor++) {
-            if(marker_index.hasClass('merker_color_selected')) {
-                break;
+        const getMarkerIndex = function(jq_elm) {
+            let index = 0;
+            for(; index < 8; index++) {
+                if(jq_elm.hasClass('merker_color_selected')) break;
+                jq_elm = jq_elm.next();
             }
-            marker_index = marker_index.next();
+            return index;
         }
-
-        marker_index = $('#auto_newline_warning_marker_color div:nth-child(2)');
-        for(warningMarkerColor = 0; warningMarkerColor < 8; warningMarkerColor++) {
-            if(marker_index.hasClass('merker_color_selected')) {
-                break;
-            }
-            marker_index = marker_index.next();
-        }
+        insertMarkerColor = getMarkerIndex($('#auto_newline_normal_marker_color div:nth-child(2)'));
+        warningMarkerColor = getMarkerIndex($('#auto_newline_warning_marker_color div:nth-child(2)'));
 
         if(insertMarkerColor >= 8) insertMarkerColor = 0;
         if(warningMarkerColor >= 8) warningMarkerColor = 1;
@@ -57,15 +52,16 @@ function autoNewLineMarkerUIUpdate() {
 }
 
 function auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMarkerColor, asciiIsHalf, initNewLine, autoNewLine) {
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.AutoNewLine_GetSourceText()', function(result){
-        let textList = result.split('/');
-        var extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
-        var builder = kuromoji.builder({dicPath: extPath + '/node_modules/kuromoji/dict'});
+        const PROCESSED = 1
+        const FAIL = 2
+        const textList = result.split('/');
+        const extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
+        const builder = kuromoji.builder({dicPath: extPath + '/node_modules/kuromoji/dict'});
         builder.build(function(err, tokenizer) {
             if(err){throw err}
-            let processedText = [];
-            let processedFlag = [];
+            const processedText = [];
+            const processedFlag = [];
             const textListLength = textList.length;
             if(initNewLine) {
                 for(let i = 0; i < textListLength; i++) {
@@ -73,9 +69,9 @@ function auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMa
                 }
             }
             for(let i = 0; i < textListLength; i++) {
-                let oneLineTextList = textList[i].split(newLineReg);
-                let preProcessedText = [];
-                let process = -1;
+                const oneLineTextList = textList[i].split(newLineReg);
+                const preProcessedText = [];
+                let process = 0;
                 for(let j = 0; j < oneLineTextList.length; j++) {
                     let charactorCount = oneLineTextList[j].length;
                     if(asciiIsHalf) {
@@ -86,31 +82,29 @@ function auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMa
                     }
                     if(charactorCount > maxCharactorNum) {
                         if(autoNewLine) {
-                            let tokens = tokenizer.tokenize(oneLineTextList[j]);
-                            let [newLineText , split_fail] = tokenInsertNewLine(tokens, maxCharactorNum, asciiIsHalf);
+                            const tokens = tokenizer.tokenize(oneLineTextList[j]);
+                            const [newLineText , split_fail] = tokenInsertNewLine(tokens, maxCharactorNum, asciiIsHalf);
                             Array.prototype.push.apply(preProcessedText, newLineText);
                             if(split_fail) {
-                                process = 2;
+                                process |= FAIL;
                             }
                         } else {
                             preProcessedText.push(oneLineTextList[j]);
                         }
-                        if(process !== 2) {
-                            process = 1;
-                        }
+                        process |= PROCESSED;
                     } else {
                         preProcessedText.push(oneLineTextList[j]);
                     }
                 }
 
                 if (preProcessedText.length > maxLineNum) {
-                    process = 2;
+                    process |= FAIL;
                 }
                 processedText.push(preProcessedText.join('\n'));
-                if(process === 1) {
-                    processedFlag.push(insertMarkerColor);
-                } else if(process === 2) {
+                if(process & FAIL) {
                     processedFlag.push(warningMarkerColor);
+                } else if(process & PROCESSED) {
+                    processedFlag.push(insertMarkerColor);
                 } else {
                     processedFlag.push(-1);
                 }
@@ -122,7 +116,6 @@ function auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMa
 }
 
 function countSelectedClipTextLength() {
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.GetSelectedClipText()', function(result){
         if(result) {
             let charactorCount = result.length;
@@ -139,8 +132,8 @@ function countSelectedClipTextLength() {
 }
 
 function tokenInsertNewLine(tokens, maxCharactorNum, asciiIsHalf) {
-    let processedText = [];
-    let tokensLength = tokens.length;
+    const processedText = [];
+    const tokensLength = tokens.length;
     let wordList = [];
     let prevWordPos = 0;
     let prevIndex = -1;
@@ -222,18 +215,15 @@ CustomInitialize['auto_newline_custum_initialize'] = function () {
     const normal_marker_parent = $('#auto_newline_normal_marker_color');
     const warning_marker_parent = $('#auto_newline_warning_marker_color');
     if(category) {
-        let marker_color = category['auto_newline_normal_marker_color'];
-        if(marker_color) {
-            normal_marker_parent.children().eq(Number(marker_color)).click();
-        } else {
-            normal_marker_parent.children().eq(1).click();
+        const marker_color_init = function(color_index, jq_elm) {
+            if(color_index) {
+                jq_elm.children().eq(Number(color_index)).click();
+            } else {
+                jq_elm.children().eq(1).click();
+            }
         }
-        marker_color = category['auto_newline_warning_marker_color'];
-        if(marker_color) {
-            warning_marker_parent.children().eq(Number(marker_color)).click();
-        } else {
-            warning_marker_parent.children().eq(2).click();
-        }
+        marker_color_init(category['auto_newline_normal_marker_color'], normal_marker_parent);
+        marker_color_init(category['auto_newline_warning_marker_color'], warning_marker_parent);
     } else {
         normal_marker_parent.children().eq(1).click();
         warning_marker_parent.children().eq(2).click();

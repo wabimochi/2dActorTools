@@ -9,7 +9,6 @@ $('#subtitle_replace_flag').on('change', function() {
 
 function mogrtUpdate() {
     let select_mogrt = document.getElementById('select_mogrt');
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.getMGTClipName()', function(names) {
         var nameList = names.split(',');
         for(let i = 0; i < nameList.length; i++){
@@ -30,16 +29,15 @@ function mogrtUpdate() {
 }
 
 function importMGT() {
-    var mogrtPathList = window.cep.fs.showOpenDialog(true, false, 'モーショングラフィックステンプレート', '', ['.mogrt']).data;
-    var csInterface = new CSInterface();
+    const mogrtPathList = window.cep.fs.showOpenDialog(true, false, 'モーショングラフィックステンプレート', '', ['.mogrt']).data;
     if(mogrtPathList != '') {
         csInterface.evalScript('$._PPP_.importMOGRTFile("' + mogrtPathList + '")');
     }
 }
 
 function insertSubtitleFromTextarea() {
-    var mogrt = document.getElementById("select_mogrt");
-    var text = document.getElementById("subtitles");
+    const mogrt = document.getElementById("select_mogrt");
+    const text = document.getElementById("subtitles");
     const presetTag = $('#preset_tag').val();
     let replaceReg = null;
     if(('#subtitle_replace').val() != '') {
@@ -50,13 +48,11 @@ function insertSubtitleFromTextarea() {
         }
     }
     const replaceAfter = $('#subtitle_replace_after').val();
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.insertSubtitle("' + mogrt.value + '","'
     + text.value.slice(text.value.indexOf(presetTag) + 1).replace(/\//g, '').replace(newLineReg, '/').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter) + '")');
 }
 
 function insertSubtitleFromTextFile() {
-    var csInterface = new CSInterface();
     csInterface.evalScript('$._PPP_.getTragetAudioClipMediaPath()', function(result){
         let replaceReg = null;
         if($('#subtitle_replace').val() != '') {
@@ -77,8 +73,7 @@ function insertSubtitleFromTextFile() {
         const presetTag = $('#preset_tag').val();
         for(let i = 0; i < mediaPathList.length; i++) {
             const path = mediaPathList[i].slice(0, mediaPathList[i].lastIndexOf('.') + 1) + 'txt';
-            console.log(path);
-            let text = getText(path);
+            let text = getFileText(path);
             if(text != null) {
                 if(presetTag !== '') {
                     textList.push(text.slice(text.indexOf(presetTag) + 1).replace(newLineReg, '\\n').replace(/\//g, '').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));

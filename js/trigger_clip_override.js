@@ -11,11 +11,10 @@ $(document).on('click', '.triggerclip_insert_setting', function() {
 });
 
 $('#trigger_clip_override_target_seq').on('change', function() {
-    let target = $(this);
+    const target = $(this);
     const trackNumSelectbox = $('#trigger_clip_override_target_track');
     if(target.val() === '1') {
         videoTrackSelectBox.push($('#trigger_clip_override_target_track'));
-        const csInterface = new CSInterface();
         csInterface.evalScript('$._PPP_.sequenceStructureChanged()');
     } else {
         const length = videoTrackSelectBox.length;
@@ -31,8 +30,7 @@ $('#trigger_clip_override_target_seq').on('change', function() {
     }
     const videoTrackNum = trackNumSelectbox.attr('select_seq_track');
     if(videoTrackNum != null && trackNumSelectbox.val() <= videoTrackNum && trackNumSelectbox.val() > 0) {
-        trackNumSelectbox.removeClass('tdact_setting_error');
-        trackNumSelectbox.addClass('tdact_setting_ok');
+        setSettingOK(trackNumSelectbox);
         trackNumSelectbox.removeAttr('uk-tooltip');
         trackNumSelectbox.removeAttr('max_track_num');
         while(trackNumSelectbox.children().length - 1 > videoTrackNum) {
@@ -46,8 +44,7 @@ $('#trigger_clip_override_target_seq').on('change', function() {
             value += 1;
         }
     } else {
-        trackNumSelectbox.removeClass('tdact_setting_ok');
-        trackNumSelectbox.addClass('tdact_setting_error');
+        setSettingError(trackNumSelectbox);
         if(videoTrackNum != undefined) {
             trackNumSelectbox.attr('uk-tooltip', videoTrackNum + ' 以下を選択してください');
             trackNumSelectbox.attr('max_track_num', videoTrackNum);
@@ -63,17 +60,15 @@ $('#trigger_clip_override_target_track').on('change', function() {
     const max_value = Number(selectbox.attr('max_track_num'));
     const select_value = Number(selectbox.val());
     if(max_value && select_value > max_value || select_value === 0) {
-        selectbox.removeClass('tdact_setting_ok');
-        selectbox.addClass('tdact_setting_error');
+        setSettingError(selectbox);
         if(select_value === 0) {
             selectbox.attr('uk-tooltip', '1 以上を選択してください');
         } else {	
             selectbox.attr('uk-tooltip', max_value + ' 以下を選択してください');
         }
     } else {
-        selectbox.removeClass('tdact_setting_error');
-        selectbox.addClass('tdact_setting_ok');
-        selectbox.removeAttr(' uk-tooltip');
+        setSettingOK(selectbox);
+        selectbox.removeAttr('uk-tooltip');
     }
 });
 
@@ -81,8 +76,7 @@ $(document).on('click', '.trigger_clip_trash', function() {
     const treePathButton = $(this).parent().prev();
     treePathButton.html('選択中のクリップをセット');
     treePathButton.removeAttr('uk-tooltip');
-    treePathButton.removeClass('tdact_setting_ok');
-    treePathButton.removeClass('tdact_setting_error');
+    resetSettingFlag(treePathButton);
     const category = treePathButton.attr('category');
     const id = treePathButton.attr('id');
     SettingUpdate(category, id, treePathButton.html());	
@@ -93,27 +87,19 @@ function triggerOverriteClip_ExecuteButton() {
     if(!trackNumElm.hasClass('tdact_setting_ok')) return;
 
     const startTriggerPathElm = $('#trigger_clipstart_clippath');
-    const endTriggerPathElm = $('#trigger_clipend_clippath');
     let startTriggerClipTreePath = '';
-    let endTriggerClipTreePath = '';
     if(startTriggerPathElm.hasClass('tdact_setting_ok')) {
         startTriggerClipTreePath = startTriggerPathElm.html();
     }
+    const endTriggerPathElm = $('#trigger_clipend_clippath');
+    let endTriggerClipTreePath = '';
     if(endTriggerPathElm.hasClass('tdact_setting_ok')) {
         endTriggerClipTreePath = endTriggerPathElm.html();
     }
     const trackNum = trackNumElm.val() - 1;
     const targetSequence = $('#trigger_clip_override_target_seq').val();
-
-    let startClipEndFlag = 0;
-    if(startTriggerPathElm.find('.insert_inpoint').hasClass('enable')) startClipEndFlag += 1;
-    if(startTriggerPathElm.find('.insert_outpoint').hasClass('enable')) startClipEndFlag += 2;
-    if(startTriggerPathElm.find('.insert_marker').hasClass('enable')) startClipEndFlag += 4;
-    let endClipEndFlag = 0;
-    if(endTriggerPathElm.find('.insert_inpoint').hasClass('enable')) endClipEndFlag += 1;
-    if(endTriggerPathElm.find('.insert_outpoint').hasClass('enable')) endClipEndFlag += 2;
-    if(endTriggerPathElm.find('.insert_marker').hasClass('enable')) endClipEndFlag += 4;
-    const csInterface = new CSInterface();
+    const startClipEndFlag = getClipEndFlag(startTriggerPathElm.parent());    
+    const endClipEndFlag = getClipEndFlag(endTriggerPathElm.parent());
     csInterface.evalScript('$._PPP_.triggerClipOverwrite("' + targetSequence + '","' + trackNum + '","' + startTriggerClipTreePath + '","' + endTriggerClipTreePath + '","' + startClipEndFlag + '","' + endClipEndFlag + '")', function() {});
 }
 
@@ -134,42 +120,29 @@ CustomInitialize['trigger_clip_custum_initialize'] = function () {
             trackSelectbox.attr('max_track_num', 1);
             trackSelectbox.val(trackIndex);
         }
-        const startTriggerClipPath = category['trigger_clipstart_clippath'];
-        if(startTriggerClipPath) {
-            const clipButtonElm = $('#trigger_clipstart_clippath');
-            clipButtonElm.html(startTriggerClipPath);
-            const csInterface = new CSInterface();
-            csInterface.evalScript('$._PPP_.existClipTreePath("' + startTriggerClipPath + '")', function(result) {
-                if(result) {
-                    clipButtonElm.attr('uk-tooltip', startTriggerClipPath);
-                    clipButtonElm.addClass('tdact_setting_ok');
-                    clipButtonElm.removeClass('tdact_setting_error');
-                }
-            });
+
+        const clipPathInit = function(path, elm) {
+            if(path) {
+                elm.html(path);
+                csInterface.evalScript('$._PPP_.existClipTreePath("' + path + '")', function(result) {
+                    if(result) {
+                        elm.attr('uk-tooltip', path);
+                        setSettingOK(elm);
+                    }
+                });
+            }
         }
-        const endTriggerClipPath = category['trigger_clipend_clippath'];
-        if(endTriggerClipPath) {
-            const clipButtonElm = $('#trigger_clipend_clippath');
-            clipButtonElm.html(endTriggerClipPath);
-            const csInterface = new CSInterface();
-            csInterface.evalScript('$._PPP_.existClipTreePath("' + endTriggerClipPath + '")', function(result) {
-                if(result) {
-                    clipButtonElm.attr('uk-tooltip', endTriggerClipPath);
-                    clipButtonElm.addClass('tdact_setting_ok');
-                    clipButtonElm.removeClass('tdact_setting_error');
-                }
-            });
-        }
+        clipPathInit(category['trigger_clipstart_clippath'], $('#trigger_clipstart_clippath'));
+        clipPathInit(category['trigger_clipend_clippath'], $('#trigger_clipend_clippath'));
+ 
         const merkerInit = function(id) {
-            let insert = category[id];
+            const insert = category[id];
             if(insert) {
                 const icon = $('#' + id);
                 if(insert == 'enable') {
-                    icon.addClass('enable');
-                    icon.removeClass('disable');
+                    setEnable(icon);
                 } else {
-                    icon.removeClass('enable');
-                    icon.addClass('disable');
+                    setDisable(icon);
                 }
             }
         }

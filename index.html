@@ -10,6 +10,7 @@
 	<script src="./node_modules/sortablejs/dist/sortable.umd.js"></script>
 	<script src="./lib/Vulcan.js"></script>
 	<script src="node_modules/lightbox2/dist/js/lightbox.js"></script>
+	<script src="./js/svg.js"></script>
 	<script src="./js/util.js"></script>
 	<script src="./js/setting.js"></script>
 	<script src="./js/actor_edit.js"></script>
@@ -65,7 +66,7 @@
 					<span class="uk-label tdactor_label uk-width-auto">トラックに並べるMOGRTを選択</span>
 					<select class="tdactor_selectbox uk-width-expand uk-select" id="select_mogrt"></select>
 					<span class="uk-label tdactor_label uk-width-auto">プリセットタグ</span>
-					<input class="uk-input uk-light tdinput" type="text" id="preset_tag" value="＞" placeholder="preset tag...">
+					<input class="uk-input uk-light tdinput save_setting_value_on_change" type="text" category="insert_subtitle" id="preset_tag" value="＞" placeholder="preset tag...">
 					<span class="uk-label tdactor_label uk-width-auto uppercase_disable">Replace（正規表現）</span>
 					<div class='uk-flex-inline'>
 						<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace" value="" placeholder="マッチングパターン">
@@ -174,15 +175,9 @@
 							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
 								<button category="trigger_clip_override" id="trigger_clipstart_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
 								<div class="uk-flex uk-flex-middle uk-width-auto insert_mode uk-margin-small-top uk-flex-nowrap" uk-grid>
-									<div category="trigger_clip_override" id="trgclp_str_ins_in" class="triggerclip_insert_setting insert_setting_icon insert_inpoint enable" style="padding-left:15px; padding-right:15px"> 
-										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="53.1" y2="50.5"/><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="34.1" y2="50.5"/><g><polygon class="insert_inpoint1" points="30.2,63.8 53.1,50.5 30.2,37.2 "/></g></g></g><rect x="56.2" y="9" class="insert_inpoint2" width="40.7" height="83.8"/><polygon class="insert_inpoint1" points="77.7,9 56.2,31.8 56.2,92.8 96.8,92.8 96.8,9 "/></svg>
-									</div>
-									<div category="trigger_clip_override" id="trgclp_str_ins_out" class="triggerclip_insert_setting insert_setting_icon insert_outpoint disable" style="padding-left:15px; padding-right:15px">
-										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="insert_outpoint4" points="14.3,92.8 85.8,92.8 85.8,9 14.2,9 "/><polygon class="insert_outpoint1" points="64.3,9 85.8,31.8 85.8,92.8 14.3,92.8 14.2,9 "/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="81.6" y2="50"/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="62.6" y2="50"/><g><polygon class="insert_outpoint3" points="58.7,63.3 81.6,50 58.7,36.7 "/></g></g></g></svg>
-									</div>
-									<div category="trigger_clip_override" id="trgclp_str_ins_mkr" class="triggerclip_insert_setting insert_setting_icon insert_marker disable" style="padding-left:15px; padding-right:15px">
-										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="marker_icon" points="23.1,58.425 23.1,18 76.57,18 76.57,58.425 49.535,83 23.1,58.425 "/></svg>
-									</div>
+									<div category="trigger_clip_override" id="trgclp_str_ins_in" class="triggerclip_insert_setting insert_setting_icon insert_inpoint enable" style="padding-left:15px; padding-right:15px"></div>
+									<div category="trigger_clip_override" id="trgclp_str_ins_out" class="triggerclip_insert_setting insert_setting_icon insert_outpoint disable" style="padding-left:15px; padding-right:15px"></div>
+									<div category="trigger_clip_override" id="trgclp_str_ins_mkr" class="triggerclip_insert_setting insert_setting_icon insert_marker disable" style="padding-left:15px; padding-right:15px"></div>
 									<div class="triggerclip_insert_setting insert_setting_icon trigger_clip_trash" style="padding-left:15px; padding-right:15px">
 										<a href="#" class="icon_s" uk-icon="icon: trash"></a>
 									</div>
@@ -194,15 +189,9 @@
 							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
 								<button category="trigger_clip_override" id="trigger_clipend_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
 								<div class="uk-flex uk-flex-middle uk-width-auto insert_mode uk-margin-small-top uk-flex-nowrap" uk-grid>
-									<div category="trigger_clip_override" id="trgclp_end_ins_in" class="triggerclip_insert_setting insert_setting_icon insert_inpoint enable" style="padding-left:15px; padding-right:15px"> 
-										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="53.1" y2="50.5"/><g><line class="insert_inpoint1" x1="2.6" y1="50.5" x2="34.1" y2="50.5"/><g><polygon class="insert_inpoint1" points="30.2,63.8 53.1,50.5 30.2,37.2 "/></g></g></g><rect x="56.2" y="9" class="insert_inpoint2" width="40.7" height="83.8"/><polygon class="insert_inpoint1" points="77.7,9 56.2,31.8 56.2,92.8 96.8,92.8 96.8,9 "/></svg>
-									</div>
-									<div category="trigger_clip_override" id="trgclp_end_ins_out" class="triggerclip_insert_setting insert_setting_icon insert_outpoint disable" style="padding-left:15px; padding-right:15px">
-										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="insert_outpoint4" points="14.3,92.8 85.8,92.8 85.8,9 14.2,9 "/><polygon class="insert_outpoint1" points="64.3,9 85.8,31.8 85.8,92.8 14.3,92.8 14.2,9 "/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="81.6" y2="50"/><g><line class="insert_outpoint3" x1="31.1" y1="50" x2="62.6" y2="50"/><g><polygon class="insert_outpoint3" points="58.7,63.3 81.6,50 58.7,36.7 "/></g></g></g></svg>
-									</div>
-									<div category="trigger_clip_override" id="trgclp_end_ins_mkr" class="triggerclip_insert_setting insert_setting_icon insert_marker disable" style="padding-left:15px; padding-right:15px">
-										<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve"><polygon class="marker_icon" points="23.1,58.425 23.1,18 76.57,18 76.57,58.425 49.535,83 23.1,58.425 "/></svg>
-									</div>
+									<div category="trigger_clip_override" id="trgclp_end_ins_in" class="triggerclip_insert_setting insert_setting_icon insert_inpoint enable" style="padding-left:15px; padding-right:15px"></div>
+									<div category="trigger_clip_override" id="trgclp_end_ins_out" class="triggerclip_insert_setting insert_setting_icon insert_outpoint disable" style="padding-left:15px; padding-right:15px"></div>
+									<div category="trigger_clip_override" id="trgclp_end_ins_mkr" class="triggerclip_insert_setting insert_setting_icon insert_marker disable" style="padding-left:15px; padding-right:15px"></div>
 									<div class="triggerclip_insert_setting insert_setting_icon trigger_clip_trash" style="padding-left:15px; padding-right:15px">
 										<a href="#" class="icon_s" uk-icon="icon: trash"></a>
 									</div>
@@ -301,17 +290,11 @@
 		'imageFadeDuration':200
 	})
 
-	$(document).on('change', '#preset_tag', function() {
-		const time = 60*60*24*30*6;
-		document.cookie = 'presettag=' + encodeURIComponent($('#preset_tag').val()) + ';max-age=' + time;
-	});
-
 	document.body.addEventListener('keydown', function(e) {
 		if($('#function_actor').hasClass('uk-active')) {
-			var csInterface = new CSInterface();
 			if (e.key === 'ArrowLeft') {
-				var linkdActor = $('.actor_sequence_link.linked');
-				for(var i = linkdActor.length - 1; i >= 0; i--) {
+				const linkdActor = $('.actor_sequence_link.linked');
+				for(let i = linkdActor.length - 1; i >= 0; i--) {
 					if(linkdActor.eq(i).hasClass('enable')) {
 						if(i - 1 >= 0) {
 							linkdActor.eq(i - 1).click();
@@ -321,8 +304,8 @@
 				}
 				e.preventDefault();
 			} else if (e.key === 'ArrowRight') {
-				var linkdActor = $('.actor_sequence_link.linked');
-				for(var i = 0; i < linkdActor.length; i++) {
+				const linkdActor = $('.actor_sequence_link.linked');
+				for(let i = 0; i < linkdActor.length; i++) {
 					if(linkdActor.eq(i).hasClass('enable')) {
 						if(i + 1 < linkdActor.length) {
 							linkdActor.eq(i + 1).click();
@@ -349,7 +332,6 @@
 	}, {passive: false});
 
 	function loadSetup() {
-		var csInterface = new CSInterface();
 		var extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
 		csInterface.evalScript('$._PPP_.Setup("' + extPath + '")');
 
@@ -360,8 +342,7 @@
 			for(let i = 0; i < length; i++) {
 				const selectbox = audioTrackSelectBox[i];
 				if(selectbox.val() <= audioTrackNum) {
-					selectbox.removeClass('tdact_setting_error');
-					selectbox.addClass('tdact_setting_ok');
+					setSettingOK(selectbox);
 					selectbox.removeAttr('uk-tooltip');
 					selectbox.removeAttr('max_track_num');
 					while(selectbox.children().length - 1 > audioTrackNum) {
@@ -375,8 +356,7 @@
 						value += 1;
 					}
 				} else {
-					selectbox.removeClass('tdact_setting_ok');
-					selectbox.addClass('tdact_setting_error');
+					setSettingError(selectbox);
 					selectbox.attr('uk-tooltip', trackNum[1] + ' 以下を選択してください');
 					selectbox.attr('max_track_num', trackNum[1]);
 				}
@@ -388,8 +368,7 @@
 			for(let i = 0; i < length; i++) {
 				const selectbox = videoTrackSelectBox[i];
 				if(selectbox.val() <= videoTrackNum) {
-					selectbox.removeClass('tdact_setting_error');
-					selectbox.addClass('tdact_setting_ok');
+					setSettingOK(selectbox);
 					selectbox.removeAttr('uk-tooltip');
 					selectbox.removeAttr('max_track_num');
 					while(selectbox.children().length - 1 > videoTrackNum) {
@@ -403,8 +382,7 @@
 						value += 1;
 					}
 				} else {
-					selectbox.removeClass('tdact_setting_ok');
-					selectbox.addClass('tdact_setting_error');
+					setSettingError(selectbox);
 					selectbox.attr('uk-tooltip', trackNum[0] + ' 以下を選択してください');
 					selectbox.attr('max_track_num', trackNum[0]);
 				}
@@ -417,7 +395,6 @@
 		});
 
 		csInterface.addEventListener('sequenceItemsSelectChanged', function(e) {
-			const csInterface = new CSInterface();
 			csInterface.evalScript('$._PPP_.getSelectedSequenceTrackNum()', function(result) {
 				if(result) {
 					trackNum = result.split(',');
@@ -426,8 +403,7 @@
 					trackNumSelectbox.attr('select_seq_track', videoTrackNum);
 					if(Number($('#trigger_clip_override_target_seq').val()) === 0) {
 						if(Number(trackNumSelectbox.val()) <= videoTrackNum) {
-							trackNumSelectbox.removeClass('tdact_setting_error');
-							trackNumSelectbox.addClass('tdact_setting_ok');
+							setSettingOK(trackNumSelectbox);
 							trackNumSelectbox.removeAttr('uk-tooltip');
 							trackNumSelectbox.removeAttr('max_track_num');
 							while(trackNumSelectbox.children().length - 1 > videoTrackNum) {
@@ -441,8 +417,7 @@
 								value += 1;
 							}
 						} else {
-							trackNumSelectbox.removeClass('tdact_setting_ok');
-							trackNumSelectbox.addClass('tdact_setting_error');
+							setSettingError(trackNumSelectbox);
 							trackNumSelectbox.attr('uk-tooltip', videoTrackNum + ' 以下を選択してください');
 							trackNumSelectbox.attr('max_track_num', videoTrackNum);
 						}
@@ -452,15 +427,15 @@
 			});
 		});
 
-		var cookiesList = document.cookie.split(';');
-		for(let cookie of cookiesList){
-			const c = cookie.split('=');
-			if( c[0] === 'presettag'){
-				$('#preset_tag').val(decodeURIComponent(c[1]));
-			}
-		}
-		const time = 60*60*24*30*6;
-		document.cookie = 'presettag=' + encodeURIComponent($('#preset_tag').val()) + ';max-age=' + time;
+		$('.insert_inpoint').each(function(index, e){
+			$(e).append(SVG_INPOINT_CLIP_ICON);
+		});
+		$('.insert_outpoint').each(function(index, e){
+			$(e).append(SVG_OUTPOINT_CLIP_ICON);
+		});
+		$('.insert_marker').each(function(index, e){
+			$(e).append(SVG_MARKER_ICON);
+		});
 	}
 </script>
 </html>
