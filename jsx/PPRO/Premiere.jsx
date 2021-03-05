@@ -123,7 +123,7 @@ $._PPP_={
 		if(mgtBin){
 			var mgtClip = $._PPP_.searchForClipWithName(mgtName, mgtBin);
 			var seq = app.project.activeSequence;
-
+			
 			if(mgtClip && seq) {
 				var VTrackIndex = 0;
 				var ATrackIndex = 0;
@@ -135,22 +135,13 @@ $._PPP_={
 				}
 				var outPoint = new Time();
 				if (VTrackIndex < seq.videoTracks.numTracks && ATrackIndex < seq.audioTracks.numTracks) {
-					var epsTime = seq.getSettings().videoFrameRate.seconds;
-					var frameRate = 1.0 / epsTime;
 					var targetVideoTrack = seq.videoTracks[VTrackIndex];
 					var targetAudioTrack = seq.audioTracks[ATrackIndex];
 					var splitText = text.split('/');
 
 					for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
 						var clip = targetAudioTrack.clips[i];
-						mgtClip.setOverrideFrameRate(frameRate);
-						outPoint.seconds = clip.outPoint.seconds - clip.inPoint.seconds; 
-						var mod = (outPoint.seconds % epsTime);
-						if(mod * 2 < epsTime) {
-							outPoint.seconds -= mod;
-						} else {
-							outPoint.seconds += epsTime - mod;
-						}
+						outPoint.seconds = clip.outPoint.seconds;
 						mgtClip.setOutPoint(outPoint.ticks, 4)
 						targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);							
 
@@ -600,8 +591,10 @@ $._PPP_={
 
 				var duration = new Time();
 				duration.seconds = $._PPP_.fixTimeError(endTime - startTime, epsTime);
+				clip.setOverrideFrameRate(1/epsTime);
 				clip.setOutPoint(duration.ticks, 4);
 				track.overwriteClip(clip, startTime);
+				clip.setOverrideFrameRate(0);
 
 				if(deleteInsertClip) {
 					var serchIndex = Math.min(i + 1, track.clips.numItems - 1);
@@ -1064,6 +1057,12 @@ $._PPP_={
 			}
 			if (ATrackIndex < activeSeq.audioTracks.numTracks) {
 				var sourceAudioTrack = activeSeq.audioTracks[ATrackIndex];
+				if(startClip) {
+					startClip.setOverrideFrameRate(1 / epsTime);
+				}
+				if(endClip) {
+					endClip.setOverrideFrameRate(1 / epsTime);
+				}
 				for (var sourceClipIndex = 0; sourceClipIndex < sourceAudioTrack.clips.numItems; sourceClipIndex++) {
 					var sourceAudioClip = sourceAudioTrack.clips[sourceClipIndex];
 					if(startClip) {
@@ -1170,6 +1169,12 @@ $._PPP_={
 						endClip.setOutPoint(duration.ticks, 4);
 						targetTrack.overwriteClip(endClip, startTime);
 					}
+				}
+				if(startClip) {
+					startClip.setOverrideFrameRate(0);
+				}
+				if(endClip) {
+					endClip.setOverrideFrameRate(0);
 				}
 			}
 		}
