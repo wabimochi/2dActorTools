@@ -572,7 +572,7 @@ function _ActorStructureSave(save_structure_file_path, currentActorObj)
         };
         const clips = $(groupList[i]).children('.dragitem');
         for(var j = 0; j < clips.length; j++){
-            const crop_path = clips[j].getAttribute('crop_path');
+            let crop_path = clips[j].getAttribute('crop_path');
             const clip_name = clips[j].getAttribute('clip');
             if(crop_path === '' || !fs.existsSync(crop_path)) {
                 if(!crop_dir){
