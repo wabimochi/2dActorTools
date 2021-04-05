@@ -15,7 +15,7 @@ $('#trigger_clip_override_target_seq').on('change', function() {
     const trackNumSelectbox = $('#trigger_clip_override_target_track');
     if(target.val() === '1') {
         videoTrackSelectBox.push($('#trigger_clip_override_target_track'));
-        csInterface.evalScript('$._PPP_.sequenceStructureChanged()');
+        csInterface.evalScript('$._PPP_.SequenceStructureChanged()');
     } else {
         const length = videoTrackSelectBox.length;
         for(let i = 0; i < length; i++){
@@ -100,7 +100,7 @@ function triggerOverriteClip_ExecuteButton() {
     const targetSequence = $('#trigger_clip_override_target_seq').val();
     const startClipEndFlag = getClipEndFlag(startTriggerPathElm.parent());    
     const endClipEndFlag = getClipEndFlag(endTriggerPathElm.parent());
-    csInterface.evalScript('$._PPP_.triggerClipOverwrite("' + targetSequence + '","' + trackNum + '","' + startTriggerClipTreePath + '","' + endTriggerClipTreePath + '","' + startClipEndFlag + '","' + endClipEndFlag + '")', function() {});
+    csInterface.evalScript('$._PPP_.TriggerClipOverwrite("' + targetSequence + '","' + trackNum + '","' + startTriggerClipTreePath + '","' + endTriggerClipTreePath + '","' + startClipEndFlag + '","' + endClipEndFlag + '")', function() {});
 }
 
 CustomInitialize['trigger_clip_custum_initialize'] = function () {
@@ -124,7 +124,7 @@ CustomInitialize['trigger_clip_custum_initialize'] = function () {
         const clipPathInit = function(path, elm) {
             if(path) {
                 elm.html(path);
-                csInterface.evalScript('$._PPP_.existClipTreePath("' + path + '")', function(result) {
+                csInterface.evalScript('$._PPP_.ExistClipTreePath("' + path + '")', function(result) {
                     if(result) {
                         elm.attr('uk-tooltip', path);
                         setSettingOK(elm);

@@ -9,7 +9,7 @@ $('#subtitle_replace_flag').on('change', function() {
 
 function mogrtUpdate() {
     let select_mogrt = document.getElementById('select_mogrt');
-    csInterface.evalScript('$._PPP_.getMGTClipName()', function(names) {
+    csInterface.evalScript('$._PPP_.GetMGTClipName()', function(names) {
         var nameList = names.split(',');
         for(let i = 0; i < nameList.length; i++){
             if(i < select_mogrt.childNodes.length){
@@ -31,7 +31,7 @@ function mogrtUpdate() {
 function importMGT() {
     const mogrtPathList = window.cep.fs.showOpenDialog(true, false, 'モーショングラフィックステンプレート', '', ['.mogrt']).data;
     if(mogrtPathList != '') {
-        csInterface.evalScript('$._PPP_.importMOGRTFile("' + mogrtPathList + '")');
+        csInterface.evalScript('$._PPP_.ImportMOGRTFile("' + mogrtPathList + '")');
     }
 }
 
@@ -48,12 +48,12 @@ function insertSubtitleFromTextarea() {
         }
     }
     const replaceAfter = $('#subtitle_replace_after').val();
-    csInterface.evalScript('$._PPP_.insertSubtitle("' + mogrt.value + '","'
+    csInterface.evalScript('$._PPP_.InsertSubtitle("' + mogrt.value + '","'
     + text.value.slice(text.value.indexOf(presetTag) + 1).replace(/\//g, '').replace(newLineReg, '/').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter) + '")');
 }
 
 function insertSubtitleFromTextFile() {
-    csInterface.evalScript('$._PPP_.getTragetAudioClipMediaPath()', function(result){
+    csInterface.evalScript('$._PPP_.GetTragetAudioClipMediaPath()', function(result){
         let replaceReg = null;
         if($('#subtitle_replace').val() != '') {
             try {
@@ -86,7 +86,7 @@ function insertSubtitleFromTextFile() {
             }
         }
         var mogrt = document.getElementById("select_mogrt");
-        csInterface.evalScript('$._PPP_.insertSubtitle("' + mogrt.value + '","' + textList.join('/') + '")');
+        csInterface.evalScript('$._PPP_.InsertSubtitle("' + mogrt.value + '","' + textList.join('/') + '")');
     });	
 }
 

@@ -315,10 +315,10 @@
 				}
 				e.preventDefault();
 			} else if (e.key === 'ArrowUp') {
-				csInterface.evalScript('$._PPP_.prevEditPoint()');
+				csInterface.evalScript('$._PPP_.PrevEditPoint()');
 				e.preventDefault();
 			} else if (e.key === 'ArrowDown') {
-				csInterface.evalScript('$._PPP_.nextEditPoint()');
+				csInterface.evalScript('$._PPP_.NextEditPoint()');
 				e.preventDefault();
 			} else if((e.key >= '0' && e.key <= '9') || (e.key >= 'a' && e.key <= 'z')){
 				if(e.ctrlKey) {
@@ -395,7 +395,7 @@
 		});
 
 		csInterface.addEventListener('sequenceItemsSelectChanged', function(e) {
-			csInterface.evalScript('$._PPP_.getSelectedSequenceTrackNum()', function(result) {
+			csInterface.evalScript('$._PPP_.GetSelectedSequenceTrackNum()', function(result) {
 				if(result) {
 					trackNum = result.split(',');
 					const videoTrackNum = Number(trackNum[0]);

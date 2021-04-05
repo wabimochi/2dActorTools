@@ -88,7 +88,7 @@ $(document).on('click', '.merker_color_selector', function() {
 $(document).on('click', '.get_select_project_clip', function() {
     const target = $(this);
     const treePath = SetectedProjectItemTreePath;
-    csInterface.evalScript('$._PPP_.existClipTreePath("' + treePath + '")', function(result) {
+    csInterface.evalScript('$._PPP_.ExistClipTreePath("' + treePath + '")', function(result) {
         if(result) {
             target.html(treePath);
             target.attr('uk-tooltip', treePath);

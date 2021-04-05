@@ -99,17 +99,17 @@ $._PPP_={
 				}
 			}
 			
-			var dummyClip = $._PPP_.shallowSearchClip(ActorBinItem, 'dummy.png');
+			var dummyClip = shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
 			if(dummyClip === null) app.project.importFiles([extPath + '/resource/dummy.png'], true, ActorBinItem, false);
 
-			DummyClipNodeID = $._PPP_.shallowSearchClip(ActorBinItem, 'dummy.png').nodeId;
+			DummyClipNodeID =  getDummyClip().nodeId;
 		}
-		app.bind('onActiveSequenceStructureChanged', $._PPP_.sequenceStructureChanged);
-		app.bind("onSourceClipSelectedInProjectPanel", $._PPP_.reportProjectItemSelectionChanged);
-		app.bind('onActiveSequenceSelectionChanged', $._PPP_.reportSequenceItemSelectionChanged)
+		app.bind('onActiveSequenceStructureChanged', $._PPP_.SequenceStructureChanged);
+		app.bind("onSourceClipSelectedInProjectPanel", reportProjectItemSelectionChanged);
+		app.bind('onActiveSequenceSelectionChanged', reportSequenceItemSelectionChanged)
 	},
 
-	sequenceStructureChanged : function () {
+	SequenceStructureChanged : function () {
 		var seq = app.project.activeSequence;
 		if(seq) {
 			eventObj.type = "numTracksNotification";
@@ -118,10 +118,8 @@ $._PPP_={
 		}
 	},
 
-	insertSubtitle : function (mgtName, text){
-		var mgtBin = $._PPP_.searchForBinWithName(MGT_BIN);
-		if(mgtBin){
-			var mgtClip = $._PPP_.searchForClipWithName(mgtName, mgtBin);
+	InsertSubtitle : function (mgtName, text){
+		var mgtClip = searchItemWithTreePath(MGT_BIN + '/' + mgtName, ProjectItemType.CLIP);
 			var seq = app.project.activeSequence;
 			
 			if(mgtClip && seq) {
@@ -156,17 +154,16 @@ $._PPP_={
 					}
 				}
 				else {
-					$._PPP_.updateEventPanel("Track target is unset.");
+				updateEventPanel("Track target is unset.");
 				}
 			}
 			else if(!seq)
-				$._PPP_.updateEventPanel("No active sequence.");
+			updateEventPanel("No active sequence.");
 			else
-				$._PPP_.updateEventPanel(mgtName + " clip is not found.");
-		}
+			updateEventPanel(mgtName + " clip is not found.");
 	},
 
-	getTragetAudioClipMediaPath: function() {
+	GetTragetAudioClipMediaPath: function() {
 		var seq = app.project.activeSequence;
 		var mediaPathList = [];
 		if(seq) {
@@ -183,7 +180,7 @@ $._PPP_={
 		return mediaPathList.join(',');
 	},
 
-	getMGTClipName: function () {
+	GetMGTClipName: function () {
 		var deepSearchMGT = function (root, clipNames) {
 			for (var i = 0; i < root.children.numItems; i++) {
 				if (root.children[i]) {
@@ -197,7 +194,7 @@ $._PPP_={
 				}
 			}
 		};
-		var root = $._PPP_.searchForBinWithName(MGT_BIN);
+		var root = shallowSearch(app.project.rootItem, MGT_BIN, ProjectItemType.BIN);
 		var clipNames = [];
 		if(root) {
 			deepSearchMGT(root, clipNames);
@@ -205,7 +202,7 @@ $._PPP_={
 		return clipNames;
 	},
 
-	captureSelectedClipProperties: function() {
+	CaptureSelectedClipProperties: function() {
 		var seq = app.project.activeSequence;
 		var propertiesNames = [];
 		if(seq) {
@@ -218,18 +215,19 @@ $._PPP_={
 					var propertyNames = {componentName: component.displayName, properties : []};
 					var propertyObject = {componentName: component.displayName, propertyNames : [], propertyValues: []};
 					for(var j = 0; j < component.properties.numItems; j++){
-						if(component.properties[j].displayName !== DISPLAY_NAME_SRC_TEXT) {
-							propertyNames.properties.push({name:component.properties[j].displayName});
-							propertyObject.propertyNames.push(component.properties[j].displayName);
-							if(component.properties[j].displayName.indexOf(LABEL_COLOR) !== -1) {
-								propertyObject.propertyValues.push(component.properties[j].getColorValue());									
+						var properties = component.properties[j];
+						if(properties.displayName !== DISPLAY_NAME_SRC_TEXT) {
+							propertyNames.properties.push({name:properties.displayName});
+							propertyObject.propertyNames.push(properties.displayName);
+							if(properties.displayName.indexOf(LABEL_COLOR) !== -1) {
+								propertyObject.propertyValues.push(properties.getColorValue());									
 							} else {
-								propertyObject.propertyValues.push(component.properties[j].getValue());	
+								propertyObject.propertyValues.push(properties.getValue());	
 							}
 						} else {
-							var srcTextNames = {componentName: component.properties[j].displayName, properties : []};
-							var srcTextPropertyObject = {componentName: component.properties[j].displayName, propertyNames : [], propertyValues: []};
-							var srcTextComponent = JSON.parse(component.properties[j].getValue());						
+							var srcTextNames = {componentName: properties.displayName, properties : []};
+							var srcTextPropertyObject = {componentName: properties.displayName, propertyNames : [], propertyValues: []};
+							var srcTextComponent = JSON.parse(properties.getValue());						
 							for(var p in srcTextComponent) {
 								srcTextNames.properties.push({name:p});
 								srcTextPropertyObject.propertyNames.push(p);
@@ -248,7 +246,7 @@ $._PPP_={
 		return JSON.stringify(wrapper);
 	},
 
-	deployCapturedProperties: function(deployParams) {
+	DeployCapturedProperties: function(deployParams) {
 		var deployObj = deployParams;
 		for(var i = 0; i < deployObj.components.length; i++) {
 			var componetName = deployObj.components[i].componentName;
@@ -315,7 +313,7 @@ $._PPP_={
 		}
 	},
 
-	getActorBinName: function() {
+	GetActorBinName: function() {
 		var actBin = ActorBinItem;
 		var binNames = [];
 		if(actBin) {
@@ -328,7 +326,7 @@ $._PPP_={
 		return binNames;
 	},
 
-	getActorStructure: function(binName) {
+	GetActorStructure: function(binName) {
 		var deepSearchActStructure = function (root, actorStructure) {
 			for (var i = 0; i < root.children.numItems; i++) {
 				if (root.children[i]) {
@@ -343,8 +341,7 @@ $._PPP_={
 				}
 			}
 		};
-
-		var root = $._PPP_.searchForBinWithName(binName, ActorBinItem);
+		var root = shallowSearch(ActorBinItem, binName, ProjectItemType.BIN);
 		var actorStructure = [];
 		if(root) {
 			deepSearchActStructure(root, actorStructure);
@@ -352,7 +349,7 @@ $._PPP_={
 		return actorStructure;
 	},
 
-	getCurrentActorClipTreePath: function(sequenceIndex, currentTime) {
+	GetCurrentActorClipTreePath: function(sequenceIndex, currentTime) {
 		if(currentTime < 0) {
 			var aseq = app.project.activeSequence;
 			if(aseq) {
@@ -364,9 +361,6 @@ $._PPP_={
 		if(seq) {
 			for(var i = 0; i < seq.videoTracks.numTracks; i++){
 				var clips = seq.videoTracks[i].clips;
-				if(clips.numItems === 0) {
-					treePathList.push('delete');
-				} else {
 					var j = 0;
 					for(; j < clips.numItems; j++) {
 						if(currentTime >= clips[j].start.seconds && currentTime < clips[j].end.seconds) {
@@ -380,11 +374,10 @@ $._PPP_={
 					}
 				}
 			}
-		}
 		return treePathList;
 	},
 
-	importMOGRTFile: function(pathList) {
+	ImportMOGRTFile: function(pathList) {
 		var seq = app.project.activeSequence;
 		if(seq) {
 			var vlocked = [];
@@ -418,25 +411,8 @@ $._PPP_={
 		}
 	},
 
-	getActorClipWithTreePath: function(actorName, treePath) {
-		var actBin = $._PPP_.shallowSearchBin(ActorBinItem, actorName);
-		var sepIndex = treePath.indexOf('/', 0);
-		var oldIndex = 0;
-		while(sepIndex !== -1){
-			var binName = treePath.slice(oldIndex, sepIndex);
-			actBin = $._PPP_.shallowSearchBin(actBin, binName);
-			if(!actBin) return null;
-			oldIndex = sepIndex + 1;
-			sepIndex = treePath.indexOf('/', sepIndex + 1);
-		}
-		if(actBin && oldIndex < treePath.length){
-			return $._PPP_.shallowSearchClip(actBin, treePath.slice(oldIndex));
-		}
-		return null;
-	},
-
-	getActorStructureMediaPath: function(actorName) {
-		var actBin = $._PPP_.shallowSearchBin(ActorBinItem, actorName);
+	GetActorStructureMediaPath: function(actorName) {
+		var actBin = shallowSearch(ActorBinItem, actorName, ProjectItemType.BIN);
 		var mediaPathList = [];
 		if(actBin) {
 			for(var i = 0; i < actBin.children.numItems; i++) {
@@ -454,10 +430,10 @@ $._PPP_={
 		return mediaPathList.join(',');
 	},
 
-	getSettingsMediaPath: function() {
+	GetSettingsMediaPath: function() {
 		var mediaPath = "";
 		if(ActorBinItem) {
-			var file = $._PPP_.shallowSearchFile(ActorBinItem, SETTINGS_FILENAME);
+			var file = shallowSearch(ActorBinItem, SETTINGS_FILENAME, ProjectItemType.FILE);
 			if(file) {
 				mediaPath = file.getMediaPath();
 			}
@@ -465,27 +441,27 @@ $._PPP_={
 		return mediaPath;
 	},
 
-	importSettingsFile: function(path) {
+	ImportSettingsFile: function(path) {
 		if(ActorBinItem) {
 			return app.project.importFiles([path], true, ActorBinItem, false);
 		}
 		return false;
 	},
 
-	setLinkSequence: function(index) {
+	SetLinkSequence: function(index) {
 		var seq = app.project.activeSequence;
 		if(seq) {
 			var sel = seq.getSelection();
 			if (sel && (sel !== "Connection to object lost")){
 				if(sel.length === 0) return LINKERROR_SEQUENCE_NOT_SELECT;
 				if(sel.length !== 1) return LINKERROR_SEQUENCE_MULTIPLE_SELECT;
-				if (sel[0].name !== 'anonymous' && sel[0].projectItem && sel[0].projectItem.isSequence()) {
-					for(var i = 0; i < app.project.sequences.numSequences; i++){
-						if(sel[0].projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
-							linkSequence[index] = app.project.sequences[i];
+				if(sel[0].name !== 'anonymous' && sel[0].projectItem && sel[0].projectItem.isSequence()) {
+					var linkSeq = clipToSequence(sel[0]);
+					if(linkSeq !== null) {
+						linkSequence[index] = linkSeq;
+						linkSequenceClip[index] = sel[0];
 							return SEQUENCE_LINK_SUCCESS;
 						}
-					}
 				} else {
 					return LINKERROR_SELECT_ITEM_ISNOT_SEQUENCE;
 				}
@@ -496,7 +472,7 @@ $._PPP_={
 		return LINKERROR_NO_ACTIVE_SEQUENCE;
 	},
 
-	insertActorClip: function(actorName, sequenceIndex, trackIndex, clipTreePath, startTime, endFlag) {
+	InsertActorClip: function(actorName, sequenceIndex, trackIndex, clipTreePath, startTime, endFlag) {
 		if(startTime < 0) {
 			var aseq = app.project.activeSequence;
 			if(aseq) {
@@ -507,10 +483,10 @@ $._PPP_={
 		var clip = null;
 		var deleteInsertClip = false;
 		if(clipTreePath === 'delete') {
-			clip = $._PPP_.getDummyClip();
+			clip = getDummyClip();
 			deleteInsertClip = true;
 		} else {
-			clip = $._PPP_.getActorClipWithTreePath(actorName, clipTreePath);
+			clip = getActorClipWithTreePath(actorName, clipTreePath);
 			if(clip === null) {
 				alert('clip not found\n' + actorName + '/' + clipTreePath);
 				return;
@@ -549,58 +525,21 @@ $._PPP_={
 				if(seq.getOutPointAsTime().seconds > 0) {
 					endTime = seq.getOutPointAsTime().seconds;
 				}
-				var i = clips.numItems - 1;
-				if(endFlag & ACT_CLIPEND_END) {
-					for(; i >= 0 ; i--){
-						if(startTime < clips[i].end.seconds ) {
-							endTime = Math.min(endTime, clips[i].end.seconds);
-						} else {
-							i = Math.min(i + 1, clips.numItems - 1);
-							break;
-						}
-					}
-				}
-				if(endFlag & ACT_CLIPEND_START) {
-					for(; i >= 0 ; i--){
-						if(startTime < clips[i].start.seconds) {
-							endTime = Math.min(endTime, clips[i].start.seconds);
-						} else {
-							break;
-						}
-					}
-				}
 
+				endTime = getNextClipTime(clips, endFlag, startTime, endTime);
 				if(endFlag & ACT_CLIPEND_MARKER) {
-					for(var j = seq.markers.numMarkers - 1; j >= 0 ; j--){
-						if(startTime < seq.markers[j].start.seconds) {
-							if(startTime < seq.markers[j].start.seconds) {
-								endTime = Math.min(endTime, seq.markers[j].start.seconds);
-							} else {
-								break;
+					endTime = getNextMarkerTime(seq.markers, startTime, endTime);
 							}
-						}
-						if(seq.markers[j].end.seconds < startTime) {
-							if(startTime < seq.markers[j].end.seconds) {
-								endTime = Math.min(endTime, seq.markers[j].end.seconds);
-							} else {
-								break;
-							}
-						}
-					}
-				}
 
 				var duration = new Time();
-				duration.seconds = $._PPP_.fixTimeError(endTime - startTime, epsTime);
+				duration.seconds = fixTimeError(endTime - startTime, epsTime);
 				clip.setOverrideFrameRate(1/epsTime);
 				clip.setOutPoint(duration.ticks, 4);
 				track.overwriteClip(clip, startTime);
 				clip.setOverrideFrameRate(0);
 
 				if(deleteInsertClip) {
-					var serchIndex = Math.min(i + 1, track.clips.numItems - 1);
-					if(endFlag & ACT_CLIPEND_MARKER) {
-						serchIndex = track.clips.numItems - 1;
-					}
+					var serchIndex = track.clips.numItems - 1;
 					for(var j = serchIndex; j >= 0 ; j--){
 						if(track.clips[j].projectItem.nodeId === DummyClipNodeID) {
 							track.clips[j].setSelected(true, false);
@@ -612,42 +551,16 @@ $._PPP_={
 		}
 	},
 
-	shallowSearchBin: function(root, name) {
-		for(var i = 0; i < root.children.numItems; i++) {
-			if(root.children[i].type === ProjectItemType.BIN && root.children[i].name === name) {
-				return root.children[i];
-			}
-		}
-		return null;
-	},
-
-	shallowSearchClip: function(root, name) {
-		for(var i = 0; i < root.children.numItems; i++) {
-			if(root.children[i].type === ProjectItemType.CLIP && root.children[i].name === name) {
-				return root.children[i];
-			}
-		}
-		return null;
-	},
-
-	shallowSearchFile: function(root, name) {
-		for(var i = 0; i < root.children.numItems; i++) {
-			if(root.children[i].type === ProjectItemType.FILE && root.children[i].name === name) {
-				return root.children[i];
-			}
-		}
-		return null;
-	},
-
-	nextEditPoint: function() {
+	NextEditPoint: function() {
 		var seq = app.project.activeSequence;
 		if(seq) {
 			var currentPlayerPos = seq.getPlayerPosition();
 			currentPlayerPos.seconds += seq.getSettings().videoFrameRate.seconds * 0.9;
 			var minSeconds = Number.MAX_VALUE;
-			for(var i = 0; i < seq.videoTracks.numTracks; i++) {
-				if(seq.videoTracks[i].isTargeted()) {
-					var targetTrack = seq.videoTracks[i];
+			var check = function(tracks) {
+				for(var i = 0; i < tracks.numTracks; i++) {
+					if(tracks[i].isTargeted()) {
+						var targetTrack = tracks[i];
 					for(var j = 0; j < targetTrack.clips.numItems; j++){
 						if(currentPlayerPos.seconds < targetTrack.clips[j].start.seconds) {
 							minSeconds = Math.min(minSeconds, targetTrack.clips[j].start.seconds);
@@ -660,36 +573,25 @@ $._PPP_={
 					}
 				}
 			}
-			for(var i = 0; i < seq.audioTracks.numTracks; i++) {
-				if(seq.audioTracks[i].isTargeted()) {
-					var targetTrack = seq.audioTracks[i];
-					for(var j = 0; j < targetTrack.clips.numItems; j++){
-						if(currentPlayerPos.seconds < targetTrack.clips[j].start.seconds) {
-							minSeconds = Math.min(minSeconds, targetTrack.clips[j].start.seconds);
-							break;
 						}
-						if(currentPlayerPos.seconds < targetTrack.clips[j].end.seconds) {
-							minSeconds = Math.min(minSeconds, targetTrack.clips[j].end.seconds);
-							break;
-						}
-					}
-				}
-			}
+			check(seq.videoTracks);
+			check(seq.audioTracks);
 			var epsTime = seq.getSettings().videoFrameRate.seconds;
-			currentPlayerPos.seconds = $._PPP_.fixTimeError(minSeconds, epsTime);
+			currentPlayerPos.seconds = fixTimeError(minSeconds, epsTime);
 			seq.setPlayerPosition(currentPlayerPos.ticks);
 		}
 	},
 
-	prevEditPoint: function() {
+	PrevEditPoint: function() {
 		var seq = app.project.activeSequence;
 		if(seq) {
 			var currentPlayerPos = seq.getPlayerPosition();
 			currentPlayerPos.seconds -= seq.getSettings().videoFrameRate.seconds * 0.9;
 			var maxSeconds = 0;
-			for(var i = 0; i < seq.videoTracks.numTracks; i++) {
-				if(seq.videoTracks[i].isTargeted()) {
-					var targetTrack = seq.videoTracks[i];
+			var check = function(tracks) {
+				for(var i = 0; i < tracks.numTracks; i++) {
+					if(tracks[i].isTargeted()) {
+						var targetTrack = tracks[i];
 					for(var j = targetTrack.clips.numItems - 1; j >= 0; j--){
 						if(currentPlayerPos.seconds > targetTrack.clips[j].end.seconds) {
 							maxSeconds = Math.max(maxSeconds, targetTrack.clips[j].end.seconds);
@@ -699,131 +601,34 @@ $._PPP_={
 							maxSeconds = Math.max(maxSeconds, targetTrack.clips[j].start.seconds);
 							break;
 						}
-
 					}
 				}
 			}
-			for(var i = 0; i < seq.audioTracks.numTracks; i++) {
-				if(seq.audioTracks[i].isTargeted()) {
-					var targetTrack = seq.audioTracks[i];
-					for(var j = targetTrack.clips.numItems - 1; j >= 0; j--){
-						if(currentPlayerPos.seconds > targetTrack.clips[j].end.seconds) {
-							maxSeconds = Math.max(maxSeconds, targetTrack.clips[j].end.seconds);
-							break;
 						}
-						if(currentPlayerPos.seconds > targetTrack.clips[j].start.seconds) {
-							maxSeconds = Math.max(maxSeconds, targetTrack.clips[j].start.seconds);
-							break;
-						}
-
-					}
-				}
-			}
-
+			check(seq.videoTracks);
+			check(seq.audioTracks);
 			var epsTime = seq.getSettings().videoFrameRate.seconds;
-			currentPlayerPos.seconds = $._PPP_.fixTimeError(maxSeconds, epsTime);
+			currentPlayerPos.seconds = fixTimeError(maxSeconds, epsTime);
 			seq.setPlayerPosition(currentPlayerPos.ticks);
 		}
 	},
 
-	createActorSequence: function(actorName, baseClipTreePath) {
+	CreateActorSequence: function(actorName, baseClipTreePath) {
 		var seqName	= prompt('Name of sequence?', actorName, 'Sequence Naming Prompt');
 		if(seqName !== 'null') {
-			var clip = $._PPP_.getActorClipWithTreePath(actorName, baseClipTreePath);
+			var clip = getActorClipWithTreePath(actorName, baseClipTreePath);
 			app.project.createNewSequenceFromClips(seqName, [clip], app.project.rootItem);
 		}
 	},
 
-	getDummyClip: function() {
-		return $._PPP_.shallowSearchClip(ActorBinItem, 'dummy.png');
-	},
-
-	keepPanelLoaded : function () {
-		app.setExtensionPersistent("com.mochi.2dActorTools", 0);
-	},
-
-	searchForBinWithName : function (nameToFind, root) {
-		// deep-search a folder by name in project
-		var deepSearchBin = function (inFolder) {
-			if (inFolder && inFolder.name === nameToFind && inFolder.type === 2) {
-				return inFolder;
-			} else {
-				for (var i = 0; i < inFolder.children.numItems; i++) {
-					if (inFolder.children[i] && inFolder.children[i].type === 2) {
-						var foundBin = deepSearchBin(inFolder.children[i]);
-						if (foundBin) {
-							return foundBin;
-						}
-					}
-				}
-			}
-		};
-		if(root)
-			return deepSearchBin(root);
-		else
-			return deepSearchBin(app.project.rootItem);
-	},
-
-	searchForClipWithName: function (nameToFind, root) {
-		var deepSearchClip = function (root, nameToFind) {
-			for (var i = 0; i < root.children.numItems; i++) {
-				if (root.children[i]) {
-					if (root.children[i].type === ProjectItemType.BIN) {
-						var foundClip = deepSearchClip(root.children[i], nameToFind);
-						if (foundClip) {
-							return foundClip;
-						}
-					}
-					else if (root.children[i].type === ProjectItemType.CLIP && root.children[i].name === nameToFind) {
-						return root.children[i];
-					}
-				}
-			}
-			return false;
-		};
-		return deepSearchClip(root, nameToFind);
-	},
-
-	searchForBinWithTreePath : function (treePath, root) {
-		var sepIndex = treePath.indexOf('/', 0);
-		var oldIndex = 0;
-		while(sepIndex !== -1){
-			var binName = treePath.slice(oldIndex, sepIndex);
-			root = $._PPP_.shallowSearchBin(root, binName);
-			if(!root) return null;
-			oldIndex = sepIndex + 1;
-			sepIndex = treePath.indexOf('/', sepIndex + 1);
-		}
-		if(root && oldIndex < treePath.length){
-			return $._PPP_.shallowSearchBin(root, treePath.slice(oldIndex));
-		}
-		return null;
-	},
-
-	searchForClipWithTreePath : function (treePath, root) {
-		var sepIndex = treePath.indexOf('/', 0);
-		var oldIndex = 0;
-		while(sepIndex !== -1){
-			var binName = treePath.slice(oldIndex, sepIndex);
-			root = $._PPP_.shallowSearchBin(root, binName);
-			if(!root) return null;
-			oldIndex = sepIndex + 1;
-			sepIndex = treePath.indexOf('/', sepIndex + 1);
-		}
-		if(root && oldIndex < treePath.length){
-			return $._PPP_.shallowSearchClip(root, treePath.slice(oldIndex));
-		}
-		return null;
-	},
-
-	importActorStructureFile : function (path, actName) {
+	ImportActorStructureFile : function (path, actName) {
 		if (app.project && path) {
-			var insertBin = $._PPP_.shallowSearchBin(ActorBinItem, actName);
+			var insertBin = shallowSearch(ActorBinItem, actName, ProjectItemType.BIN);
 			return app.project.importFiles([path], true, insertBin, false);
 		}
 	},
 
-	importFiles : function (path, trackIndex, importBinTreePath) {
+	ImportFiles : function (path, trackIndex, importBinTreePath) {
 		var pathList = path.split('\\');
 		var trackIndexList = trackIndex.split('\\');
 		var binTreePathList = importBinTreePath.split('\\');
@@ -837,7 +642,7 @@ $._PPP_={
 			importSet[binTreePathList[i]].push(pathList[i]);
 		}
 		for(var key in importSet) {
-			var importBin = $._PPP_.searchForBinWithTreePath(key, app.project.rootItem);
+			var importBin = searchItemWithTreePath(key, ProjectItemType.BIN);
 			if(importBin) {
 				app.project.importFiles(importSet[key], true, importBin, false);
 			}
@@ -850,9 +655,9 @@ $._PPP_={
 				var targetTrackIndex = trackIndexList[i];
 				if(trackIndexList[i] >= 0) {
 					var targetPath = pathList[i];
-					var importBin = $._PPP_.searchForBinWithTreePath(binTreePathList[i], app.project.rootItem);
+					var importBin = searchItemWithTreePath(binTreePathList[i], ProjectItemType.BIN);
 					var clipName = targetPath.slice(targetPath.lastIndexOf('/') + 1);
-					var projectItem = $._PPP_.shallowSearchClip(importBin, clipName);
+					var projectItem = shallowSearch(importBin, clipName, ProjectItemType.CLIP);
 					var targetAudioTrack = seq.audioTracks[targetTrackIndex];
 					targetAudioTrack.overwriteClip(projectItem, seq.getPlayerPosition().seconds);
 					for (var j = 0; j < targetAudioTrack.clips.numItems; j++) {
@@ -865,16 +670,6 @@ $._PPP_={
 				}
 			}
 		}
-	},
-
-	fixTimeError : function(seconds, epsTime) {
-		var mod = (seconds % epsTime);
-		if(mod * 2 < epsTime) {
-			seconds -= mod;
-		} else {
-			seconds += epsTime - mod;
-		}
-		return seconds;
 	},
 
 	AutoNewLine_GetSourceText : function() {
@@ -937,7 +732,7 @@ $._PPP_={
 				}
 				if(_markerColorIndex[i] !== '-1') {
 					var clipTime = OperationTargetList[i].start.seconds;
-					clipTime = $._PPP_.fixTimeError(clipTime, epsTime);
+					clipTime = fixTimeError(clipTime, epsTime);
 					var marker = markers.createMarker(clipTime);
 					marker.setColorByIndex(Number(_markerColorIndex[i]));
 					marker.comments = _textList[i];
@@ -965,48 +760,21 @@ $._PPP_={
 		return text;
 	},
 
-	getSelectedBinTreePath : function() {
-		var treePath = app.project.getInsertionBin().treePath;
-		var index = treePath.indexOf('\\', 1);
-		if(index > 0) {
-			treePath = treePath.slice(treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
-			return treePath;
-		}
-		return '';
-	},
-
-	existBinTreePath : function(treePath) {
-		if($._PPP_.searchForBinWithTreePath(treePath, app.project.rootItem)) {
+	ExistBinTreePath : function(treePath) {
+		if(searchItemWithTreePath(treePath, ProjectItemType.BIN)) {
 			return true;
 		}
 		return '';
 	},
 	
-	existClipTreePath : function(treePath) {
-		if($._PPP_.searchForClipWithTreePath(treePath, app.project.rootItem)) {
+	ExistClipTreePath : function(treePath) {
+		if(searchItemWithTreePath(treePath, ProjectItemType.CLIP)) {
 			return true;
 		}
 		return '';
 	},
 
-	reportProjectItemSelectionChanged : function (e) { // Note: This message is also triggered when the user opens or creates a new project. 
-		var projectItems = e;
-		if (projectItems){
-			if (projectItems.length) {
-				eventObj.type = "projectItemsSelect";
-				eventObj.data = projectItems[0].treePath.slice(projectItems[0].treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
-				eventObj.dispatch();
-			}
-		}
-	},
-
-	reportSequenceItemSelectionChanged : function () {
-		eventObj.type = "sequenceItemsSelectChanged";
-		eventObj.data = '';
-		eventObj.dispatch();
-	},
-
-	getSelectedSequenceTrackNum : function() {
+	GetSelectedSequenceTrackNum : function() {
 		var seq = app.project.activeSequence;
 		if(seq) {
 			var selection = seq.getSelection();
@@ -1024,7 +792,7 @@ $._PPP_={
 		return '';
 	},
 
-	triggerClipOverwrite : function(targetSeqFlag, trackIndex, startClipTreePath, endClipTreePath, startTriggerInsertFlag, endTriggerInsertFlag) {
+	TriggerClipOverwrite : function(targetSeqFlag, trackIndex, startClipTreePath, endClipTreePath, startTriggerInsertFlag, endTriggerInsertFlag) {
 		var seq = app.project.activeSequence;
 		var activeSeq = app.project.activeSequence;
 		if(targetSeqFlag == 0) {
@@ -1048,8 +816,8 @@ $._PPP_={
 			if(trackIndex >= seq.videoTracks.numTracks) return;
 			var targetTrack = seq.videoTracks[trackIndex];
 			var epsTime = seq.getSettings().videoFrameRate.seconds;
-			var startClip = $._PPP_.searchForClipWithTreePath(startClipTreePath, app.project.rootItem);
-			var endClip = $._PPP_.searchForClipWithTreePath(endClipTreePath, app.project.rootItem);
+			var startClip = searchItemWithTreePath(startClipTreePath, ProjectItemType.CLIP);
+			var endClip = searchItemWithTreePath(endClipTreePath, ProjectItemType.CLIP);
 
 			var ATrackIndex = 0;
 			for(; ATrackIndex < activeSeq.audioTracks.numTracks; ATrackIndex++) {
@@ -1063,111 +831,29 @@ $._PPP_={
 				if(endClip) {
 					endClip.setOverrideFrameRate(1 / epsTime);
 				}
+				var insertClip = function(clip, startTime, endFlag) {
+						var clips = targetTrack.clips;
+						var endTime = startTime + 60 * 60;
+						if(seq.getOutPointAsTime().seconds > 0) {
+							endTime = seq.getOutPointAsTime().seconds;
+						}
+					endTime = getNextClipTime(clips, endFlag, startTime, endTime);
+					if(endFlag & ACT_CLIPEND_MARKER) {
+						endTime = getNextMarkerTime(seq.markers, startTime, endTime);
+					}
+					var duration = new Time();
+					duration.seconds = fixTimeError(endTime - startTime, epsTime);
+					clip.setOutPoint(duration.ticks, 4);
+					targetTrack.overwriteClip(clip, startTime);
+				}
+
 				for (var sourceClipIndex = 0; sourceClipIndex < sourceAudioTrack.clips.numItems; sourceClipIndex++) {
 					var sourceAudioClip = sourceAudioTrack.clips[sourceClipIndex];
 					if(startClip) {
-						var clips = targetTrack.clips;
-						var endFlag = startTriggerInsertFlag;
-						var startTime = sourceAudioClip.start.seconds;
-						var endTime = startTime + 60 * 60;
-						if(seq.getOutPointAsTime().seconds > 0) {
-							endTime = seq.getOutPointAsTime().seconds;
-						}
-						var i = clips.numItems - 1;
-						if(endFlag & ACT_CLIPEND_END) {
-							for(; i >= 0 ; i--){
-								if(startTime < clips[i].end.seconds ) {
-									endTime = Math.min(endTime, clips[i].end.seconds);
-								} else {
-									i = Math.min(i + 1, clips.numItems - 1);
-									break;
-								}
-							}
-						}
-						if(endFlag & ACT_CLIPEND_START) {
-							for(; i >= 0 ; i--){
-								if(startTime < clips[i].start.seconds) {
-									endTime = Math.min(endTime, clips[i].start.seconds);
-								} else {
-									break;
-								}
-							}
-						}
-		
-						if(endFlag & ACT_CLIPEND_MARKER) {
-							for(var j = seq.markers.numMarkers - 1; j >= 0 ; j--){
-								if(startTime < seq.markers[j].start.seconds) {
-									if(startTime < seq.markers[j].start.seconds) {
-										endTime = Math.min(endTime, seq.markers[j].start.seconds);
-									} else {
-										break;
-									}
-								}
-								if(seq.markers[j].end.seconds < startTime) {
-									if(startTime < seq.markers[j].end.seconds) {
-										endTime = Math.min(endTime, seq.markers[j].end.seconds);
-									} else {
-										break;
-									}
-								}
-							}
-						}
-						var duration = new Time();
-						duration.seconds = $._PPP_.fixTimeError(endTime - startTime, epsTime);
-						startClip.setOutPoint(duration.ticks, 4);
-						targetTrack.overwriteClip(startClip, startTime);
+						insertClip(startClip, sourceAudioClip.start.seconds, startTriggerInsertFlag);
 					}
 					if(endClip) {
-						var clips = targetTrack.clips;
-						var endFlag = endTriggerInsertFlag;
-						var startTime = sourceAudioClip.end.seconds;
-						var endTime = startTime + 60 * 60;
-						if(seq.getOutPointAsTime().seconds > 0) {
-							endTime = seq.getOutPointAsTime().seconds;
-						}
-						var i = clips.numItems - 1;
-						if(endFlag & ACT_CLIPEND_END) {
-							for(; i >= 0 ; i--){
-								if(startTime < clips[i].end.seconds ) {
-									endTime = Math.min(endTime, clips[i].end.seconds);
-								} else {
-									i = Math.min(i + 1, clips.numItems - 1);
-									break;
-								}
-							}
-						}
-						if(endFlag & ACT_CLIPEND_START) {
-							for(; i >= 0 ; i--){
-								if(startTime < clips[i].start.seconds) {
-									endTime = Math.min(endTime, clips[i].start.seconds);
-								} else {
-									break;
-								}
-							}
-						}
-		
-						if(endFlag & ACT_CLIPEND_MARKER) {
-							for(var j = seq.markers.numMarkers - 1; j >= 0 ; j--){
-								if(startTime < seq.markers[j].start.seconds) {
-									if(startTime < seq.markers[j].start.seconds) {
-										endTime = Math.min(endTime, seq.markers[j].start.seconds);
-									} else {
-										break;
-									}
-								}
-								if(seq.markers[j].end.seconds < startTime) {
-									if(startTime < seq.markers[j].end.seconds) {
-										endTime = Math.min(endTime, seq.markers[j].end.seconds);
-									} else {
-										break;
-									}
-								}
-							}
-						}
-						var duration = new Time();
-						duration.seconds = $._PPP_.fixTimeError(endTime - startTime, epsTime);
-						endClip.setOutPoint(duration.ticks, 4);
-						targetTrack.overwriteClip(endClip, startTime);
+						insertClip(endClip, sourceAudioClip.end.seconds, endTriggerInsertFlag);
 					}
 				}
 				if(startClip) {
@@ -1177,16 +863,159 @@ $._PPP_={
 					endClip.setOverrideFrameRate(0);
 				}
 			}
-		}
-	},
-
-	updateEventPanel : function (message) {
-		app.setSDKEventMessage(message, 'info');
-		//app.setSDKEventMessage('Here is a warning.', 'warning');
-		//app.setSDKEventMessage('Here is an error.', 'error');  // Very annoying; use sparingly.
+								}
 	},
 
 	setLocale : function (localeFromCEP) {
 		$.locale = localeFromCEP;
 	},
+
 };
+
+function getClipLocalTime (clip, time) {
+	return time + clip.inPoint.seconds - clip.start.seconds;
+							}
+
+function getActorClipWithTreePath(actorName, treePath) {
+	return searchItemWithTreePath(ActorBinItem.name + '/' + actorName + '/' + treePath, ProjectItemType.CLIP);
+						}
+
+function shallowSearch(root, name, projectItemType) {
+	for(var i = 0; i < root.children.numItems; i++) {
+		if(root.children[i].type === projectItemType && root.children[i].name === name) {
+			return root.children[i];
+								}
+							}
+	return null;
+						}
+		
+function searchItemWithTreePath (treePath, type) {
+    var sepIndex = treePath.indexOf('/', 0);
+    var oldIndex = 0;
+    var root = app.project.rootItem;
+    while(sepIndex !== -1){
+        var binName = treePath.slice(oldIndex, sepIndex);
+        root = shallowSearch(root, binName, ProjectItemType.BIN);
+        if(!root) return null;
+        oldIndex = sepIndex + 1;
+        sepIndex = treePath.indexOf('/', sepIndex + 1);
+    }
+    if(root && oldIndex < treePath.length){
+        return shallowSearch(root, treePath.slice(oldIndex), type);
+    }
+    return null;
+									}
+
+function getDummyClip() {
+	return shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
+								}
+
+function fixTimeError(seconds, epsTime) {
+    var mod = (seconds % epsTime);
+    if(mod * 2 < epsTime) {
+        seconds -= mod;
+									} else {
+        seconds += epsTime - mod;
+								}
+    return seconds;
+							}
+
+function clipToSequence(clip) {
+    for(var i = 0; i < app.project.sequences.numSequences; i++){
+        if(clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
+            return app.project.sequences[i];
+						}
+					}
+    return null;
+						}
+
+function getNextClipTime(clips, endFlag, startSeconds, endSeconds) {
+						var i = clips.numItems - 1;
+						if(endFlag & ACT_CLIPEND_END) {
+							for(; i >= 0 ; i--){
+            if(startSeconds < clips[i].end.seconds ) {
+                endSeconds = Math.min(endSeconds, clips[i].end.seconds);
+								} else {
+									i = Math.min(i + 1, clips.numItems - 1);
+									break;
+								}
+							}
+						}
+						if(endFlag & ACT_CLIPEND_START) {
+							for(; i >= 0 ; i--){
+            if(startSeconds < clips[i].start.seconds) {
+                endSeconds = Math.min(endSeconds, clips[i].start.seconds);
+								} else {
+									break;
+								}
+							}
+						}
+    return endSeconds;
+}
+		
+function getNextMarkerTime(markers, startSeconds, endSeconds) {
+    for(var i = markers.numMarkers - 1; i >= 0 ; i--){
+        if(startSeconds < markers[i].start.seconds) {
+            if(startSeconds < markers[i].start.seconds) {
+                endSeconds = Math.min(endSeconds, markers[i].start.seconds);
+									} else {
+										break;
+									}
+								}
+        if(markers[i].end.seconds < startSeconds) {
+            if(startSeconds < markers[i].end.seconds) {
+                endSeconds = Math.min(endSeconds, markers[i].end.seconds);
+									} else {
+										break;
+									}
+								}
+							}
+    return endSeconds;
+}
+
+function updateEventPanel(message) {
+    app.setSDKEventMessage(message, 'info');
+    //app.setSDKEventMessage('Here is a warning.', 'warning');
+    //app.setSDKEventMessage('Here is an error.', 'error');  // Very annoying; use sparingly.
+}
+
+function getComponentObject(clip, componentName) {
+	var component = null;
+	for(var i = 0; i < clip.components.numItems; i++) {
+		if(clip.components[i].displayName === componentName) {
+			component = clip.components[i];
+						}
+					}
+	return component;
+				}
+
+function getPropertyObject (component, propertyNames) {
+	var propertyRoot = component;
+	for(var i = 0; i < propertyNames.length; i++) {
+		const propertyName = propertyNames[i];
+		for(var j = 0; j < propertyRoot.properties.numItems; j++){
+			if(propertyRoot.properties[j].displayName === propertyName) {
+				propertyRoot = propertyRoot.properties[j];
+				break;
+				}
+				}
+			}
+	return propertyRoot;
+		}
+
+function reportProjectItemSelectionChanged(e) {
+    var projectItems = e;
+    if (projectItems){
+        if (projectItems.length) {
+            eventObj.type = "projectItemsSelect";
+            eventObj.data = projectItems[0].treePath.slice(projectItems[0].treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
+            eventObj.dispatch();
+        }
+    }
+}
+
+function reportSequenceItemSelectionChanged() {
+    eventObj.type = "sequenceItemsSelectChanged";
+    eventObj.data = '';
+    eventObj.dispatch();
+}

@@ -18,7 +18,7 @@ $(document).on('click', '.propertyDeploy>div>div', function(e){
 });
 
 function propertyCapture() {
-    csInterface.evalScript('$._PPP_.captureSelectedClipProperties()', function(propertiesNames) {
+    csInterface.evalScript('$._PPP_.CaptureSelectedClipProperties()', function(propertiesNames) {
         $('#capturedParameters').empty();
         const obj = JSON.parse(propertiesNames);
         for(let i = 0; i < obj.components.length; i++) {
@@ -59,5 +59,5 @@ function propertyDeploy() {
     }
     const wrapper = {components:componentList};
 
-    csInterface.evalScript('$._PPP_.deployCapturedProperties(' + JSON.stringify(wrapper) + ')');
+    csInterface.evalScript('$._PPP_.DeployCapturedProperties(' + JSON.stringify(wrapper) + ')');
 }
