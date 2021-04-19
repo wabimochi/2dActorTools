@@ -80,6 +80,7 @@ var fAnimationSourceClips = null;
 var fAnimationSourceClipsLength = 0;
 var fAnimationMarkers = null;
 var fAnimationSequence = null;
+var fAnimationProperties = null;
 var fLinkedSequence = null;
 var fAnimationKeypoints = null;
 var fAnimationStartTime = null;
@@ -969,9 +970,16 @@ $._PPP_={
 			fAnimationSourceClipsLength = fAnimationSourceClips.numItems;
 		}
 
-		initializeKey(fAnimationSequence, 0, 100);
-		for(var i = 1; i < fAnimationSequence.videoTracks.numTracks; i++){
-			initializeKey(fAnimationSequence, i, 0);
+		fAnimationProperties = [];
+		for(var i = 0; i < fAnimationSequence.videoTracks.numTracks; i++){
+			var component = getComponentObject(fAnimationSequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
+			var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+			fAnimationProperties.push(property);
+		}
+
+		initializeKey(fAnimationProperties[0], 100);
+		for(var i = 1; i < fAnimationProperties.length; i++){
+			initializeKey(fAnimationProperties[i], 0);
 		}
 		
 		var samplerate = (1 / 15).toString();
@@ -1214,37 +1222,30 @@ function getTransition(sequence, targetMarker){
 	return [transition_in, transition_out];
 }
 
-function switchActiveTrack(sequence, activateSeconds, activateTrackIndex, deactivateTrackIndex) {
-	var epsTime = sequence.getSettings().videoFrameRate.seconds;
+function switchActiveTrack(activateSeconds, activateTrackIndex, deactivateTrackIndex, epsTime) {
 	activateSeconds = fixTimeError(activateSeconds, epsTime);
 	var lastTime = new Time();
 	lastTime.seconds = fixTimeError(activateSeconds - epsTime, epsTime);
 	var activateTime = new Time();
 	activateTime.seconds = fixTimeError(activateSeconds, epsTime);
-
-	for(var i = 0; i < sequence.videoTracks.numTracks; i++){
-		var component = getComponentObject(sequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
-		var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
-		var value = property.getValueAtKey(activateTime);
+	for(var i = 0; i < fAnimationProperties.length; i++){
+		var value = fAnimationProperties[i].getValueAtKey(activateTime);
 		if(value == 100) {
-			property.removeKey(activateTime);
-			property.removeKey(lastTime);
+			fAnimationProperties[i].removeKey(activateTime);
+			fAnimationProperties[i].removeKey(lastTime);
 		}
 	}
 
 	var deactivateProperty = null;
 	if(deactivateTrackIndex >= 0) {
-		var component = getComponentObject(sequence.videoTracks[deactivateTrackIndex].clips[0], OPACITY_COMPONENT_NAME);
-		deactivateProperty = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+		deactivateProperty = fAnimationProperties[deactivateTrackIndex];
 	} else {
-		for(var i = 0; i < sequence.videoTracks.numTracks; i++){
-			var component = getComponentObject(sequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
-			var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
-			var prevKeyTime = property.findPreviousKey(activateTime);
-			var lastValue = property.getValueAtTime(prevKeyTime);
+		for(var i = 0; i < fAnimationProperties.length; i++){
+			var prevKeyTime = fAnimationProperties[i].findPreviousKey(activateTime);
+			var lastValue = fAnimationProperties[i].getValueAtTime(prevKeyTime);
 			if(lastValue == 100) {
 				if(activateTrackIndex == i) return;
-				deactivateProperty = property;
+				deactivateProperty = fAnimationProperties[i];
 				break;
 			}
 		}
@@ -1259,8 +1260,7 @@ function switchActiveTrack(sequence, activateSeconds, activateTrackIndex, deacti
 		deactivateProperty.setValueAtKey(activateTime, 0, 0);
 	}
 
-	var component = getComponentObject(sequence.videoTracks[activateTrackIndex].clips[0], OPACITY_COMPONENT_NAME);
-	var activateProperty = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+	var activateProperty = fAnimationProperties[activateTrackIndex];
 	var prevKeyTime = activateProperty.findPreviousKey(activateTime);
 	var lastValue = activateProperty.getValueAtKey(prevKeyTime);
 	activateProperty.addKey(lastTime);
@@ -1285,10 +1285,7 @@ function clearFrameKey(sequence, trackIndex, start, end) {
 	property.removeKeyRange(startTime, endTime);
 }
 
-function initializeKey(sequence, trackIndex, init){
-	var component = getComponentObject(sequence.videoTracks[trackIndex].clips[0], OPACITY_COMPONENT_NAME);
-	var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
-
+function initializeKey(property, init){
 	if (property.isTimeVarying()) {
 		property.setTimeVarying(false);
 	}
@@ -1427,7 +1424,7 @@ function bakeFrameAnimation_Audio(){
 			var prevIndex = -1;
 			for(var key in finalKey) {
 				if(finalKey[key] != prevIndex) {
-					switchActiveTrack(fAnimationSequence, Number(key) * epsTime, finalKey[key], prevIndex);			
+					switchActiveTrack(Number(key) * epsTime, finalKey[key], prevIndex, epsTime);			
 					prevIndex = finalKey[key];
 				}
 			}
