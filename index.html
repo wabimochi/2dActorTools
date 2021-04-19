@@ -290,6 +290,41 @@
 		'imageFadeDuration':200
 	})
 
+
+	function toArrayBuffer(buf) {
+		return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+	}
+
+    function clearCanvas(canvas, canvasCtx) {
+        canvasWidth = canvas.width;
+        canvasHeight = canvas.height;
+        canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+        canvasCtx.beginPath();
+	}
+	
+	function smoothArray(array, s) {
+		// 'use strict';
+		const is = 1 - s;
+		for (let i = 1; i < array.length; i++){
+            array[i] = s * array[i] + is * array[i - 1];
+        }
+        return array;
+    }
+
+	function draw(audio_data, length, canvasCtx) {
+		for (var idx = 0; idx < length; idx++) {
+			var x = canvasWidth * (idx / length);
+			var y = (1 - audio_data[idx]) * canvasHeight;
+			if (idx === 0) {
+				canvasCtx.moveTo(x, y);
+			} else {
+				canvasCtx.lineTo(x, y);
+			}
+		}
+
+		canvasCtx.strokeStyle = '#6cc7ff';
+		canvasCtx.stroke();
+	}
 	document.body.addEventListener('keydown', function(e) {
 		if($('#function_actor').hasClass('uk-active')) {
 			if (e.key === 'ArrowLeft') {
@@ -424,6 +459,60 @@
 					}
 					trackNumSelectbox.change();
 				}
+			});
+		});
+
+		csInterface.addEventListener('getAudioAnimKeyPoint', function(e) {
+			const [path, epsTime, id] = e.data.split(',');
+			const threshold = 0.1;
+			const audioContext = new AudioContext();
+			const data = fs.readFileSync(path);
+			audioContext.decodeAudioData(toArrayBuffer(data), function(audio_context) {
+				let array = audio_context.getChannelData(0);
+				let block_size = Math.round(audio_context.sampleRate * epsTime);
+				let s_array = new Float32Array(Math.ceil(audio_context.length / block_size));
+				let sum = 0;
+				let idx = 0;
+				for(let i = 0; i < array.length;) {
+					sum = 0;
+					for(let j = i; j < i + block_size; j++) {
+						sum += Math.abs(array[j]);
+					}
+					s_array[idx] = sum;
+					idx++;
+					i += block_size;
+				}
+				let max = -100000;
+				for(let i = 0; i < s_array.length; i++) {
+					if(max < s_array[i]) max = s_array[i];
+				}
+				const keys = [];
+				const startTime = [];
+				let prev_key = 0;
+				let prev_value = 0;
+				for(let i = 0; i < s_array.length; i++) {
+					if(i < s_array.length - 1) {
+						const value = s_array[i] / max;
+						console.log(value);
+						if(value - threshold < 0 && prev_key === 1){
+							keys.push(0);
+							startTime.push(i * epsTime);
+							prev_key = 0;
+							prev_value = value;
+						} else if(value - prev_value > 0 && prev_key === 0){
+							keys.push(1);
+							startTime.push(i * epsTime);
+							prev_key = 1;
+							prev_value = value;
+						}
+					} else {
+						if(prev_key === 1){
+							keys.push(0);
+							startTime.push(i * epsTime);
+						}
+					}
+				}
+				csInterface.evalScript('$._PPP_.SetFrameAnimationKeypoints_Audio("' + id.toString() + '","' + keys.join(',') + '","' + startTime.join(',') + '")', function(result) {});
 			});
 		});
 

@@ -1,4 +1,4 @@
-#include "./lib/json2.js"
+#include "./lib/json2.js";
 
 var TIMEDISPLAY_24Timecode				= 100;
 var TIMEDISPLAY_25Timecode				= 101;
@@ -63,6 +63,7 @@ var LINKERROR_SEQUENCE_MULTIPLE_SELECT = 3;
 var LINKERROR_SELECT_ITEM_ISNOT_SEQUENCE = 4;
 var LINKERROR_UNKNOWN = 5;
 var linkSequence = [];
+var linkSequenceClip = [];
 
 var ACT_CLIPEND_START = 1;
 var ACT_CLIPEND_END = 2;
@@ -75,8 +76,18 @@ var propertiesObject = [];
 var OperationTargetList = [];
 var eventObj = new CSXSEvent();
 
-$._PPP_={
+var fAnimationSourceClips = null;
+var fAnimationSourceClipsLength = 0;
+var fAnimationMarkers = null;
+var fAnimationSequence = null;
+var fLinkedSequence = null;
+var fAnimationKeypoints = null;
+var fAnimationStartTime = null;
 
+var fAnimationSourceCount = 0;
+var fAnimationSourceSize = 0;
+
+$._PPP_={
 	Setup: function(extPath){
 		if (app.project) {
 			var projectItems = app.project.rootItem.children;
@@ -870,6 +881,128 @@ $._PPP_={
 		$.locale = localeFromCEP;
 	},
 
+	InsertFrameAnimationMarker : function(linkedSequenceIndex, animationTrackIndex, markerStartTime, slot, comment) {
+		var clips = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex].clips;
+		var markers = null;
+		var seq = null;
+		for(var i = 0; i < clips.numItems; i++) {
+			if(clips[i].projectItem.isSequence()) {
+				seq = clipToSequence(clips[i]);
+				markers = seq.markers;
+			}
+		}
+		if(seq === null || markers === null) {
+			alert('assert');
+			return;
+		}
+
+		var marker = null;
+		var currentMarker = null;
+		var nextMarker = null;
+		var idx = markers.numMarkers - 1;
+
+		if(markers.numMarkers > 0) {
+			marker = markers.getLastMarker();
+			for(; idx >= 0; idx--) {
+				if(marker.name === slot) {
+					if(markerStartTime < marker.start.seconds) {
+						nextMarker = marker;
+					}
+					if(marker.start.seconds <= markerStartTime) {
+						currentMarker = marker;
+						break;
+					}
+				}
+				if(idx !== 0) {
+					marker = markers.getPrevMarker(marker);
+				}
+			}
+		}
+
+		if(currentMarker !== null && markerStartTime === currentMarker.start.seconds){
+			currentMarker.comments = comment;
+		} else {
+			var newMarker = markers.createMarker(markerStartTime);
+			if(nextMarker === null) {
+				if(seq.getOutPointAsTime().seconds > 0) {
+					newMarker.end = seq.getOutPointAsTime().seconds;
+				} else {
+					newMarker.end = markerStartTime + 60 * 60;
+				}
+			} else {
+				newMarker.end = nextMarker.start.seconds;
+			}
+			newMarker.name = slot;
+			newMarker.comments = comment;
+			if(currentMarker != null) {
+				currentMarker.end = markerStartTime;
+			}
+		}
+	},
+
+	FrameAnimation_Audio : function(linkedSequenceIndex, animationTrackIndex, sourceIndex) {
+		fLinkedSequence = linkSequence[linkedSequenceIndex];
+		// fLinkedSequence = clipToSequence(app.project.activeSequence.videoTracks[1].clips[0]);
+		var clips = fLinkedSequence.videoTracks[animationTrackIndex].clips;
+		fAnimationMarkers = null;
+		fAnimationSequence = null;
+		for(var i = 0; i < clips.numItems; i++) {
+			if(clips[i].projectItem.isSequence()) {
+				fAnimationSequence = clipToSequence(clips[i]);
+				fAnimationMarkers = fAnimationSequence.markers;
+			}
+		}
+		if(fAnimationSequence === null || fAnimationMarkers === null) {
+			alert('assert');
+			return;
+		}
+	
+		if(!app.project.activeSequence){
+			updateEventPanel("[ERROR] No active sequence.");
+			return;
+		}
+
+		fAnimationSourceClips = app.project.activeSequence.getSelection();
+		fAnimationSourceClipsLength = fAnimationSourceClips.length;
+		if(fAnimationSourceClipsLength <= 0) {
+			fAnimationSourceClips = app.project.activeSequence.audioTracks[sourceIndex].clips;
+			fAnimationSourceClipsLength = fAnimationSourceClips.numItems;
+		}
+
+		initializeKey(fAnimationSequence, 0, 100);
+		for(var i = 1; i < fAnimationSequence.videoTracks.numTracks; i++){
+			initializeKey(fAnimationSequence, i, 0);
+		}
+		
+		var samplerate = (1 / 15).toString();
+		fAnimationSourceSize = 0;
+		fAnimationSourceCount = 0;
+		for(var i = 0; i < fAnimationSourceClipsLength; i++) {
+			if(fAnimationSourceClips[i].mediaType === 'Audio') {
+				fAnimationSourceSize++;
+			}
+		}
+		fAnimationKeypoints = [];
+		fAnimationStartTime = [];
+
+		for(var i = 0; i < fAnimationSourceClipsLength; i++) {
+			if(fAnimationSourceClips[i].mediaType === 'Audio') {
+				eventObj.type = "getAudioAnimKeyPoint";
+				eventObj.data = fAnimationSourceClips[i].projectItem.getMediaPath() + ',' + samplerate + ',' + i.toString();
+				eventObj.dispatch();
+			}
+		}
+	},
+
+	SetFrameAnimationKeypoints_Audio : function(clipIndex, keypoints, startTime) {
+		fAnimationKeypoints[Number(clipIndex)] = keypoints;
+		fAnimationStartTime[Number(clipIndex)] = startTime;
+		fAnimationSourceCount++;
+		if(fAnimationSourceCount === fAnimationSourceSize){
+			bakeFrameAnimation_Audio();
+		}
+	},
+
 };
 
 function getClipLocalTime (clip, time) {
@@ -1018,4 +1151,287 @@ function reportSequenceItemSelectionChanged() {
     eventObj.type = "sequenceItemsSelectChanged";
     eventObj.data = '';
     eventObj.dispatch();
+}
+
+var FrameAnimationKey = function(index, duration, epsTime) {
+    this.index = index;
+    this.duration = duration;
+    this.frame = duration / epsTime;
+};
+
+function getAnimationKeys(sequence, time) {
+	var markers = sequence.markers;
+	var marker = null;
+	var end = Number.POSITIVE_INFINITY;
+	var targetMarker = null;
+	
+	if(markers.numMarkers > 0) {
+		var idx = markers.numMarkers - 1;
+		marker = markers.getLastMarker();
+		for(; idx >= 0; idx--) {
+			if(time < marker.start.seconds) {
+				end = marker.start.seconds;
+			}
+			if(time >= marker.start.seconds) {
+				targetMarker = marker;
+				break;
+			}
+			if(idx !== 0) {
+				marker = markers.getPrevMarker(marker);
+			}
+		}
+	}
+	if (targetMarker !== null) {
+		var transition = getTransition(sequence, targetMarker)
+		return [targetMarker.start.seconds, end, transition[0], transition[1]];
+	}
+	return [null, null, null, null];
+}
+
+function getTransition(sequence, targetMarker){
+	var epsTime = sequence.getSettings().videoFrameRate.seconds;
+	var infoList = targetMarker.comments.split('\n');
+	var indexes = infoList[0].split(',');
+	var durations = infoList[1].split(',');
+	var transition_in = [];
+	for(var i = 0; i < indexes.length; i++) {
+		transition_in.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
+	}
+
+	var transition_out = [];
+	if(infoList.length >= 4){
+		indexes = infoList[2].split(',');
+		durations = infoList[3].split(',');
+		for(var i = 0; i < indexes.length; i++) {
+			transition_out.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
+		}	
+	} else {
+		for(var i = indexes.length - 2; i >= 0; i--) {
+			transition_out.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
+		}
+	}
+
+	return [transition_in, transition_out];
+}
+
+function switchActiveTrack(sequence, activateSeconds, activateTrackIndex, deactivateTrackIndex) {
+	var epsTime = sequence.getSettings().videoFrameRate.seconds;
+	activateSeconds = fixTimeError(activateSeconds, epsTime);
+	var lastTime = new Time();
+	lastTime.seconds = fixTimeError(activateSeconds - epsTime, epsTime);
+	var activateTime = new Time();
+	activateTime.seconds = fixTimeError(activateSeconds, epsTime);
+
+	for(var i = 0; i < sequence.videoTracks.numTracks; i++){
+		var component = getComponentObject(sequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
+		var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+		var value = property.getValueAtKey(activateTime);
+		if(value == 100) {
+			property.removeKey(activateTime);
+			property.removeKey(lastTime);
+		}
+	}
+
+	var deactivateProperty = null;
+	if(deactivateTrackIndex >= 0) {
+		var component = getComponentObject(sequence.videoTracks[deactivateTrackIndex].clips[0], OPACITY_COMPONENT_NAME);
+		deactivateProperty = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+	} else {
+		for(var i = 0; i < sequence.videoTracks.numTracks; i++){
+			var component = getComponentObject(sequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
+			var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+			var prevKeyTime = property.findPreviousKey(activateTime);
+			var lastValue = property.getValueAtTime(prevKeyTime);
+			if(lastValue == 100) {
+				if(activateTrackIndex == i) return;
+				deactivateProperty = property;
+				break;
+			}
+		}
+	}
+
+	if(deactivateProperty != null) {
+		var prevKeyTime = deactivateProperty.findPreviousKey(activateTime);
+		var lastValue = deactivateProperty.getValueAtKey(prevKeyTime);
+		deactivateProperty.addKey(lastTime);
+		deactivateProperty.setValueAtKey(lastTime, lastValue, 0);
+		deactivateProperty.addKey(activateTime);
+		deactivateProperty.setValueAtKey(activateTime, 0, 0);
+	}
+
+	var component = getComponentObject(sequence.videoTracks[activateTrackIndex].clips[0], OPACITY_COMPONENT_NAME);
+	var activateProperty = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+	var prevKeyTime = activateProperty.findPreviousKey(activateTime);
+	var lastValue = activateProperty.getValueAtKey(prevKeyTime);
+	activateProperty.addKey(lastTime);
+	activateProperty.setValueAtKey(lastTime, lastValue, 0);
+	activateProperty.addKey(activateTime);
+	activateProperty.setValueAtKey(activateTime, 100, 0);
+}
+
+function clearFrameKey(sequence, trackIndex, start, end) {
+	var epsTime = sequence.getSettings().videoFrameRate.seconds;
+	var component = getComponentObject(sequence.videoTracks[trackIndex].clips[0], OPACITY_COMPONENT_NAME);
+	var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+
+	if (!property.isTimeVarying()) {
+		property.setTimeVarying(true);
+	}
+
+	var startTime = new Time();
+	startTime.seconds =  fixTimeError(start, epsTime);;
+	var endTime = new Time();
+	endTime.seconds = fixTimeError(end, epsTime);
+	property.removeKeyRange(startTime, endTime);
+}
+
+function initializeKey(sequence, trackIndex, init){
+	var component = getComponentObject(sequence.videoTracks[trackIndex].clips[0], OPACITY_COMPONENT_NAME);
+	var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+
+	if (property.isTimeVarying()) {
+		property.setTimeVarying(false);
+	}
+	property.setTimeVarying(true);
+		
+	var startTime = new Time();
+	startTime.seconds = 0;
+	property.addKey(startTime);
+	property.setValueAtKey(startTime, init, 0);
+}
+
+function bakeFrameAnimation_Audio(){
+	var epsTime = fAnimationSequence.getSettings().videoFrameRate.seconds;
+	var markers = fAnimationSequence.markers;
+
+	if(markers.numMarkers == 0) return;
+	var currentMarker = markers.getFirstMarker();
+	var nextMarker = null;
+	var currentTransitionIn = null
+	var currentTransitionOut = null;
+	var nextTransitionIn = null
+	var nextTransitionOut = null;
+	var markerIndex = 0;
+	var targetTime = 0;
+	var currentTransitionOutDuration = 0;
+	var nextTransitionOutDuration = 0;
+
+	if(markers.numMarkers > 1) {
+		nextMarker = markers.getNextMarker(currentMarker);
+		var transition = getTransition(fAnimationSequence, nextMarker);
+		nextTransitionIn = transition[0];
+		nextTransitionOut = transition[1];
+	}
+
+	var checkMarker = function (lastTime, currentStatus){
+		var markerChenged = false;
+		while(nextMarker != null && targetTime >= nextMarker.start.seconds) {
+			var activateIndex = nextTransitionIn[nextTransitionIn.length - 1].index;
+			if(currentStatus == 0) {
+				activateIndex = nextTransitionOut[nextTransitionOut.length - 1].index;
+			}
+			if(nextMarker.start.seconds > lastTime) {
+				finalKey[Math.round(nextMarker.start.seconds / epsTime)] = activateIndex;
+			} else {
+				finalKey[Math.round(lastTime / epsTime)] = activateIndex;
+			}
+
+			currentMarker = nextMarker;
+			markerIndex++;
+			if(markerIndex < markers.numMarkers - 1) {
+				nextMarker = markers.getNextMarker(currentMarker);
+				var transition = getTransition(fAnimationSequence, nextMarker);
+				currentTransitionIn = nextTransitionIn;
+				currentTransitionOut = nextTransitionOut;
+				nextTransitionIn = transition[0];
+				nextTransitionOut = transition[1];
+			} else {
+				nextMarker = null;
+			}
+
+			markerChenged = true;
+		}
+
+		if(markerChenged){
+			currentTransitionOutDuration = 0;
+			for(var i = 0; i < currentTransitionOut.length; i++) {
+				currentTransitionOutDuration += currentTransitionOut[i].duration;
+			}
+			nextTransitionOutDuration = 0;
+			if(nextMarker != null) {
+				for(var i = 0; i < nextTransitionOut.length; i++) {
+					nextTransitionOutDuration += nextTransitionOut[i].duration;				
+				}
+			}
+		}
+	}
+
+	var lastTime = 0;
+	for(var clipIndex = 0; clipIndex < fAnimationSourceClipsLength; clipIndex++) {
+		if(fAnimationSourceClips[clipIndex].mediaType === 'Audio') {
+			var clipStart = fAnimationSourceClips[clipIndex].start.seconds - epsTime * 0;
+			var clipEnd = fAnimationSourceClips[clipIndex].end.seconds - epsTime * 1;
+			var keypoints = fAnimationKeypoints[clipIndex].split(',');
+			var startTime = fAnimationStartTime[clipIndex].split(',');
+
+			var transition = getTransition(fAnimationSequence, currentMarker);
+			currentTransitionIn = transition[0]
+			currentTransitionOut = transition[1];
+			
+			var finalKey = {};
+			for(var i = 0; i < startTime.length; i++) {
+				if(keypoints[i] == 1) {
+					targetTime = clipStart + Number(startTime[i]);
+					checkMarker(lastTime, 0);
+
+					var limitTime = clipEnd;
+					if(i < startTime.length - 1) {
+						limitTime = clipStart + Number(startTime[i + 1]) - currentTransitionOutDuration;
+					}
+
+					// transition in
+					for(var j = 0; j < currentTransitionIn.length; j++) {
+						targetTime = fixTimeError(targetTime, epsTime);
+						if(targetTime < limitTime) {				
+							finalKey[Math.round(targetTime / epsTime)] = currentTransitionIn[j].index;
+							targetTime += currentTransitionIn[j].duration;
+						} else {
+							break;
+						}
+					}
+					lastTime = targetTime;
+
+					if(nextMarker != null && nextMarker.start.seconds < limitTime) {
+						if(targetTime + nextTransitionOutDuration - currentTransitionOutDuration < limitTime) {
+							// Interrupt
+							checkMarker(lastTime, 1);
+							if(i < startTime.length - 1) {
+								limitTime = clipStart + Number(startTime[i + 1]) - currentTransitionOutDuration;
+							}
+						}
+					} 
+
+					// transition out
+					targetTime = limitTime;
+					limitTime = clipStart + Number(startTime[i]);
+					for(var j = 0; j < currentTransitionOut.length; j++) {
+						if(targetTime >= limitTime) {
+							targetTime = fixTimeError(targetTime, epsTime);
+							finalKey[Math.round(targetTime / epsTime)] = currentTransitionOut[j].index;
+						}
+						targetTime += currentTransitionOut[j].duration;
+					}
+					lastTime = targetTime;
+				}
+			}
+			var prevIndex = -1;
+			for(var key in finalKey) {
+				if(finalKey[key] != prevIndex) {
+					switchActiveTrack(fAnimationSequence, Number(key) * epsTime, finalKey[key], prevIndex);			
+					prevIndex = finalKey[key];
+				}
+			}
+		}
+	}
+	alert('complete');
 }
