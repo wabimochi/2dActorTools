@@ -377,6 +377,9 @@ $._PPP_={
 					for(; j < clips.numItems; j++) {
 						if(currentTime >= clips[j].start.seconds && currentTime < clips[j].end.seconds) {
 							var treePath = clips[j].projectItem.treePath;
+						if(clips[j].projectItem.isSequence()) {
+							treePath = 'nop';
+						}
 							treePathList.push(treePath.slice(1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1)))).replace(/\\/g, '/'));
 							break;
 						}
@@ -497,6 +500,8 @@ $._PPP_={
 		if(clipTreePath === 'delete') {
 			clip = getDummyClip();
 			deleteInsertClip = true;
+		} else if(clipTreePath === 'nop') {
+			return;
 		} else {
 			clip = getActorClipWithTreePath(actorName, clipTreePath);
 			if(clip === null) {
@@ -993,7 +998,6 @@ $._PPP_={
 		}
 		fAnimationKeypoints = [];
 		fAnimationStartTime = [];
-
 		for(var i = 0; i < fAnimationSourceClipsLength; i++) {
 			if(fAnimationSourceClips[i].mediaType === 'Audio') {
 				eventObj.type = "getAudioAnimKeyPoint";

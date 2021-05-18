@@ -25,7 +25,7 @@
 	<link id="lightboxstyle" href="node_modules/lightbox2/dist/css/lightbox.css" rel="stylesheet" type="text/css">
 </head>
 
-<body onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate();LoadSettings()">
+<body onContextmenu="return false;" onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate();LoadSettings()">
 	<div class='uk-flex-center'>
 		<a href="javascript:history.go(0)" uk-icon="icon: refresh"></a>
 		<a href="#" id='setting_file_not_exist_icon' class='uk-align-right' uk-toggle="target: #settigs_file_modal" uk-icon="icon: warning" style="color:yellow; visibility: hidden;" uk-tooltip="title: 設定ファイルがありません。ここをクリックして保存先を指定してください。; pos: bottom-right"></a>
@@ -91,7 +91,6 @@
 				</div>
 				<div>
 				</div>
-
 			</li>
 			<li>
 				<div class="uk-margin-left uk-width-auto" uk-toggle="target: #offcanvas-nav"><a href="#" class="uk-margin-small-right" uk-icon="icon: menu"></a></div>
@@ -218,40 +217,67 @@
 			</li>
 			<li>
 				<div class="uk-thumbnav td-thumbnav uk-padding uk-padding-small uk-padding-remove-vertical actor_linknav">
-					<ul></ul>
+					<ul>
+
+					</ul>
+					<button id="actor_setting_save_button" class="uk-button uk-button-secondary highlight uk-animation-slide-right-medium uk-width-auto" onClick="SaveActorSetting()" style="margin-left: 5px; padding-right: 15px;" hidden>設定の保存</button>
+					<button id="actor_setting_cancel_button" class="uk-button uk-button-secondary uk-animation-slide-right-medium uk-width-auto" onClick="ActorSettingEnd()" style="margin-left: 5px; padding-right: 15px;" hidden>キャンセル</button>
+
 				</div>
+
+				<div class="uk-flex">
+					<div id="actor_parts_box" class="uk-width-1-3 actor_parts_top" style="height:100vh; position: sticky; top:0; overflow:scroll; margin-right: 5px;" hidden>
+					</div>
+					<div>
+						<div style="margin-bottom:10px">
+							<label>
+								アニメーションタイプ
+								<select class="tdactor_selectbox uk-margin-small-left uk-width-auto uk-select" id="select_animation_type">
+									<option value="0">ランダム</option>
+									<option value="1">リップシンク（開閉）</option>
+								</select>
+							</label>
+						</div>
 				<ul class="uk-switcher" id="actor_switcher"></ul>
-			</li>
-			<li>
-				<div class='uk-margin-small' id='actor_controle_div'>
-					<select class="tdactor_selectbox uk-margin-small-left uk-width-expand uk-select" name="select_actor" id="select_actor_setting"></select>
-					<div class="uk-flex-center uk-child-width-expand@ss uk-margin-small-top uk-margin-left uk-margin-right actor_setting_control" uk-grid>
-						<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right" id="actor_setting_start" onClick="actorSettingStart()">設定開始</button>
-						<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right disable" id="actor_setting_save_button" onClick="OverwriteActorStructure()">保存</button>
-						<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right disable" id="actor_setting_initialize" onClick="InitializeActorStructure()">初期化</button>
+						<div id="animation_editor_root" class="uk-margin-small-right">フレームクリップ編集
+							<div class="uk-margin-small-left uk-width-expand uk-flex">
+								<div class="uk-width-expand" style="display: inline-block;">閉じ</div>
+								<div class="" style="display: inline-block;">開き</div>
+							</div>
+
+							<div class="uk-margin-small-left uk-margin-right uk-width-expand uk-flex uk-flex-left actor_parts_list" style="background-color:#111;">
+								<div id="animation_editor_thumbnav" class="td-thumbnav uk-width-expand">
+									<ul class="uk-flex actor_group">
+										
+									</ul>
+								</div>
 					</div>
 				</div>
-				<div class="uk-child-width-1-2" uk-grid id="actor_setup">
-					<div>
-						<ul uk-nav class="uk-light uk-nav-default uk-background-secondary uk-width-auto uk-padding">
-							<div class="root_container" id="root_container"></div>
-							<details class="container" id=actor_not_use>
-								<summary>Not use</summary>
-							</details>
-							<div class="uk-margin">
-								<div class="uk-inline uk-width-3-4">
-									<span class="uk-form-icon uk-form-icon-flip" uk-icon="icon: plus"></span>
-									<input class="uk-input uk-light add_container" type="text" id='add_group' placeholder="Group name...">
+
 								</div>
 							</div>
+				<div id="actor_contextmenu" class="contextmenu">
+					<ul>
+						<li id="actor_setting_start_button" onClick="StartActorSetting()">設定</li>
+						<li onClick="menu3()">menu4</li>
 						</ul>
 					</div>
-					<div>
-						<div style="z-index: 980;" uk-sticky="offset: 10; bottom: #top">
-							<p><a href="" rel="lightbox" id="actor_setup_zoom"><img class="actor_setup_thumb" id="actor_setup_thumb" src="" alt=""/></a></p>
+				<div id="parts_contextmenu" class="contextmenu">
+					<ul>
+						<li id="actor_setting_remove_parts_button">削除</li>
+						<li id="actor_setting_add_animation_clip">アニメーションクリップの追加</li>
+					</ul>
 						</div>
+				<div id="group_contextmenu" class="contextmenu">
+					<ul>
+						<li id="actor_setting_add_group_button">グループの追加</li>
+						<li id="actor_setting_remove_group_button">グループの削除</li>
+						<li id="actor_setting_add_animation_clip_on_group">アニメーションクリップの追加</li>
+					</ul>
 					</div>
-				</div>
+			</li>
+			<li>
+				<!-- TODO delete -->
 			</li>
 			<li>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
@@ -283,7 +309,7 @@
 </body>
 
 <script>
-	let ActorStructure = [];
+	
 	lightbox.option({
 		'resizeDuration': 400,
 		'fadeDuration':200,
@@ -325,9 +351,15 @@
 		canvasCtx.strokeStyle = '#6cc7ff';
 		canvasCtx.stroke();
 	}
+	const KEYCODE_Delete = 46;
+	const KEYCODE_ArrowLeft = 37;
+	const KEYCODE_ArrowUp = 38;
+	const KEYCODE_ArrowRight = 39;
+	const KEYCODE_ArrowDown = 40;
 	document.body.addEventListener('keydown', function(e) {
+		if(!$('#actor_switcher').hasClass('setting')) {
 		if($('#function_actor').hasClass('uk-active')) {
-			if (e.key === 'ArrowLeft') {
+				if (e.keyCode === KEYCODE_ArrowLeft) {
 				const linkdActor = $('.actor_sequence_link.linked');
 				for(let i = linkdActor.length - 1; i >= 0; i--) {
 					if(linkdActor.eq(i).hasClass('enable')) {
@@ -338,7 +370,7 @@
 					}
 				}
 				e.preventDefault();
-			} else if (e.key === 'ArrowRight') {
+				} else if (e.keyCode === KEYCODE_ArrowRight) {
 				const linkdActor = $('.actor_sequence_link.linked');
 				for(let i = 0; i < linkdActor.length; i++) {
 					if(linkdActor.eq(i).hasClass('enable')) {
@@ -349,10 +381,10 @@
 					}
 				}
 				e.preventDefault();
-			} else if (e.key === 'ArrowUp') {
+				} else if (e.keyCode === KEYCODE_ArrowUp) {
 				csInterface.evalScript('$._PPP_.PrevEditPoint()');
 				e.preventDefault();
-			} else if (e.key === 'ArrowDown') {
+				} else if (e.keyCode === KEYCODE_ArrowDown) {
 				csInterface.evalScript('$._PPP_.NextEditPoint()');
 				e.preventDefault();
 			} else if((e.key >= '0' && e.key <= '9') || (e.key >= 'a' && e.key <= 'z')){
@@ -363,6 +395,11 @@
 				}
 				e.preventDefault();
 			} 
+		}
+		} else {
+			if (e.keyCode === KEYCODE_Delete) {
+				DeleteSelectedParts();
+			}
 		}
 	}, {passive: false});
 
@@ -525,6 +562,8 @@
 		$('.insert_marker').each(function(index, e){
 			$(e).append(SVG_MARKER_ICON);
 		});
+
+		ActorEditInitialize();
 	}
 </script>
 </html>
