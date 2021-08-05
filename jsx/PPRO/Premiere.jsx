@@ -54,6 +54,9 @@ var MediaType_Video = 1;
 
 var NOT_SET = "-400000";
 
+var ANIMATION_SEQUENCE_LINK_MARKER_COLOR = 5;
+var TRANSITION_MARKER_NAME = 'animation';
+
 var mylib = new ExternalObject( "lib:\PlugPlugExternalObject" );
 
 var SEQUENCE_LINK_SUCCESS = 0;
@@ -64,6 +67,7 @@ var LINKERROR_SELECT_ITEM_ISNOT_SEQUENCE = 4;
 var LINKERROR_UNKNOWN = 5;
 var linkSequence = [];
 var linkSequenceClip = [];
+var linkAnimationSequence = [];
 
 var ACT_CLIPEND_START = 1;
 var ACT_CLIPEND_END = 2;
@@ -94,7 +98,7 @@ $._PPP_={
 			var projectItems = app.project.rootItem.children;
 			var actBinExists = false;
 			for(var i = 0; i < projectItems.numItems; i++) {
-				if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN) {
+				if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN_NAME) {
 					ActorBinItem = projectItems[i];
 					actBinExists = true;
 					break;
@@ -102,9 +106,9 @@ $._PPP_={
 			}
 			
 			if(!actBinExists) {
-				app.project.rootItem.createBin(ACT_BIN);
+				app.project.rootItem.createBin(ACT_BIN_NAME);
 				for(var i = 0; i < projectItems.numItems; i++) {
-					if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN) {
+					if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN_NAME) {
 						ActorBinItem = projectItems[i];
 						break;
 					}
@@ -116,9 +120,24 @@ $._PPP_={
 
 			DummyClipNodeID =  getDummyClip().nodeId;
 		}
+		app.unbind('onActiveSequenceStructureChanged');
 		app.bind('onActiveSequenceStructureChanged', $._PPP_.SequenceStructureChanged);
-		app.bind("onSourceClipSelectedInProjectPanel", reportProjectItemSelectionChanged);
-		app.bind('onActiveSequenceSelectionChanged', reportSequenceItemSelectionChanged)
+
+		app.unbind('onSourceClipSelectedInProjectPanel');
+		app.bind('onSourceClipSelectedInProjectPanel', reportProjectItemSelectionChanged);
+
+		app.unbind('onActiveSequenceSelectionChanged');
+		app.bind('onActiveSequenceSelectionChanged', reportSequenceItemSelectionChanged);
+
+		app.unbind('onActiveSequenceTrackItemAdded');
+		app.bind('onActiveSequenceTrackItemAdded', reportSequenceItemAdd);
+
+		app.unbind('onActiveSequenceTrackItemRemoved');
+		app.bind('onActiveSequenceTrackItemRemoved', reportSequenceItemRemove);
+
+		app.unbind('onActiveSequenceChanged');
+		app.bind('onActiveSequenceChanged', reportSequenceChanged);
+		
 	},
 
 	SequenceStructureChanged : function () {
@@ -131,7 +150,7 @@ $._PPP_={
 	},
 
 	InsertSubtitle : function (mgtName, text){
-		var mgtClip = searchItemWithTreePath(MGT_BIN + '/' + mgtName, ProjectItemType.CLIP);
+		var mgtClip = searchItemWithTreePath(MGT_BIN_NAME + '/' + mgtName, ProjectItemType.CLIP);
 			var seq = app.project.activeSequence;
 			
 			if(mgtClip && seq) {
@@ -206,7 +225,7 @@ $._PPP_={
 				}
 			}
 		};
-		var root = shallowSearch(app.project.rootItem, MGT_BIN, ProjectItemType.BIN);
+		var root = shallowSearch(app.project.rootItem, MGT_BIN_NAME, ProjectItemType.BIN);
 		var clipNames = [];
 		if(root) {
 			deepSearchMGT(root, clipNames);
@@ -376,11 +395,20 @@ $._PPP_={
 					var j = 0;
 					for(; j < clips.numItems; j++) {
 						if(currentTime >= clips[j].start.seconds && currentTime < clips[j].end.seconds) {
-							var treePath = clips[j].projectItem.treePath;
-						if(clips[j].projectItem.isSequence()) {
-							treePath = 'nop';
+						if(clips[j].projectItem.isSequence()){
+							var animSeq = trackItemToSequence(clips[j]);
+							if(getAnimationSequenceLinkInfo(animSeq) !== null) {
+								var marker = getTransitionMarkerAtTime(animSeq.markers, currentTime);
+								if(marker !== null){
+									// '/' is animation mark
+									treePathList.push('/' + getTransitionForClipset(animSeq, marker));
 						}
-							treePathList.push(treePath.slice(1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1)))).replace(/\\/g, '/'));
+							} else {
+								treePathList.push('');	
+							}
+						} else {
+							treePathList.push(getTreePathFromActorClip(clips[j]));
+						}
 							break;
 						}
 					}
@@ -445,6 +473,15 @@ $._PPP_={
 		return mediaPathList.join(',');
 	},
 
+	GetActorClipMediaPath: function(actorName, treePathCSV) {
+		var _treePathList = treePathCSV.split(',');
+		var mediaPathList = [];
+		for(var i = 0; i < _treePathList.length; i++) {
+			mediaPathList.push(getActorClipWithTreePath(actorName, _treePathList[i]).getMediaPath());
+		}
+		return mediaPathList.join(',');
+	},
+
 	GetSettingsMediaPath: function() {
 		var mediaPath = "";
 		if(ActorBinItem) {
@@ -471,7 +508,7 @@ $._PPP_={
 				if(sel.length === 0) return LINKERROR_SEQUENCE_NOT_SELECT;
 				if(sel.length !== 1) return LINKERROR_SEQUENCE_MULTIPLE_SELECT;
 				if(sel[0].name !== 'anonymous' && sel[0].projectItem && sel[0].projectItem.isSequence()) {
-					var linkSeq = clipToSequence(sel[0]);
+					var linkSeq = trackItemToSequence(sel[0]);
 					if(linkSeq !== null) {
 						linkSequence[index] = linkSeq;
 						linkSequenceClip[index] = sel[0];
@@ -488,10 +525,10 @@ $._PPP_={
 	},
 
 	InsertActorClip: function(actorName, sequenceIndex, trackIndex, clipTreePath, startTime, endFlag) {
+		var activeSequence = app.project.activeSequence;
 		if(startTime < 0) {
-			var aseq = app.project.activeSequence;
-			if(aseq) {
-				startTime = aseq.getPlayerPosition().seconds;
+			if(activeSequence) {
+				startTime = getClipLocalTime(linkSequenceClip[sequenceIndex], activeSequence.getPlayerPosition().seconds);
 			}
 		}
 		var seq = linkSequence[sequenceIndex];
@@ -500,61 +537,20 @@ $._PPP_={
 		if(clipTreePath === 'delete') {
 			clip = getDummyClip();
 			deleteInsertClip = true;
-		} else if(clipTreePath === 'nop') {
+		} else if(clipTreePath === '') {
 			return;
 		} else {
 			clip = getActorClipWithTreePath(actorName, clipTreePath);
 			if(clip === null) {
-				alert('clip not found\n' + actorName + '/' + clipTreePath);
+				alert('clip not found\n' + ACT_BIN_NAME + '/' + actorName + '/' + clipTreePath);
 				return;
 			}
 		}
 		if(seq && clip){
-			if(trackIndex >= seq.videoTracks.numTracks) {
-				var vlocked = [];
-				for(var i = 0; i < seq.videoTracks.numTracks; i++){
-					vlocked.push(seq.videoTracks[i].isLocked());
-					seq.videoTracks[i].setLocked(1);
-				}
-				var currentTrackNum = seq.videoTracks.numTracks;
-				for(var i = trackIndex - currentTrackNum; i >= 0; i--) {
-					seq.videoTracks[seq.videoTracks.numTracks - 1].overwriteClip(clip, startTime);
-					seq.videoTracks[seq.videoTracks.numTracks - 1].setLocked(1);
-				}
-				for(var i = Number(currentTrackNum); i < seq.videoTracks.numTracks; i++) {
-					seq.videoTracks[i].setLocked(0);
-					seq.videoTracks[i].clips[0].setSelected(true, false);
-					seq.videoTracks[i].clips[0].remove(false, false);
-				}
-
-				for(var i = 0; i < currentTrackNum; i++){
-					if(!vlocked[i]){
-						seq.videoTracks[i].setLocked(0);
-					}
-				}
-			}
-
+			makeVideoTrack(seq, trackIndex);
 			var track = seq.videoTracks[trackIndex];
 			if(!track.isLocked()){
-				var clips = track.clips;
-				var epsTime = seq.getSettings().videoFrameRate.seconds;
-				var endTime = startTime + 60 * 60;
-				if(seq.getOutPointAsTime().seconds > 0) {
-					endTime = seq.getOutPointAsTime().seconds;
-				}
-
-				endTime = getNextClipTime(clips, endFlag, startTime, endTime);
-				if(endFlag & ACT_CLIPEND_MARKER) {
-					endTime = getNextMarkerTime(seq.markers, startTime, endTime);
-							}
-
-				var duration = new Time();
-				duration.seconds = fixTimeError(endTime - startTime, epsTime);
-				clip.setOverrideFrameRate(1/epsTime);
-				clip.setOutPoint(duration.ticks, 4);
-				track.overwriteClip(clip, startTime);
-				clip.setOverrideFrameRate(0);
-
+				overwriteVideoClip(clip, seq, track, startTime, endFlag, activeSequence);
 				if(deleteInsertClip) {
 					var serchIndex = track.clips.numItems - 1;
 					for(var j = serchIndex; j >= 0 ; j--){
@@ -634,7 +630,7 @@ $._PPP_={
 		var seqName	= prompt('Name of sequence?', actorName, 'Sequence Naming Prompt');
 		if(seqName !== 'null') {
 			var clip = getActorClipWithTreePath(actorName, baseClipTreePath);
-			app.project.createNewSequenceFromClips(seqName, [clip], app.project.rootItem);
+			app.project.createNewSequenceFromClips(seqName, [clip], app.project.getInsertionBin());
 		}
 	},
 
@@ -848,29 +844,14 @@ $._PPP_={
 				if(endClip) {
 					endClip.setOverrideFrameRate(1 / epsTime);
 				}
-				var insertClip = function(clip, startTime, endFlag) {
-						var clips = targetTrack.clips;
-						var endTime = startTime + 60 * 60;
-						if(seq.getOutPointAsTime().seconds > 0) {
-							endTime = seq.getOutPointAsTime().seconds;
-						}
-					endTime = getNextClipTime(clips, endFlag, startTime, endTime);
-					if(endFlag & ACT_CLIPEND_MARKER) {
-						endTime = getNextMarkerTime(seq.markers, startTime, endTime);
-					}
-					var duration = new Time();
-					duration.seconds = fixTimeError(endTime - startTime, epsTime);
-					clip.setOutPoint(duration.ticks, 4);
-					targetTrack.overwriteClip(clip, startTime);
-				}
 
 				for (var sourceClipIndex = 0; sourceClipIndex < sourceAudioTrack.clips.numItems; sourceClipIndex++) {
 					var sourceAudioClip = sourceAudioTrack.clips[sourceClipIndex];
 					if(startClip) {
-						insertClip(startClip, sourceAudioClip.start.seconds, startTriggerInsertFlag);
+						overwriteVideoClip(startClip, seq, targetTrack, sourceAudioClip.start.seconds, startTriggerInsertFlag, activeSeq);
 					}
 					if(endClip) {
-						insertClip(endClip, sourceAudioClip.end.seconds, endTriggerInsertFlag);
+						overwriteVideoClip(endClip, seq, targetTrack, sourceAudioClip.end.seconds, endTriggerInsertFlag, activeSeq);
 					}
 				}
 				if(startClip) {
@@ -887,75 +868,205 @@ $._PPP_={
 		$.locale = localeFromCEP;
 	},
 
-	InsertFrameAnimationMarker : function(linkedSequenceIndex, animationTrackIndex, markerStartTime, comment) {
-		var markerName = "FrameAnimation";
+	/* 
+		Parameters
+		----------
+		linkedSequenceIndex
+			Index of actor.
+		animationTrackIndex
+			Track index of the animation.
+		treePathCSV
+			Clips that may be used, separated by commas.
+
+		Returns
+		-------
+
+	*/
+	SetupAnimationMarker : function(actorName, groupName, linkedSequenceIndex, animationTrackIndex, treePathCSV){
+		var treePathList = treePathCSV.split(',');
+		var startTime = new Time();
+		startTime.seconds = -60*60;
+		var duration = new Time();
+		duration.seconds = 60*60*11;
 		var clips = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex].clips;
-		var markers = null;
-		var seq = null;
-		for(var i = 0; i < clips.numItems; i++) {
-			if(clips[i].projectItem.isSequence()) {
-				seq = clipToSequence(clips[i]);
-				markers = seq.markers;
+		var seq = getFirstSequenceFromTrackItems(clips);
+		var newAnimationSequence = false;
+
+		if(seq === null) {
+			var sequenceID = linkSequence[linkedSequenceIndex].sequenceID;
+			for(var i = 0; i < app.project.sequences.numSequences; i++){
+				var info = getAnimationSequenceLinkInfo(app.project.sequences[i]);
+				if(info !== null && info[0] === sequenceID && info[1] == animationTrackIndex) {					
+					seq = app.project.sequences[i];
+					break;
 			}
 		}
-		if(seq === null || markers === null) {
-			alert('assert');
-			return;
 		}
 
-		var marker = null;
-		var currentMarker = null;
-		var nextMarker = null;
-		var idx = markers.numMarkers - 1;
+		if(seq === null) {
+			newAnimationSequence = true;
+			var parent = getParentBin(linkSequence[linkedSequenceIndex].projectItem);
+			var initializeClip = getActorClipWithTreePath(actorName, treePathList[0]);
+			initializeClip.setInPoint(startTime, 4);
+			initializeClip.setOutPoint(duration, 4);
+			seq = app.project.createNewSequenceFromClips(actorName + '_' + groupName, [initializeClip], parent);
+			seq.close();
+			var newMarker = seq.markers.createMarker(0);
+			newMarker.name = 'DO NOT CHANGE THIS MARKER!';
+			newMarker.comments = linkSequence[linkedSequenceIndex].sequenceID  + '\n' + animationTrackIndex.toString();
+			newMarker.end = 10;
+			newMarker.setTypeAsComment();
+			newMarker.setColorByIndex(ANIMATION_SEQUENCE_LINK_MARKER_COLOR);
+			var component = getComponentObject(seq.videoTracks[0].clips[0], OPACITY_COMPONENT_NAME);
+			var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+			initializeKey(property, 100);
+		}
 
-		if(markers.numMarkers > 0) {
-			marker = markers.getLastMarker();
-			for(; idx >= 0; idx--) {
-				if(marker.name === markerName) {
-					if(markerStartTime < marker.start.seconds) {
-						nextMarker = marker;
-					}
-					if(marker.start.seconds <= markerStartTime) {
-						currentMarker = marker;
+		if(!linkAnimationSequence[linkedSequenceIndex]){
+			linkAnimationSequence[linkedSequenceIndex] = [];
+		};
+		linkAnimationSequence[linkedSequenceIndex][animationTrackIndex] = seq;
+
+		var indexes = {};
+		for(var i = 0; i < seq.videoTracks.numTracks; i++) {
+			if(seq.videoTracks[i].clips.numItems > 0) {
+				var clip = seq.videoTracks[i].clips[0];
+				indexes[getTreePathFromActorClip(clip)] = i;
+			}
+		}
+
+		var lastBlankIndex = 0;
+		for(var i = 0; i < treePathList.length; i++) {
+			var path = treePathList[i];
+			if(!indexes.hasOwnProperty(path)){
+				var clip = getActorClipWithTreePath(actorName, path);
+				clip.setInPoint(startTime, 4);
+				clip.setOutPoint(duration, 4);
+				for(; lastBlankIndex < seq.videoTracks.numTracks; lastBlankIndex++) {
+					if(seq.videoTracks[lastBlankIndex].clips.numItems === 0){
+						seq.videoTracks[lastBlankIndex].overwriteClip(clip, 0);
+						indexes[path] = lastBlankIndex;
 						break;
 					}
 				}
-				if(idx !== 0) {
-					marker = markers.getPrevMarker(marker);
+				if(lastBlankIndex === seq.videoTracks.numTracks) {
+					seq.videoTracks[seq.videoTracks.numTracks - 1].setLocked(1);				
+					seq.videoTracks[seq.videoTracks.numTracks - 1].overwriteClip(clip, 0);
+					indexes[path] = lastBlankIndex;		
 				}
+				if(newAnimationSequence){
+					var component = getComponentObject(seq.videoTracks[lastBlankIndex].clips[0], OPACITY_COMPONENT_NAME);
+					var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+					initializeKey(property, 0);
+				}
+			}
+		}
+		for(var i = 0; i < seq.videoTracks.numTracks; i++){
+			if(seq.videoTracks[i].isLocked()){
+				seq.videoTracks[i].setLocked(0);
 			}
 		}
 
-		if(currentMarker !== null && markerStartTime === currentMarker.start.seconds){
+		var sorted = [];
+		for(var key in indexes){
+			sorted[indexes[key]] = key;
+		}
+		return sorted.join(',');
+	},
+
+	InsertFrameAnimationMarker : function(linkedSequenceIndex, animationTrackIndex, comment, endFlag) {
+		linkedSequenceIndex = Number(linkedSequenceIndex);
+		animationTrackIndex = Number(animationTrackIndex);
+		var track = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex];
+		if(track.isLocked()){
+			return;
+		}
+		var clips = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex].clips;
+		var activeSequence = app.project.activeSequence;
+		var linkedSequenceTime = getClipLocalTime(linkSequenceClip[linkedSequenceIndex], activeSequence.getPlayerPosition().seconds);
+
+		var seq = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
+		var epsTime = seq.getSettings().videoFrameRate.seconds;
+		makeVideoTrack(seq, animationTrackIndex);
+		overwriteVideoClip(seq.projectItem, linkSequence[linkedSequenceIndex], track, linkedSequenceTime, endFlag, activeSequence);
+		var trackItem = getTrackItemAtTime(clips, linkedSequenceTime);
+		var newStartTime = fixTimeError(getClipLocalTime(trackItem, linkedSequenceTime), epsTime);
+		var newEndTime =  fixTimeError(getClipLocalTime(trackItem, trackItem.outPoint.seconds), epsTime);
+		var markers = seq.markers;
+		var marker = null;
+		var currentMarker = null;
+
+		var removeList = [];
+		var trimmingStart = [];
+		var trimmingMid = [];
+		var trimmingEnd = [];
+		if(markers.numMarkers > 0) {
+			marker = getFirstTransitionMarker(markers);
+			while(marker !== null) {
+				var currentStartTime = fixTimeError(marker.start.seconds, epsTime);
+				var currentEndTime = fixTimeError(marker.end.seconds, epsTime);
+				if(newStartTime <= currentStartTime || newStartTime <= currentEndTime) {
+					if(currentStartTime === newStartTime && currentEndTime === newEndTime){
+						currentMarker = marker;
+					} else if(newStartTime <= currentStartTime && currentEndTime <= newEndTime) {
+						removeList.push(marker);
+					} else if(currentStartTime < newStartTime) {
+						if(newEndTime < currentEndTime){
+							trimmingMid.push(marker);
+						} else if(newStartTime < currentEndTime){
+							trimmingEnd.push(marker);
+						}
+					} else if(currentStartTime < newEndTime && newEndTime < currentEndTime){
+						trimmingStart.push(marker);
+					} else if(newEndTime < currentStartTime && newEndTime < currentEndTime) {
+						break;
+					}
+				} else if(currentStartTime < 0 && currentEndTime < 0){
+					removeList.push(marker);
+				}
+				marker = getNextTransitionMarker(markers, marker);
+				}
+			}
+
+		for(var i = 0; i < removeList.length; i++){
+			markers.deleteMarker(removeList[i]);
+		}
+		for(var i = 0; i < trimmingEnd.length; i++){
+			trimmingEnd[i].end = newStartTime;
+		}
+		for(var i = 0; i < trimmingStart.length; i++){
+			var tmpEnd = trimmingStart[i].end.seconds;
+			trimmingStart[i].start = newEndTime;
+			trimmingStart[i].end = tmpEnd;
+		}
+		for(var i = 0; i < trimmingMid.length; i++){
+			var postMarker = markers.createMarker(newEndTime);
+			postMarker.end = trimmingMid[i].end.seconds;
+			postMarker.name = TRANSITION_MARKER_NAME;
+			postMarker.comments = trimmingMid[i].comments;
+			postMarker.setTypeAsSegmentation();
+			trimmingMid[i].end = newStartTime;
+		}
+
+		if(currentMarker !== null){
 			currentMarker.comments = comment;
 		} else {
-			var newMarker = markers.createMarker(markerStartTime);
-			if(nextMarker === null) {
-				if(seq.getOutPointAsTime().seconds > 0) {
-					newMarker.end = seq.getOutPointAsTime().seconds;
-				} else {
-					newMarker.end = markerStartTime + 60 * 60;
-				}
-			} else {
-				newMarker.end = nextMarker.start.seconds;
-			}
-			newMarker.name = markerName;
+			var newMarker = markers.createMarker(newStartTime);
+			newMarker.end = newEndTime;
+			newMarker.name = TRANSITION_MARKER_NAME;
 			newMarker.comments = comment;
-			if(currentMarker != null) {
-				currentMarker.end = markerStartTime;
+			newMarker.setTypeAsSegmentation();
 			}
-		}
 	},
 
 	FrameAnimation_Audio : function(linkedSequenceIndex, animationTrackIndex, sourceIndex) {
 		fLinkedSequence = linkSequence[linkedSequenceIndex];
-		// fLinkedSequence = clipToSequence(app.project.activeSequence.videoTracks[1].clips[0]);
 		var clips = fLinkedSequence.videoTracks[animationTrackIndex].clips;
 		fAnimationMarkers = null;
 		fAnimationSequence = null;
 		for(var i = 0; i < clips.numItems; i++) {
 			if(clips[i].projectItem.isSequence()) {
-				fAnimationSequence = clipToSequence(clips[i]);
+				fAnimationSequence = trackItemToSequence(clips[i]);
 				fAnimationMarkers = fAnimationSequence.markers;
 			}
 		}
@@ -969,18 +1080,18 @@ $._PPP_={
 			return;
 		}
 
-		fAnimationSourceClips = app.project.activeSequence.getSelection();
-		fAnimationSourceClipsLength = fAnimationSourceClips.length;
-		if(fAnimationSourceClipsLength <= 0) {
 			fAnimationSourceClips = app.project.activeSequence.audioTracks[sourceIndex].clips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.numItems;
-		}
 
 		fAnimationProperties = [];
 		for(var i = 0; i < fAnimationSequence.videoTracks.numTracks; i++){
+			if(fAnimationSequence.videoTracks[i].clips.length > 0){
 			var component = getComponentObject(fAnimationSequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
 			var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
 			fAnimationProperties.push(property);
+			} else {
+				fAnimationProperties.push(null);
+		}
 		}
 
 		initializeKey(fAnimationProperties[0], 100);
@@ -1016,7 +1127,7 @@ $._PPP_={
 		}
 	},
 
-	FrameAnimation_Random : function(linkedSequenceIndex, animationTrackIndex, period, randomlyRange) {
+	FrameAnimation_Random : function(linkedSequenceIndex, animationTrackIndex) {
 		fLinkedSequence = linkSequence[linkedSequenceIndex];
 		var clips = fLinkedSequence.videoTracks[animationTrackIndex].clips;
 		var end = 0;
@@ -1025,11 +1136,13 @@ $._PPP_={
 
 		for(var i = clips.numItems - 1; i >= 0; i--) {
 			if(clips[i].projectItem.isSequence()) {
-				fAnimationSequence = clipToSequence(clips[i]);
+				fAnimationSequence = trackItemToSequence(clips[i]);
 				fAnimationMarkers = fAnimationSequence.markers;
-				end = clips[i].end.seconds;
+				end = Math.max(10 * 60, clips[i].end.seconds);
+				break;
 			}
 		}
+
 		if(fAnimationSequence === null || fAnimationMarkers === null) {
 			alert('assert');
 			return;
@@ -1042,19 +1155,21 @@ $._PPP_={
 
 		fAnimationProperties = [];
 		for(var i = 0; i < fAnimationSequence.videoTracks.numTracks; i++){
+			if(fAnimationSequence.videoTracks[i].clips.length > 0){
 			var component = getComponentObject(fAnimationSequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
 			var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
 			fAnimationProperties.push(property);
+			} else {
+				fAnimationProperties.push(null);
+		}
 		}
 
 		initializeKey(fAnimationProperties[0], 100);
 		for(var i = 1; i < fAnimationProperties.length; i++){
 			initializeKey(fAnimationProperties[i], 0);
 		}
-		
-		bakeFrameAnimation_Random(period, randomlyRange, end);
-	},
-	
+		bakeFrameAnimation_Random(end);
+	}
 };
 
 function getClipLocalTime (clip, time) {
@@ -1105,7 +1220,7 @@ function fixTimeError(seconds, epsTime) {
     return seconds;
 							}
 
-function clipToSequence(clip) {
+function trackItemToSequence(clip) {
     for(var i = 0; i < app.project.sequences.numSequences; i++){
         if(clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
             return app.project.sequences[i];
@@ -1198,72 +1313,90 @@ function reportProjectItemSelectionChanged(e) {
         }
     }
 }
-
 function reportSequenceItemSelectionChanged() {
     eventObj.type = "sequenceItemsSelectChanged";
     eventObj.data = '';
     eventObj.dispatch();
 }
 
+function reportSequenceItemAdd(track, trackItem) {
+}
+function reportSequenceItemRemove(track, trackItem) {
+}
+function reportSequenceChanged() {
+}
+
 var FrameAnimationKey = function(index, duration, epsTime) {
     this.index = index;
     this.duration = duration;
     this.frame = duration / epsTime;
-};
-
-function getAnimationKeys(sequence, time) {
-	var markers = sequence.markers;
-	var marker = null;
-	var end = Number.POSITIVE_INFINITY;
-	var targetMarker = null;
-	
-	if(markers.numMarkers > 0) {
-		var idx = markers.numMarkers - 1;
-		marker = markers.getLastMarker();
-		for(; idx >= 0; idx--) {
-			if(time < marker.start.seconds) {
-				end = marker.start.seconds;
-			}
-			if(time >= marker.start.seconds) {
-				targetMarker = marker;
-				break;
-			}
-			if(idx !== 0) {
-				marker = markers.getPrevMarker(marker);
-			}
-		}
-	}
-	if (targetMarker !== null) {
-		var transition = getTransition(sequence, targetMarker)
-		return [targetMarker.start.seconds, end, transition[0], transition[1]];
-	}
-	return [null, null, null, null];
 }
 
-function getTransition(sequence, targetMarker){
+function getTransition_Random(sequence, targetMarker){
 	var epsTime = sequence.getSettings().videoFrameRate.seconds;
+	var infoList = targetMarker.comments.split('\n');
+	
+	var transition = [];
+
+	var indexes = infoList[2].split(',');
+	var durations = infoList[3].split(',');
+	transition.push(new FrameAnimationKey(Number(indexes[indexes.length - 1]), Number(durations[durations.length - 1]), epsTime));
+
+	indexes = infoList[0].split(',');
+	durations = infoList[1].split(',');
+	for(var i = 0; i < indexes.length; i++) {
+		transition.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
+			}
+	
+	var transition_property = infoList[4].split(',');
+
+	return [transition, transition_property];
+			}
+
+function getTransition_Lip(sequence, targetMarker){
+	var epsTime = sequence.getSettings().videoFrameRate.seconds;
+	var infoList = targetMarker.comments.split('\n');
+
+	var transition = [];
+
+	var indexes = infoList[2].split(',');
+	var durations = infoList[3].split(',');
+	transition.push(new FrameAnimationKey(Number(indexes[indexes.length - 1]), Number(durations[durations.length - 1]), epsTime));
+
+	indexes = infoList[0].split(',');
+	durations = infoList[1].split(',');
+	for(var i = 0; i < indexes.length; i++) {
+		transition.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
+			}
+
+	return transition;
+		}
+
+function getTransitionForClipset(sequence, targetMarker){
 	var infoList = targetMarker.comments.split('\n');
 	var indexes = infoList[0].split(',');
 	var durations = infoList[1].split(',');
-	var transition_in = [];
-	for(var i = 0; i < indexes.length; i++) {
-		transition_in.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
+	var treePathList = [];
+
+	treePathList.push(getTreePathFromActorClip(sequence.videoTracks[Number(infoList[2].split(',')[0])].clips[0]));
+	for(var i = 0; i < indexes.length; i++){
+		treePathList.push(getTreePathFromActorClip(sequence.videoTracks[Number(indexes[i])].clips[0]));
 	}
 
-	var transition_out = [];
-	if(infoList.length >= 4){
-		indexes = infoList[2].split(',');
-		durations = infoList[3].split(',');
-		for(var i = 0; i < indexes.length; i++) {
-			transition_out.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
+	var frameList = [];
+	frameList.push(Math.round(Number(infoList[3].split(',')[0]) * 60));
+	for(var i = 0; i < durations.length; i++){
+		frameList.push(Math.round(Number(durations[i]) * 60));
 		}	
-	} else {
-		for(var i = indexes.length - 2; i >= 0; i--) {
-			transition_out.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
-		}
-	}
 
-	return [transition_in, transition_out];
+	var result = '{"anim_clips":"' + treePathList.join(',') + '","frame":"' + frameList.join(',') + '"';;
+	if(infoList.length >= 5){
+		var randomInfo = infoList[4].split(',');
+		result += ',"interval":"' + randomInfo[0].toString() + '","min":"' + randomInfo[1].toString() + '","max":"' + randomInfo[2].toString() + '"';
+		}
+
+	result += '}';
+	return result;
 }
 
 function switchActiveTrack(activateSeconds, activateTrackIndex, deactivateTrackIndex, epsTime) {
@@ -1272,20 +1405,15 @@ function switchActiveTrack(activateSeconds, activateTrackIndex, deactivateTrackI
 	lastTime.seconds = fixTimeError(activateSeconds - epsTime, epsTime);
 	var activateTime = new Time();
 	activateTime.seconds = fixTimeError(activateSeconds, epsTime);
-	for(var i = 0; i < fAnimationProperties.length; i++){
-		var value = fAnimationProperties[i].getValueAtKey(activateTime);
-		if(value == 100) {
-			fAnimationProperties[i].removeKey(activateTime);
-			fAnimationProperties[i].removeKey(lastTime);
-		}
-	}
 
 	var deactivateProperty = null;
 	if(deactivateTrackIndex >= 0) {
 		deactivateProperty = fAnimationProperties[deactivateTrackIndex];
 	} else {
 		for(var i = 0; i < fAnimationProperties.length; i++){
+			if(fAnimationProperties[i] === null) continue;
 			var prevKeyTime = fAnimationProperties[i].findPreviousKey(activateTime);
+			if(prevKeyTime !== undefined){
 			var lastValue = fAnimationProperties[i].getValueAtTime(prevKeyTime);
 			if(lastValue == 100) {
 				if(activateTrackIndex == i) return;
@@ -1294,23 +1422,44 @@ function switchActiveTrack(activateSeconds, activateTrackIndex, deactivateTrackI
 			}
 		}
 	}
+		if(deactivateProperty === null) {
+			for(var i = 0; i < fAnimationProperties.length; i++){
+				if(fAnimationProperties[i] === null) continue;
+				var prevKeyTime = fAnimationProperties[i].getValueAtKey(activateTime);		
+				if(prevKeyTime !== null){
+					var lastValue = fAnimationProperties[i].getValueAtTime(prevKeyTime);
+					if(lastValue == 100) {
+						if(activateTrackIndex == i) return;
+						deactivateProperty = fAnimationProperties[i];
+						break;
+					}
+				}
+			}
+		}
+	}
 
-	if(deactivateProperty != null) {
+	if(deactivateProperty !== null) {
 		var prevKeyTime = deactivateProperty.findPreviousKey(activateTime);
+		if(prevKeyTime !== undefined){
 		var lastValue = deactivateProperty.getValueAtKey(prevKeyTime);
 		deactivateProperty.addKey(lastTime);
 		deactivateProperty.setValueAtKey(lastTime, lastValue, 0);
+		}
 		deactivateProperty.addKey(activateTime);
 		deactivateProperty.setValueAtKey(activateTime, 0, 0);
 	}
 
 	var activateProperty = fAnimationProperties[activateTrackIndex];
+	if(activateProperty !== null){
 	var prevKeyTime = activateProperty.findPreviousKey(activateTime);
+		if(prevKeyTime !== undefined){
 	var lastValue = activateProperty.getValueAtKey(prevKeyTime);
 	activateProperty.addKey(lastTime);
 	activateProperty.setValueAtKey(lastTime, lastValue, 0);
+		}
 	activateProperty.addKey(activateTime);
 	activateProperty.setValueAtKey(activateTime, 100, 0);
+}
 }
 
 function clearFrameKey(sequence, trackIndex, start, end) {
@@ -1330,6 +1479,7 @@ function clearFrameKey(sequence, trackIndex, start, end) {
 }
 
 function initializeKey(property, init){
+	if(property === null) return;
 	if (property.isTimeVarying()) {
 		property.setTimeVarying(false);
 	}
@@ -1341,73 +1491,53 @@ function initializeKey(property, init){
 	property.setValueAtKey(startTime, init, 0);
 }
 
+function HasPassedMarkerChangeTime (time, nextMarker) {
+	if(nextMarker !== null) {
+		return nextMarker.start.seconds <= time;
+	}
+	return false;
+}
+
 function bakeFrameAnimation_Audio(){
 	var epsTime = fAnimationSequence.getSettings().videoFrameRate.seconds;
 	var markers = fAnimationSequence.markers;
 
 	if(markers.numMarkers == 0) return;
-	var currentMarker = markers.getFirstMarker();
+	var currentMarker = getFirstTransitionMarker(markers);
 	var nextMarker = null;
-	var currentTransitionIn = null
-	var currentTransitionOut = null;
-	var nextTransitionIn = null
-	var nextTransitionOut = null;
-	var markerIndex = 0;
+	var currentTransition = null;
 	var targetTime = 0;
 	var currentTransitionOutDuration = 0;
-	var nextTransitionOutDuration = 0;
 
-	if(markers.numMarkers > 1) {
-		nextMarker = markers.getNextMarker(currentMarker);
-		var transition = getTransition(fAnimationSequence, nextMarker);
-		nextTransitionIn = transition[0];
-		nextTransitionOut = transition[1];
-	}
+	nextMarker = getNextTransitionMarker(markers, currentMarker);
 
-	var checkMarker = function (lastTime, currentStatus){
-		var markerChenged = false;
-		while(nextMarker != null && targetTime >= nextMarker.start.seconds) {
-			var activateIndex = nextTransitionIn[nextTransitionIn.length - 1].index;
-			if(currentStatus == 0) {
-				activateIndex = nextTransitionOut[nextTransitionOut.length - 1].index;
-			}
-			if(nextMarker.start.seconds > lastTime) {
-				finalKey[Math.round(nextMarker.start.seconds / epsTime)] = activateIndex;
-			} else {
-				finalKey[Math.round(lastTime / epsTime)] = activateIndex;
-			}
-
+	var ChangeNextTransition = function(currentLevel){
 			currentMarker = nextMarker;
-			markerIndex++;
-			if(markerIndex < markers.numMarkers - 1) {
-				nextMarker = markers.getNextMarker(currentMarker);
-				var transition = getTransition(fAnimationSequence, nextMarker);
-				currentTransitionIn = nextTransitionIn;
-				currentTransitionOut = nextTransitionOut;
-				nextTransitionIn = transition[0];
-				nextTransitionOut = transition[1];
-			} else {
-				nextMarker = null;
+		if(currentMarker !== null) {
+			var prevLength = currentTransition.length;
+			currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
+			nextMarker = getNextTransitionMarker(markers, currentMarker);
+			currentLevel = Math.floor(currentLevel * currentTransition.length / prevLength);
+			return currentLevel;
 			}
-
-			markerChenged = true;
+		return 0;
 		}
 
-		if(markerChenged){
-			currentTransitionOutDuration = 0;
-			for(var i = 0; i < currentTransitionOut.length; i++) {
-				currentTransitionOutDuration += currentTransitionOut[i].duration;
+	var LevelRestriction = function(){
+		timeToClose = 0;
+		for(var levelItr = 1; levelItr <= level; levelItr++) {
+			timeToClose += currentTransition[levelItr].duration;
+			if(targetTime + timeToClose >= limitTime || targetTime + timeToClose + currentTransition[0].duration >= clipEnd){
+				level = levelItr;
+				break;
 			}
-			nextTransitionOutDuration = 0;
-			if(nextMarker != null) {
-				for(var i = 0; i < nextTransitionOut.length; i++) {
-					nextTransitionOutDuration += nextTransitionOut[i].duration;				
 				}
 			}
-		}
-	}
 
-	var lastTime = 0;
+	var finalKey = {};
+	currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
+	finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
+	
 	for(var clipIndex = 0; clipIndex < fAnimationSourceClipsLength; clipIndex++) {
 		if(fAnimationSourceClips[clipIndex].mediaType === 'Audio') {
 			var clipStart = fAnimationSourceClips[clipIndex].start.seconds - epsTime * 0;
@@ -1415,54 +1545,100 @@ function bakeFrameAnimation_Audio(){
 			var keypoints = fAnimationKeypoints[clipIndex].split(',');
 			var startTime = fAnimationStartTime[clipIndex].split(',');
 
-			var transition = getTransition(fAnimationSequence, currentMarker);
-			currentTransitionIn = transition[0]
-			currentTransitionOut = transition[1];
-			
-			var finalKey = {};
+			currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
+			var level = 1;
 			for(var i = 0; i < startTime.length; i++) {
+				level = Math.max(level, 0);
 				if(keypoints[i] == 1) {
+					level = Math.max(level, 1);
 					targetTime = clipStart + Number(startTime[i]);
-					checkMarker(lastTime, 0);
-
 					var limitTime = clipEnd;
 					if(i < startTime.length - 1) {
-						limitTime = clipStart + Number(startTime[i + 1]) - currentTransitionOutDuration;
+						limitTime = clipStart + Number(startTime[i + 1]);
 					}
 
-					// transition in
-					for(var j = 0; j < currentTransitionIn.length; j++) {
-						targetTime = fixTimeError(targetTime, epsTime);
-						if(targetTime < limitTime) {				
-							finalKey[Math.round(targetTime / epsTime)] = currentTransitionIn[j].index;
-							targetTime += currentTransitionIn[j].duration;
+					while(true){
+						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+							ChangeNextTransition(0);
+							finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
 						} else {
 							break;
 						}
 					}
-					lastTime = targetTime;
+					// transition in
+					var timeToClose = 0;
+					for(; level < currentTransition.length; level++) {
+						targetTime = fixTimeError(targetTime, epsTime);
+						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+							level = ChangeNextTransition(level);
+							level = Math.max(level, 1);
+							LevelRestriction();
+						}
+						finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
+						targetTime += currentTransition[level].duration;
+						timeToClose += currentTransition[level].duration;
+						if(targetTime + timeToClose >= limitTime) {
+							break;
+						}
+					}
+					level = Math.min(level, currentTransition.length - 1);
+					LevelRestriction();
 
-					if(nextMarker != null && nextMarker.start.seconds < limitTime) {
-						if(targetTime + nextTransitionOutDuration - currentTransitionOutDuration < limitTime) {
-							// Interrupt
-							checkMarker(lastTime, 1);
-							if(i < startTime.length - 1) {
-								limitTime = clipStart + Number(startTime[i + 1]) - currentTransitionOutDuration;
+					var currentTransitionOutDuration = 0;
+					for(var j = 0; j < currentTransition.length - 1; j++) {
+						currentTransitionOutDuration += currentTransition[j].duration;
 							}
+					targetTime = Math.max(targetTime, limitTime - currentTransitionOutDuration);
+
+					// mid test
+					while(true){
+						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+							level = ChangeNextTransition(level);
+							level = Math.max(level, 1);
+							LevelRestriction();
+							finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[level].index;
+						} else {
+							break;
 						}
 					} 
 
 					// transition out
-					targetTime = limitTime;
-					limitTime = clipStart + Number(startTime[i]);
-					for(var j = 0; j < currentTransitionOut.length; j++) {
-						if(targetTime >= limitTime) {
-							targetTime = fixTimeError(targetTime, epsTime);
-							finalKey[Math.round(targetTime / epsTime)] = currentTransitionOut[j].index;
+					level = Math.min(level, currentTransition.length - 2);
+					for(; level >= 0; level--) {
+						targetTime = fixTimeError(targetTime, epsTime);
+						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+							level = ChangeNextTransition(level);
+							LevelRestriction();
 						}
-						targetTime += currentTransitionOut[j].duration;
+						if(targetTime <= limitTime){
+							finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
+							targetTime += currentTransition[level].duration;
+						} else {
+							break;
+						}
 					}
-					lastTime = targetTime;
+				} else {
+					targetTime = clipStart + Number(startTime[i]);
+					var limitTime = clipEnd;
+					if(i < startTime.length - 1) {
+						limitTime = clipStart + Number(startTime[i + 1]);
+					}
+					level = Math.min(level, currentTransition.length - 2);
+					for(; level >= 0; level--) {
+							targetTime = fixTimeError(targetTime, epsTime);
+						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+							level = ChangeNextTransition(level);
+							LevelRestriction();
+						}
+						if(targetTime + currentTransition[level].duration < limitTime){
+							finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
+							targetTime += currentTransition[level].duration;
+						} else {
+							break;
+						}
+					}
+						}
+					}
 				}
 			}
 			var prevIndex = -1;
@@ -1472,86 +1648,236 @@ function bakeFrameAnimation_Audio(){
 					prevIndex = finalKey[key];
 				}
 			}
-		}
-	}
 	alert('complete');
 }
 
-function bakeFrameAnimation_Random(period, randomlyRange, end){
+function bakeFrameAnimation_Random(end){
 	var epsTime = fAnimationSequence.getSettings().videoFrameRate.seconds;
 	var markers = fAnimationSequence.markers;
 
 	if(markers.numMarkers == 0) return;
-	var currentMarker = markers.getFirstMarker();
-	var nextMarker = null;
-	var currentTransitionIn = null
-	var currentTransitionOut = null;
-	var nextTransitionIn = null
-	var nextTransitionOut = null;
-	var markerIndex = 0;
-	var targetTime = Number(period) + (Math.random() * 2 - 1) *  Number(randomlyRange);
-	var lastTime = 0;
+	var currentMarker = getFirstTransitionMarker(markers);
+	var nextMarker = getNextTransitionMarker(markers, currentMarker);
+	var currentTransition = null;
+	var targetTime = 0;
 	var prevIndex = -1;
+	var period = Number(epsTime);
+	var randomlyRange = 0;
 
-	var transition = getTransition(fAnimationSequence, currentMarker);
-	currentTransitionIn = transition[0]
-	currentTransitionOut = transition[1];
+	var _transition = getTransition_Random(fAnimationSequence, currentMarker);
+	currentTransition = _transition[0];
+	period = Number(_transition[1][0]);
+	randomlyRange = Number(_transition[1][1]);
 
-	if(markers.numMarkers > 1) {
-		nextMarker = markers.getNextMarker(currentMarker);
-		var transition = getTransition(fAnimationSequence, nextMarker);
-		nextTransitionIn = transition[0];
-		nextTransitionOut = transition[1];
-	}
-
-	var checkMarker = function (lastTime, currentStatus){
-		var markerChenged = false;
-		while(nextMarker != null && targetTime >= nextMarker.start.seconds) {
-			var activateIndex = nextTransitionIn[nextTransitionIn.length - 1].index;
-			if(currentStatus == 0) {
-				activateIndex = nextTransitionOut[nextTransitionOut.length - 1].index;
+	var ChangeNextTransition = function(currentLevel){
+		currentMarker = nextMarker;
+		if(currentMarker !== null) {
+			var prevLength = currentTransition.length;
+			var _transition = getTransition_Random(fAnimationSequence, currentMarker);
+			currentTransition = _transition[0];
+			period = Number(_transition[1][0]);
+			randomlyRange = Number(_transition[1][1]);
+			nextMarker = getNextTransitionMarker(markers, currentMarker);
+			currentLevel = Math.floor(currentLevel * currentTransition.length / prevLength);
+			return currentLevel;
 			}
-			if(nextMarker.start.seconds > lastTime) {
-				switchActiveTrack(nextMarker.start.seconds, activateIndex, prevIndex, epsTime);			
-			} else {
-				switchActiveTrack(lastTime, activateIndex, prevIndex, epsTime);			
+		return 0;
 			}
-			prevIndex = activateIndex;
 
-			currentMarker = nextMarker;
-			markerIndex++;
-			if(markerIndex < markers.numMarkers - 1) {
-				nextMarker = markers.getNextMarker(currentMarker);
-				var transition = getTransition(fAnimationSequence, nextMarker);
-				currentTransitionIn = nextTransitionIn;
-				currentTransitionOut = nextTransitionOut;
-				nextTransitionIn = transition[0];
-				nextTransitionOut = transition[1];
-			} else {
-				nextMarker = null;
-			}
-			markerChenged = true;
-		}
-	}
+	switchActiveTrack(0, currentTransition[0].index, prevIndex, epsTime);
+	targetTime = Math.max(epsTime, period + (Math.random() * 2 - 1) * randomlyRange);
 
 	while(targetTime < end) {
-		checkMarker(lastTime, 0);
-		// transition in
-		for(var j = 0; j < currentTransitionIn.length; j++) {
-			targetTime = fixTimeError(targetTime, epsTime);
-			switchActiveTrack(targetTime, currentTransitionIn[j].index, prevIndex, epsTime);			
-			prevIndex = currentTransitionIn[j].index;
-			targetTime += currentTransitionIn[j].duration;
-		}					
-		// transition out
-		for(var j = 0; j < currentTransitionOut.length; j++) {
-			targetTime = fixTimeError(targetTime, epsTime);
-			switchActiveTrack(targetTime, currentTransitionOut[j].index, prevIndex, epsTime);			
-			prevIndex = currentTransitionOut[j].index;
-			targetTime += currentTransitionOut[j].duration;
+		while(true){
+			if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+				ChangeNextTransition(0);
+				switchActiveTrack(targetTime, currentTransition[0].index, prevIndex, epsTime);
+				prevIndex = currentTransition[0].index;
+			} else {
+				break;
 		}
-		lastTime = targetTime;
-		targetTime += Number(period) + (Math.random() * 2 - 1) *  Number(randomlyRange);
+	}
+
+		// transition in
+		for(var i = 1; i < currentTransition.length; i++) {
+			targetTime = fixTimeError(targetTime, epsTime);
+			if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+				i = ChangeNextTransition(i);
+				i = Math.max(i, 1);
+			}
+			switchActiveTrack(targetTime, currentTransition[i].index, prevIndex, epsTime);			
+			prevIndex = currentTransition[i].index;
+			targetTime += currentTransition[i].duration;
+		}					
+
+		// transition out
+		for(var i = currentTransition.length - 2; i >= 0; i--) {
+			targetTime = fixTimeError(targetTime, epsTime);
+			if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+				i = ChangeNextTransition(i);
+			}
+			switchActiveTrack(targetTime, currentTransition[i].index, prevIndex, epsTime);			
+			prevIndex = currentTransition[i].index;
+			targetTime += currentTransition[i].duration;
+		}
+		targetTime += Math.max(epsTime, period + (Math.random() * 2 - 1) * randomlyRange);
 	}
 	alert('complete');
+}
+
+function getFirstSequenceFromTrackItems(clips) {
+	// todo animation sequence check
+	var seq = null;
+	for(var i = 0; i < clips.numItems; i++) {
+		if(clips[i].projectItem.isSequence()) {
+			seq = trackItemToSequence(clips[i]);
+		}
+	}
+	return seq;
+}
+
+function getTrackItemAtTime(trackItems, time){
+	for(var i = 0; i < trackItems.numItems; i++) {
+		if(trackItems[i].inPoint.seconds <= time && time < trackItems[i].outPoint.seconds){
+			return trackItems[i];
+		}
+	}
+	return null;
+}
+
+function getTreePathFromActorClip(clip){
+	var treePath = clip.projectItem.treePath;
+	if(clip.projectItem.isSequence()) {
+		treePath = '';
+	}
+	return treePath.slice(1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1)))).replace(/\\/g, '/');
+}
+
+function getParentBin(projectItem){
+	var treePath = removeRootPath(projectItem.treePath);
+	var index = treePath.lastIndexOf('/');
+	if(index !== -1) {
+		treePath = treePath.slice(0, index);
+		return searchItemWithTreePath(treePath, ProjectItemType.BIN);
+	} else {
+		return app.project.rootItem.treePath.replace(/\\/g, '/');
+	}
+}
+
+function removeRootPath(treePath) {
+	treePath = treePath.replace(/\\/g, '/');
+	var rootPath = app.project.rootItem.treePath.replace(/\\/g, '/');
+	if(treePath.indexOf(rootPath) === 0){
+		treePath = treePath.slice(rootPath.length + 1);
+	}
+	return treePath;
+}
+
+function getNextTransitionMarker(markers, currentMarker){
+	var endMarker = markers.getLastMarker();
+
+	while(currentMarker.guid !== endMarker.guid){
+		currentMarker = markers.getNextMarker(currentMarker);
+		if(isTransitionMarker(currentMarker)) {
+			return currentMarker;
+		}
+	}
+	return null;
+}
+
+function getFirstTransitionMarker(markers) {
+	var marker =  markers.getFirstMarker();
+	do {
+		if(isTransitionMarker(marker)) {
+			return marker;
+		}
+		marker = getNextTransitionMarker(markers, marker);
+	} while(marker !== null);
+	return null;
+}
+
+function isTransitionMarker(marker){
+	return marker.type === 'Segmentation' && marker.name === TRANSITION_MARKER_NAME;
+}
+
+function getTransitionMarkerAtTime(markers, seconds) {
+	if(markers.numMarkers > 0) {
+		var currentMarker = markers.getFirstMarker();
+		if(!isTransitionMarker(currentMarker)){
+			currentMarker = getNextTransitionMarker(markers, currentMarker);
+		}
+		while(currentMarker !== null) {
+			if(currentMarker.start.seconds <= seconds && seconds < currentMarker.end.seconds){
+				return currentMarker;
+			}
+			currentMarker = getNextTransitionMarker(markers, currentMarker);
+		}
+	}
+	return null;
+}
+
+function getAnimationSequenceLinkInfo(sequence){
+	if(sequence.markers.numMarkers > 0) {
+		var currentMarker = sequence.markers.getFirstMarker();
+		var endMarker = sequence.markers.getLastMarker();
+		while(true){
+			if(currentMarker.type === 'Comment' && currentMarker.getColorByIndex() === ANIMATION_SEQUENCE_LINK_MARKER_COLOR) {
+				return currentMarker.comments.split('\n');
+			}
+			if(currentMarker.guid !== endMarker.guid) {
+				currentMarker = sequence.markers.getNextMarker(currentMarker);
+			} else {
+				break;
+			}
+		}
+	}
+	return null;
+}
+
+function overwriteVideoClip(projectItem, sequence, track, startTime, endFlag, endMarkerSequence){
+	var clips = track.clips;
+	var epsTime = sequence.getSettings().videoFrameRate.seconds;
+	var endTime = startTime + 60 * 60;
+	if(sequence.getOutPointAsTime().seconds > 0) {
+		endTime = sequence.getOutPointAsTime().seconds;
+	}
+
+	endTime = getNextClipTime(clips, endFlag, startTime, endTime);
+	if(endFlag & ACT_CLIPEND_MARKER) {
+		endTime = getNextMarkerTime(endMarkerSequence.markers, startTime, endTime);
+	}
+
+	var _endTime = new Time();
+	_endTime.seconds = fixTimeError(endTime, epsTime);
+	projectItem.setOverrideFrameRate(1/epsTime);
+	var _startTime = new Time();
+	_startTime.seconds = fixTimeError(startTime, epsTime);
+	projectItem.setInPoint(_startTime.ticks, 4);
+	projectItem.setOutPoint(_endTime.ticks, 4);
+	track.overwriteClip(projectItem, startTime);
+	projectItem.setOverrideFrameRate(0);
+}
+
+function makeVideoTrack(sequence, trackIndex) {
+	if(trackIndex >= sequence.videoTracks.numTracks) {
+		var lastIndex = sequence.videoTracks.numTracks - 1;
+		var vlocked = sequence.videoTracks[lastIndex].isLocked();
+		if(!vlocked) {
+			sequence.videoTracks[lastIndex].setLocked(1);
+		}
+		var currentTrackNum = sequence.videoTracks.numTracks;
+		var clip = getDummyClip();
+		for(var i = trackIndex - currentTrackNum; i >= 0; i--) {
+			sequence.videoTracks[sequence.videoTracks.numTracks - 1].overwriteClip(clip, 0);
+			sequence.videoTracks[sequence.videoTracks.numTracks - 1].setLocked(1);
+		}
+		for(var i = Number(currentTrackNum); i < sequence.videoTracks.numTracks; i++) {
+			sequence.videoTracks[i].setLocked(0);
+			sequence.videoTracks[i].clips[0].setSelected(true, false);
+			sequence.videoTracks[i].clips[0].remove(false, false);
+		}
+		if(!vlocked) {
+			sequence.videoTracks[lastIndex].setLocked(0);
+		}
+	}
 }

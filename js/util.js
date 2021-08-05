@@ -55,13 +55,40 @@ function SaveJson(obj, path) {
     return window.cep.fs.writeFile(path, JSON.stringify(obj)).err;
 }
 
-$(document).on('change', '.input_num_only', function() {
+$(document).on('change', '.input_integer_only', function() {
     const target = $(this);
     let inputval = target.val().match(/[0-9０-９]+/g);
     if(inputval) {
         inputval = inputval.join('').replace(/[０-９]/g, function(s) {
             return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
         });
+        target.val(inputval);
+    } else {
+        target.val('');
+    }
+});
+
+$(document).on('change', '.input_positive_num_only', function() {
+    const target = $(this);
+    let inputval = target.val().match(/[0-9０-９\.]+/g);
+    if(inputval) {
+        inputval = inputval.join('').replace(/[０-９]/g, function(s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        });
+        inputval = inputval.match(/\d+(?:\.\d+)?/).join('');
+        target.val(inputval);
+    } else {
+        target.val('');
+    }
+});
+$(document).on('change', '.input_num_only', function() {
+    const target = $(this);
+    let inputval = target.val().match(/[0-9０-９\.\-]+/g);
+    if(inputval) {
+        inputval = inputval.join('').replace(/[０-９]/g, function(s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        });
+        inputval = inputval.match(/-?\d+(?:\.\d+)?/).join('');
         target.val(inputval);
     } else {
         target.val('');
@@ -111,8 +138,10 @@ function enableSwitch(jq_elm) {
     const enable = jq_elm.hasClass('enable');
     if(enable){
         setDisable(jq_elm);
+        return false;
     } else {
         setEnable(jq_elm);
+        return true;
     }
 }
 function setEnable(jq_elm) {
@@ -132,13 +161,19 @@ function setSettingFlag(jq_elm, ok = true) {
 }
 function setSettingOK(jq_elm) {
     jq_elm.removeClass('tdact_setting_error');
-    jq_elm.addClass('tdact_setting_ok');    
+    jq_elm.addClass('tdact_setting_ok');
 }
 function setSettingError(jq_elm) {
     jq_elm.removeClass('tdact_setting_ok');
-    jq_elm.addClass('tdact_setting_error');  
+    jq_elm.addClass('tdact_setting_error');
 }
 function resetSettingFlag(jq_elm) {
     jq_elm.removeClass('tdact_setting_ok');
     jq_elm.removeClass('tdact_setting_error');
 }
+
+function makeEvalScript(functionName, ...params){
+    return '$._PPP_.' + functionName + '("' + params.join('","') + '")';
+};
+
+const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms));

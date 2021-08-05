@@ -98,7 +98,7 @@ function triggerOverriteClip_ExecuteButton() {
     }
     const trackNum = trackNumElm.val() - 1;
     const targetSequence = $('#trigger_clip_override_target_seq').val();
-    const startClipEndFlag = getClipEndFlag(startTriggerPathElm.parent());    
+    const startClipEndFlag = getClipEndFlag(startTriggerPathElm.parent());
     const endClipEndFlag = getClipEndFlag(endTriggerPathElm.parent());
     csInterface.evalScript('$._PPP_.TriggerClipOverwrite("' + targetSequence + '","' + trackNum + '","' + startTriggerClipTreePath + '","' + endTriggerClipTreePath + '","' + startClipEndFlag + '","' + endClipEndFlag + '")', function() {});
 }
@@ -134,7 +134,7 @@ CustomInitialize['trigger_clip_custum_initialize'] = function () {
         }
         clipPathInit(category['trigger_clipstart_clippath'], $('#trigger_clipstart_clippath'));
         clipPathInit(category['trigger_clipend_clippath'], $('#trigger_clipend_clippath'));
- 
+
         const merkerInit = function(id) {
             const insert = category[id];
             if(insert) {

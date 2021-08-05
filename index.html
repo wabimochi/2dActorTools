@@ -9,7 +9,6 @@
 	<script src="./node_modules/uikit/dist/js/uikit-icons.min.js"></script>
 	<script src="./node_modules/sortablejs/dist/sortable.umd.js"></script>
 	<script src="./lib/Vulcan.js"></script>
-	<script src="node_modules/lightbox2/dist/js/lightbox.js"></script>
 	<script src="./js/svg.js"></script>
 	<script src="./js/util.js"></script>
 	<script src="./js/setting.js"></script>
@@ -20,12 +19,11 @@
 	<script src="./js/subtitle.js"></script>
 	<script src="./js/trigger_clip_override.js"></script>
 
-	<link id="tdactorstyle" href="css/tdActor.css" rel="stylesheet" type="text/css">
 	<link id="uikitstyle" href="node_modules/uikit/dist/css/uikit.min.css" rel="stylesheet" type="text/css">
-	<link id="lightboxstyle" href="node_modules/lightbox2/dist/css/lightbox.css" rel="stylesheet" type="text/css">
+	<link id="tdactorstyle" href="css/tdActor.css" rel="stylesheet" type="text/css">
 </head>
 
-<body onContextmenu="return false;" onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate();LoadSettings()">
+<body onContextmenu="return false;" onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate();LoadSettings()" spellcheck="false">
 	<div class='uk-flex-center'>
 		<a href="javascript:history.go(0)" uk-icon="icon: refresh"></a>
 		<a href="#" id='setting_file_not_exist_icon' class='uk-align-right' uk-toggle="target: #settigs_file_modal" uk-icon="icon: warning" style="color:yellow; visibility: hidden;" uk-tooltip="title: 設定ファイルがありません。ここをクリックして保存先を指定してください。; pos: bottom-right"></a>
@@ -49,11 +47,10 @@
 	</div>
 
 	<div id="mainfunc">
-		<ul class="uk-flex-center" id="function_switch" uk-tab="active: 0;">
+		<ul class="uk-flex-center" id="function_switch" uk-tab="active: 2;">
 			<li id="function_subtitle"><a href="#">字幕</a></li>
 			<li id="function_property_deploy"><a href="#">リファインツール</a></li>
 			<li id="function_actor"><a href="#">立ち絵</a></li>
-			<li id="function_actor_setting"><a href="#">立ち絵設定</a></li>
 			<li id="function_auto_import"><a href="#">自動インポート</a></li>
 			<li id="extention_setting"><a href="#">設定</a></li>
 		</ul>
@@ -136,7 +133,7 @@
 								<div class="merker_color_selector" style="background-color: #19F4D6;"></div>
 							</div>
 							<div class="uk-margin-left uk-margin">
-								<label><input id="auto_newline_maxlinecount" category="autonewline" class="uk-input uk-light tdinput input_num_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" placeholder="行数" value="2">行を超える、もしくは分割できない場合のマーカーの色</label>
+								<label><input id="auto_newline_maxlinecount" category="autonewline" class="uk-input uk-light tdinput input_integer_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" placeholder="行数" value="2">行を超える、もしくは分割できない場合のマーカーの色</label>
 							</div>
 							<div class="uk-margin-left uk-flex-inline uk-flex-middle" id="auto_newline_warning_marker_color" category="autonewline">
 								<div class="uk-margin-left"></div>
@@ -153,7 +150,7 @@
 							<div class="uk-margin"><label><input id="auto_newline_insert" category="autonewline" class="uk-checkbox td_check save_setting_check_on_change" type="checkbox" checked> 自動で改行する</label></div>
 							<div class="uk-margin">
 								<label>
-									1行の文字数<input id="auto_newline_maxcount" category="autonewline" class="uk-input uk-light tdinput input_num_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" value="35">
+									1行の文字数<input id="auto_newline_maxcount" category="autonewline" class="uk-input uk-light tdinput input_integer_only save_setting_value_on_change uk-form-small uk-form-width-xsmall uk-margin-left uk-margin-right" type="text" value="35">
 									<a href="#" class="" onClick="countSelectedClipTextLength()" uk-icon="icon: pencil" uk-tooltip="選択中のクリップの文字数を取得"></a>
 								</label>
 							</div>
@@ -183,7 +180,7 @@
 								</div>
 							</div>
 							<div class="uk-flex uk-flex-left uk-margin-small-top">
-								<span class="uk-label  tdactor_label uk-width-auto">トリガー：クリップの終了</span>
+								<span class="uk-label tdactor_label uk-width-auto">トリガー：クリップの終了</span>
 							</div>
 							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
 								<button category="trigger_clip_override" id="trigger_clipend_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
@@ -216,12 +213,12 @@
 				</ul>
 			</li>
 			<li>
-				<div class="uk-thumbnav td-thumbnav uk-padding uk-padding-small uk-padding-remove-vertical actor_linknav">
+				<div id="actor_list_root" class="uk-thumbnav td-thumbnav uk-padding uk-padding-small uk-padding-remove-vertical actor_linknav">
 					<ul>
 
 					</ul>
-					<button id="actor_setting_save_button" class="uk-button uk-button-secondary highlight uk-animation-slide-right-medium uk-width-auto" onClick="SaveActorSetting()" style="margin-left: 5px; padding-right: 15px;" hidden>設定の保存</button>
-					<button id="actor_setting_cancel_button" class="uk-button uk-button-secondary uk-animation-slide-right-medium uk-width-auto" onClick="ActorSettingEnd()" style="margin-left: 5px; padding-right: 15px;" hidden>キャンセル</button>
+					<button id="actor_setting_save_button" class="uk-button uk-button-secondary highlight uk-animation-slide-right-medium uk-width-auto" onClick="SaveActorSetting()" style="margin-left:5px;" hidden>設定の保存</button>
+					<button id="actor_setting_cancel_button" class="uk-button uk-button-secondary uk-animation-slide-right-medium uk-width-auto" onClick="ActorSettingEnd()" style="margin-left:5px;" hidden>キャンセル</button>
 
 				</div>
 
@@ -229,55 +226,90 @@
 					<div id="actor_parts_box" class="uk-width-1-3 actor_parts_top" style="height:100vh; position: sticky; top:0; overflow:scroll; margin-right: 5px;" hidden>
 					</div>
 					<div>
-						<div style="margin-bottom:10px">
+						<button id="actor_setting_animation_end_button" class="uk-button uk-button-secondary highlight uk-animation-slide-right-medium uk-width-auto" onClick="AnimationSettingEnd()" style="margin-left:5px;" hidden>アニメーションの設定を終了</button>
+						<div id="animation_type_root" style="margin-bottom:10px" hidden>
 							<label>
-								アニメーションタイプ
+								グループのアニメーションタイプ
 								<select class="tdactor_selectbox uk-margin-small-left uk-width-auto uk-select" id="select_animation_type">
 									<option value="0">ランダム</option>
 									<option value="1">リップシンク（開閉）</option>
 								</select>
 							</label>
 						</div>
-				<ul class="uk-switcher" id="actor_switcher"></ul>
-						<div id="animation_editor_root" class="uk-margin-small-right">フレームクリップ編集
-							<div class="uk-margin-small-left uk-width-expand uk-flex">
-								<div class="uk-width-expand" style="display: inline-block;">閉じ</div>
-								<div class="" style="display: inline-block;">開き</div>
+						<ul class="uk-switcher" id="actor_switcher"></ul>
+						<div id="animation_editor_root" class="uk-margin-small-left uk-margin-small-right" hidden>
+							<div>
+								<div class="uk-label tdactor_label">名前</div>
+								<input id="animation_editor_name" class="uk-light tdinput" type="text" style="width:300px;">
 							</div>
-
-							<div class="uk-margin-small-left uk-margin-right uk-width-expand uk-flex uk-flex-left actor_parts_list" style="background-color:#111;">
-								<div id="animation_editor_thumbnav" class="td-thumbnav uk-width-expand">
-									<ul class="uk-flex actor_group">
+							
+							<div uk-flex uk-flex-column>
+								<div class="uk-label tdactor_label">サムネイル</div>
+								<div id="animation_editor_thumbnail" class="td-thumbnav dragdrop-area-bg" style="min-width:100px; width:fit-content;">
+									<ul class="uk-flex actor_group" style="min-width:100px; width:fit-content; justify-content: center; padding:10px 20px 10px 20px;">
 										
 									</ul>
 								</div>
-					</div>
-				</div>
+							</div>
 
+							<div class="uk-label tdactor_label">フレームクリップ編集</div>	
+							<div>
+								<div class="uk-margin-small-left uk-margin-right uk-flex uk-flex-left actor_parts_list dragdrop-area-bg" style="position: relative; text-align: center; height:113px">
+									<div id="animation_editor_help2" style="position:absolute; display:inline-block; font-weight:bold; color:#888; left:0%;">閉じ</div>
+									<div id="animation_editor_help3" style="position:absolute; display:inline-block; font-weight:bold; color:#888; right:0%;">開き</div>
+									<div id="animation_editor_thumbnav" class="td-thumbnav uk-width-expand">
+										<ul class="uk-flex actor_group" style="width:50vw; padding-top:20px">
+											
+										</ul>
+										<div id="animation_editor_help1" class="hide_u480" style="position:absolute; display:inline-block; font-weight:bold; color:#8888; white-space:nowrap; transform:translate(-50%, -130%)">ここにパーツをドラッグ＆ドロップ</div>
+									</div>
 								</div>
 							</div>
+
+							<div class="animation_type0_elm">
+								<div class="uk-label tdactor_label">間隔(秒)</div>
+								<input id="animation_editor_interval" class="input_positive_num_only uk-light tdinput" type="text">
+							</div>
+
+							<div class="animation_type0_elm">
+								<div class="uk-label tdactor_label">ランダムの範囲(秒)</div>
+								<input id="animation_editor_random_range" class="input_num_only uk-light tdinput" type="text">
+							</div>
+
+							<div id="animation_preview" class="uk-flex uk-flex-column">
+								<div id="animation_play_button" class="td-icon-button" uk-icon="play"></div>
+								<img id="animation_preview_img" src="">
+							</div>
+
+						</div>
+
+					</div>
+				</div>
 				<div id="actor_contextmenu" class="contextmenu">
 					<ul>
 						<li id="actor_setting_start_button" onClick="StartActorSetting()">設定</li>
 						<li onClick="menu3()">menu4</li>
-						</ul>
-					</div>
+					</ul>
+				</div>
 				<div id="parts_contextmenu" class="contextmenu">
 					<ul>
 						<li id="actor_setting_remove_parts_button">削除</li>
-						<li id="actor_setting_add_animation_clip">アニメーションクリップの追加</li>
+						<li id="actor_setting_add_animation_clip_button" hidden>アニメーションクリップの追加</li>
 					</ul>
-						</div>
+				</div>
 				<div id="group_contextmenu" class="contextmenu">
 					<ul>
 						<li id="actor_setting_add_group_button">グループの追加</li>
 						<li id="actor_setting_remove_group_button">グループの削除</li>
-						<li id="actor_setting_add_animation_clip_on_group">アニメーションクリップの追加</li>
+						<li id="actor_setting_add_animation_clip_on_group">アニメーションの設定</li>
 					</ul>
-					</div>
-			</li>
-			<li>
-				<!-- TODO delete -->
+				</div>
+				<div id="bake_contextmenu" class="contextmenu">
+					<ul>
+						<li id="actor_bake_animation">アニメーションのベイク</li>
+						<li id="actor_bake_animation_all">アニメーションのベイク（全て）</li>
+					</ul>
+				</div>
 			</li>
 			<li>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
@@ -309,93 +341,56 @@
 </body>
 
 <script>
-	
-	lightbox.option({
-		'resizeDuration': 400,
-		'fadeDuration':200,
-		'imageFadeDuration':200
-	})
-
-
 	function toArrayBuffer(buf) {
 		return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 	}
 
-    function clearCanvas(canvas, canvasCtx) {
-        canvasWidth = canvas.width;
-        canvasHeight = canvas.height;
-        canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-        canvasCtx.beginPath();
-	}
-	
-	function smoothArray(array, s) {
-		// 'use strict';
-		const is = 1 - s;
-		for (let i = 1; i < array.length; i++){
-            array[i] = s * array[i] + is * array[i - 1];
-        }
-        return array;
-    }
-
-	function draw(audio_data, length, canvasCtx) {
-		for (var idx = 0; idx < length; idx++) {
-			var x = canvasWidth * (idx / length);
-			var y = (1 - audio_data[idx]) * canvasHeight;
-			if (idx === 0) {
-				canvasCtx.moveTo(x, y);
-			} else {
-				canvasCtx.lineTo(x, y);
-			}
-		}
-
-		canvasCtx.strokeStyle = '#6cc7ff';
-		canvasCtx.stroke();
-	}
 	const KEYCODE_Delete = 46;
 	const KEYCODE_ArrowLeft = 37;
 	const KEYCODE_ArrowUp = 38;
 	const KEYCODE_ArrowRight = 39;
 	const KEYCODE_ArrowDown = 40;
 	document.body.addEventListener('keydown', function(e) {
+		if($('input:focus').length > 0) return;
 		if(!$('#actor_switcher').hasClass('setting')) {
-		if($('#function_actor').hasClass('uk-active')) {
+			if($('#function_actor').hasClass('uk-active')) {
 				if (e.keyCode === KEYCODE_ArrowLeft) {
-				const linkdActor = $('.actor_sequence_link.linked');
-				for(let i = linkdActor.length - 1; i >= 0; i--) {
-					if(linkdActor.eq(i).hasClass('enable')) {
-						if(i - 1 >= 0) {
-							linkdActor.eq(i - 1).click();
+					const linkdActor = $('.actor_sequence_link.linked');
+					for(let i = linkdActor.length - 1; i >= 0; i--) {
+						if(linkdActor.eq(i).hasClass('enable')) {
+							if(i - 1 >= 0) {
+								linkdActor.eq(i - 1).click();
+							}
+							break;
 						}
-						break;
 					}
-				}
-				e.preventDefault();
+					e.preventDefault();
 				} else if (e.keyCode === KEYCODE_ArrowRight) {
-				const linkdActor = $('.actor_sequence_link.linked');
-				for(let i = 0; i < linkdActor.length; i++) {
-					if(linkdActor.eq(i).hasClass('enable')) {
-						if(i + 1 < linkdActor.length) {
-							linkdActor.eq(i + 1).click();
+					const linkdActor = $('.actor_sequence_link.linked');
+					for(let i = 0; i < linkdActor.length; i++) {
+						if(linkdActor.eq(i).hasClass('enable')) {
+							if(i + 1 < linkdActor.length) {
+								linkdActor.eq(i + 1).click();
+							}
+							break;
 						}
-						break;
 					}
-				}
-				e.preventDefault();
+					e.preventDefault();
 				} else if (e.keyCode === KEYCODE_ArrowUp) {
-				csInterface.evalScript('$._PPP_.PrevEditPoint()');
-				e.preventDefault();
+					csInterface.evalScript('$._PPP_.PrevEditPoint()');
+					e.preventDefault();
 				} else if (e.keyCode === KEYCODE_ArrowDown) {
-				csInterface.evalScript('$._PPP_.NextEditPoint()');
-				e.preventDefault();
-			} else if((e.key >= '0' && e.key <= '9') || (e.key >= 'a' && e.key <= 'z')){
-				if(e.ctrlKey) {
-					getActorClipSet(e.key);
-				} else {
-					setActorClipSet(e.key);
+					csInterface.evalScript('$._PPP_.NextEditPoint()');
+					e.preventDefault();
+				} else if((e.key >= '0' && e.key <= '9') || (e.key >= 'a' && e.key <= 'z')){
+					if(e.ctrlKey) {
+						getActorClipSet(e.key);
+					} else {
+						setActorClipSet(e.key);
+					}
+					e.preventDefault();
 				}
-				e.preventDefault();
-			} 
-		}
+			}
 		} else {
 			if (e.keyCode === KEYCODE_Delete) {
 				DeleteSelectedParts();
@@ -530,7 +525,6 @@
 				for(let i = 0; i < s_array.length; i++) {
 					if(i < s_array.length - 1) {
 						const value = s_array[i] / max;
-						console.log(value);
 						if(value - threshold < 0 && prev_key === 1){
 							keys.push(0);
 							startTime.push(i * epsTime);

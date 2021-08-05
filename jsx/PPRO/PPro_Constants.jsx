@@ -1,5 +1,5 @@
-MGT_BIN = "モーショングラフィックステンプレートメディア";
-ACT_BIN = "2dActorTools";
+MGT_BIN_NAME = "モーショングラフィックステンプレートメディア";
+ACT_BIN_NAME = "2dActorTools";
 DISPLAY_NAME_SRC_TEXT = "ソーステキスト";
 DISPLAY_NAME_GRAPHIC = "グラフィックパラメーター";
 LABEL_COLOR = "カラー";

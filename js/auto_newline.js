@@ -139,7 +139,7 @@ function tokenInsertNewLine(tokens, maxCharactorNum, asciiIsHalf) {
     let prevIndex = -1;
     let offset = 0;
     let split_fail = 0;
-    
+
     for(let i = 0; i < tokensLength; i++) {
         if(asciiIsHalf) {
             const arr = tokens[i].surface_form.match(asciiReg);

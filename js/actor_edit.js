@@ -1,13 +1,19 @@
 
-const ACT_ST_actor = "actor";
-const ACT_ST_crop_path = "crop_path";
-const ACT_ST_clipset = "clipset";
-const ACT_ST_version = "version";
+const ACT_ST_actor = 'actor';
+const ACT_ST_crop_path = 'crop_path';
+const ACT_ST_clipset = 'clipset';
+const ACT_ST_version = 'version';
+const CLIP_TYPE_None = 'none';
+const CLIP_TYPE_Animation = 'Anim';
+
 let ActorIndexForSetting = -1;
 let ContextmenuPartsSelectJQElm = null;
 let ContextmenuGroupSelectJQElm = null;
+let AnimationEditingGroupJQElm = null;
 let ActorStructure = [];
 let ActorStructurePath = [];
+let IsAnimationEditing = false;
+let AnimationIndexes = [];
 
 $(document).on('click', '.actor_sequence_link.unlink', function() {
     if($('#actor_switcher').hasClass('setting')) return;
@@ -28,6 +34,7 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
             StartActorSetting();
         } else {
             ActorStructure[index] = LoadActorStructure(actorStructPath);
+            ActorStructurePath[index] = actorStructPath;
             csInterface.evalScript('$._PPP_.SetLinkSequence("' + index + '")', function(result) {
                 if(result === '0') {
                     actor_sequence_link.addClass('enable');
@@ -37,7 +44,7 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                     target_actor_component.addClass('uk-active');
                     actor_root.empty();
 
-                    SetupActorComponent(index);
+                    SetupActorComponent(index, actorName);
                 } else {
                     var errormsg = 'Error : ';
                     switch(result){
@@ -126,12 +133,35 @@ $(document).on('click', '.actor_thumb_parent', function() {
         if(linkdActor.eq(i).hasClass('enable'))
             actorName = linkdActor.eq(i).children('.actor_sequence_link_label').html();
     }
-    const tree_path = $(this).attr('tree_path');
-    const group_index = $(this).attr('group_index');
+    const target = $(this);
+    const tree_path = target.attr('tree_path');
+    const group_index = target.attr('group_index');
     const seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
-    const insert_mode = $(this).parents('.parts_selector');
+    const insert_mode = target.parents('.parts_selector');
     const flag = getClipEndFlag(insert_mode);
+    const type = target.attr('data-type');
+    if(type == CLIP_TYPE_None){
     insertActorClip(actorName, seq_index, group_index, tree_path, flag);
+    } else if(type == CLIP_TYPE_Animation) {
+        let anim_clips = target.attr('anim_clips');
+        let frame = target.attr('frame');
+
+        const anim_indexes = convertTreePathToAnimationIndex(seq_index, group_index, anim_clips);
+
+        frame = frame.split(',').map(x => (Number(x) / 60).toFixed(3));
+        comment = anim_indexes.slice(1).join(',') + '\\n' + 
+                    frame.slice(1).join(',') + '\\n' +
+                    anim_indexes.reverse().slice(1).join(',') + '\\n' + 
+                    frame.reverse().slice(1).join(','); 
+        const animType = target.closest('.actor_parts_top').attr('anim-type');
+
+        if(animType == 0) {
+            const interval = target.attr('anim_interval');
+            const range = target.attr('anim_range');
+            comment += '\\n' + interval.toString() + ',' + range.toString();
+        }
+        insertAnimationMarker(seq_index, group_index, comment, flag);
+    }
 });
 
 $(document).on('click', '.actor_clipset', function() {
@@ -147,7 +177,6 @@ $(document).on('mouseleave ', '.actor_thumb_parent', function() {
     const actor_label = $(this).parents('.actor_parts_top').find('.select_actor_label');
     actor_label.html('');
 });
-
 
 function actorSelectBoxUpdate() {
     const actor_linknav = $('.actor_linknav ul');
@@ -221,11 +250,15 @@ function setActorClipSet(shortcutKey) {
                 const insert_mode = actorFlagList.eq(actorFlagList.length - 1 - j);
                 if(!insert_mode.find('.insert_disable').hasClass('enable')) {
                     const flag = getClipEndFlag(insert_mode);
+                    if(treePathList[j][0] === '/') {
+                        // todo anim
+                    } else {
                     insertActorClip(actorName, seqIndex, j, treePathList[j], flag);
                 }
             }
         }
     }
+}
 }
 
 function getActorClipSet(shortcutKey) {
@@ -242,6 +275,19 @@ function getActorClipSet(shortcutKey) {
                 if(!ActorStructure[seqIndex].clipset[shortcutKey]) {
                     const li = $('<li>', {'class':'actor_clipset', text:shortcutKey.toString()});
                     $('#actor_switcher>.uk-active').find('.actor_clipset_root').eq(0).append(li);
+                }
+
+                let animIndex;
+                let animClipesetCount = 0;
+                while((animIndex = treePathList.indexOf('/{')) !== -1) {
+                    let endIndex = treePathList.indexOf('}', animIndex);
+                    let anim_info = treePathList.substring(animIndex + 1, endIndex + 1);
+
+                    let animClipset = JSON.parse(anim_info);
+                    let acKey = shortcutKey + animClipesetCount.toString();
+                    animClipesetCount++;
+                    ActorStructure[seqIndex].clipset[acKey] = animClipset;
+                    treePathList = treePathList.substring(0, animIndex + 1) + acKey + treePathList.substring(endIndex + 1);
                 }
 
                 ActorStructure[seqIndex].clipset[shortcutKey] = treePathList;
@@ -263,6 +309,21 @@ function getActorClipSet(shortcutKey) {
 
 function insertActorClip(actor_name, seq_index, group_index, tree_path, flag) {
     csInterface.evalScript('$._PPP_.InsertActorClip("' + actor_name + '",' + seq_index + ','+ group_index + ',"' + tree_path + '",-1,' + flag + ')');	
+}
+
+function insertAnimationMarker(seq_index, group_index, comment, flag) {
+    const script = makeEvalScript('InsertFrameAnimationMarker', seq_index, group_index, comment, flag);
+    csInterface.evalScript(script);
+}
+
+function convertTreePathToAnimationIndex(seq_index, group_index, anim_clips){
+    const indexes = AnimationIndexes[seq_index][group_index];
+    const result = [];
+    const animClips = anim_clips.split(',');
+    for(let i = 0; i < animClips.length; i++){
+        result.push(indexes.indexOf(animClips[i]));
+    }
+    return result;
 }
 
 function AddPartsBoxGroup(name) {
@@ -296,7 +357,7 @@ function AddPartsBoxGroup(name) {
 }
 
 function AddActorClip(rootNode, name, tree_path, crop_path) {
-    const li = $('<li>', {'class':'actor_thumb_parent dragitem', name:name, tree_path:tree_path, group_index: 0, 'data-type':'none', 
+    const li = $('<li>', {'class':'actor_thumb_parent dragitem', name:name, tree_path:tree_path, group_index: 0, 'uk-flex':'', 'uk-flex-column':'', 'data-type':CLIP_TYPE_None, 
      'uk-tooltip': 'pos:top-right; duration:0; title:<img class="actor_tooltip thumb_background" src="' + crop_path + '"><div>' + name +'</div>'});
 
     const img = $('<img>', {'class':'thumb_background fix_size_img'});
@@ -318,9 +379,7 @@ function InitializeActorStructure() {
     }
 }
 
-function MakeThumbnav(){
-    const thumbnav = $('<div>', {'class':'td-thumbnav uk-width-expand'});
-    thumbnav[0].addEventListener('mousewheel', function(e) {
+function HorizontalScroll(e) {
         const amount = 60;
         e.stopPropagation();
         var oEvent = e, 
@@ -329,25 +388,46 @@ function MakeThumbnav(){
         position += direction > 0 ? -amount : amount;
         $(this).scrollLeft(position);
         e.preventDefault();
-    }, { passive: false });
+}
+
+function MakeThumbnav(){
+    const thumbnav = $('<div>', {'class':'td-thumbnav uk-width-expand'});
+    thumbnav[0].addEventListener('mousewheel', HorizontalScroll, { passive: false });
     return thumbnav;
 }
 
-function MakeGroupElement(group_name, group_index, clips, crop_path_list) {
-    const actor = $('<div>', {'class':'actor_parts_top'});
+function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_type, anim_source, isSetting) {
+    const actor = $('<div>', {'class':'actor_parts_top', group_index: group_index, 'anim-type': anim_type});
 
-    const label = $('<div>', {style:'align-items: center; margin-left:0px;'});
-    label.attr('uk-grid', '');
+    const label = $('<div>', {style:'align-items: center; margin-left:0px;', 'uk-grid':''});
+    label.append($('<div>', {'class':'actor_group_tracktxt', text:'V' + (group_index + 1).toString()}));
+
+    let hasAnimClip = false;
+    for(let j = 0; j < clips.length; j++){
+        if(clips[j].type == CLIP_TYPE_Animation){
+            hasAnimClip = true;
+            break;
+        }
+    }
+    if(hasAnimClip){
+        actor.attr('has_anim','');
+    }
+
+    const animLabel = $('<div>', {'class':'animation_label', style:'align-items: center;', 'uk-grid':''});
+    animLabel.append($('<div>', {'class':'actor_group_tracktxt', text:'Anim:A'}));
+    animLabel.append($('<input>', {class: 'input_integer_only uk-light tdinput input_auto_resize input_source_track', type: 'text', value:anim_source}));
+    label.append(animLabel);
+
+    if(!hasAnimClip || anim_type != 1 || isSetting){
+        animLabel.attr('hidden','');
+    }
 
     const group = $('<div>', {'class':'uk-width-expand select_actor_group'});
-
     group.html(group_name);
-    label.append($('<div>', {'class':'actor_group_tracktxt', text:'v' + (group_index + 1).toString()}));
     label.append(group);
 
     const partsName = $('<div>', {'class':'uk-width-auto uk-text-right select_actor_label'});
     label.append(partsName);
-
     actor.append(label);
 
     const partsSelector = $('<div>', {'class':'uk-text-center uk-padding uk-padding-small uk-padding-remove-vertical remove-top-margine parts_selector'});
@@ -363,6 +443,9 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list) {
     const markerIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_marker disable'});
         markerIcon.html(SVG_MARKER_ICON);
         
+    const expandButton = $('<div>', {'class': 'actor_gruop_expand_button'});
+    expandButton.append($('<div>', {'class': 'actor_gruop_expand_text', 'uk-icon':'icon: chevron-right'}))
+    checkbox_div.append(expandButton);
     checkbox_div.append(inpointClipIcon);
     checkbox_div.append(outpointClipIcon);
     checkbox_div.append(markerIcon);
@@ -372,10 +455,18 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list) {
     const partsList = $('<div>', {'class':'uk-width-expand uk-flex uk-flex-left actor_parts_list'});
     const thumbnav = MakeThumbnav();
 
-
     const ul = $('<ul>', {'class':'uk-flex actor_group'});
     for(let j = 0; j < clips.length; j++){
-        const li = $('<li>', {'class':'actor_thumb_parent', name:clips[j].clip, tree_path:clips[j].tree_path, group_index: group_index, 'data-type':'Anim'});
+        let type = clips[j].type ? clips[j].type : CLIP_TYPE_None;
+        let anim_clips = clips[j].anim_clips ? clips[j].anim_clips : '';
+        let frame = 0;
+        if(clips[j].frame) {
+            frame = clips[j].frame;
+        }
+        let interval = clips[j].interval ? clips[j].interval : 0;
+        let range = clips[j].range ? clips[j].range : 0;
+        const li = $('<li>', {'class':'actor_thumb_parent', name:clips[j].clip, tree_path:clips[j].tree_path, group_index: group_index,
+         'data-type': type, anim_clips:anim_clips, frame:frame, anim_interval:interval, anim_range:range});
         const img = $('<img>', {'class':'actor_thumb thumb_background fix_size_img'});
         const crop = crop_path_list[clips[j].tree_path];
         if (crop && fs.existsSync(crop)) {
@@ -386,7 +477,7 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list) {
         }
         ul.append(li);
     }
-    const li = $('<li>', {'class':'actor_thumb_parent trash_icon', name:'このクリップを消す', tree_path:'delete', group_index: group_index, trash:'', 'data-type':'none'});
+    const li = $('<li>', {'class':'actor_thumb_parent trash_icon', name:'このクリップを消す', tree_path:'delete', group_index: group_index, trash:'', 'data-type':CLIP_TYPE_None});
     const trash = $('<span>', {'uk-icon':'icon: trash; ratio:2'});
     li.append(trash);
     ul.append(li);
@@ -398,7 +489,7 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list) {
     return actor;
 }
 
-function SetupActorComponent(index){
+async function SetupActorComponent(index, actorName, isSetting=false){
     const actorObj = ActorStructure[index];
     if(actorObj) {
         actor_root = $('.actor_component[sequence="' + index + '"]');
@@ -429,9 +520,43 @@ function SetupActorComponent(index){
         });
 
         for(let i = 0; i < actorObj.actor.length; i++) {
-            const actor = MakeGroupElement(actorObj.actor[i].group, actorObj.actor.length - 1 - i, actorObj.actor[i].clips, actorObj.crop_path);
+            const group_index = actorObj.actor.length - 1 - i;
+            const actor = MakeGroupElement(
+                actorObj.actor[i].group, 
+                group_index, 
+                actorObj.actor[i].clips, 
+                actorObj.crop_path,
+                actorObj.actor[i].anim_type, 
+                actorObj.actor[i].source,
+                isSetting);
             actor_root.append(actor);
+            if(actorObj.actor[i].anim_type && !isSetting){
+                const clips = actorObj.actor[i].clips;
+                let treePathList = [];
+                for(let j = 0; j < clips.length; j++){
+                    if(clips[j].type === CLIP_TYPE_Animation){
+                        Array.prototype.push.apply(treePathList, clips[j].anim_clips.split(','));
         }
+    }
+
+                if(treePathList.length > 0) {
+                    treePathList = Array.from(new Set(treePathList));
+                    const script = makeEvalScript('SetupAnimationMarker', actorName, actorObj.actor[i].group, index, group_index, treePathList.join(','));
+                    let mutex = false;
+                    csInterface.evalScript(script, function(actorStructPath) {
+                        if(!AnimationIndexes[index]) {
+                            AnimationIndexes[index] = {};
+}
+                        AnimationIndexes[index][group_index] = actorStructPath.split(',');
+                        mutex = true;
+                    });
+                    while(!mutex) {
+                        await sleep(1);
+                    };
+                }
+            }
+        }
+        $('.input_source_track').change();
     }
 }
 
@@ -475,18 +600,87 @@ function save_transparent_crop(src_path, dist_path, callback) {
     });
 }
 
-$(document).on("click", ".actor_thumb_parent", function(e) {
+$(document).on('click', '.actor_thumb_parent', function(e) {
     if(e.ctrlKey) {
     } else if(e.shiftKey) {
     } else {
         if($('#actor_switcher').hasClass('setting')){   
+            const target = $(this);
+            if(IsAnimationEditing && target.closest('#actor_switcher').length > 0) {
+                $('#animation_editor_root').removeClass('events_disable');
+                const prevClip = target.siblings('.anim_selected');
+                if(prevClip.length > 0) {
+                    SaveAnimationEdit(prevClip);
+                }
+                $('#animation_editor_thumbnav>ul>li').remove();
+                $('.anim_selected').not(this).removeClass('anim_selected');
+                target.siblings().addClass('anim_unselect');
+                target.addClass('anim_selected');
+                target.removeClass('anim_unselect');
             $('.selected').not(this).removeClass('selected');
-            $(this).addClass('selected');
+                target.addClass('selected');
+                LoadAnimationEdit(target);
+            } else {
+                $('.selected').not(this).removeClass('selected');
+                target.addClass('selected');
         }
+    }
     }
 });
 
+function SaveAnimationEdit(target_JQElm){
+    const root = $('#animation_editor_thumbnav');
+    const type = $('#select_animation_type').val();
+
+    target_JQElm.attr('name', $('#animation_editor_name').val());
+
+    let treePath = [];
+    let frame = [];
+    root.find('li').each(function() { treePath.push($(this).attr('tree_path'))});
+    root.find('input').each(function() { frame.push($(this).val())});
+    target_JQElm.attr('anim_clips', treePath.join(','));
+    target_JQElm.attr('frame', frame.join(','));
+
+    if(type == 0){
+        let interval = $('#animation_editor_interval').val();
+        let range = $('#animation_editor_random_range').val();
+        target_JQElm.attr('anim_interval', interval);
+        target_JQElm.attr('anim_range', range);
+    }
+}
+function LoadAnimationEdit(target_JQElm){
+    const root = $('#animation_editor_thumbnav>ul');
+
+    $('#animation_editor_name').val(target_JQElm.attr('name'));
+
+    let treePath = [];
+    let frame = [];
+    let attr = target_JQElm.attr('anim_clips');
+    if(attr) treePath = attr.split(',');
+    attr = target_JQElm.attr('frame');
+    if(attr) frame = attr.split(',');
+    const partBoxRoot = $('#actor_parts_box');
+    for(let i = 0; i < treePath.length; i++){
+        const parts = partBoxRoot.find('[tree_path="' + treePath[i] + '"]');
+        const clone = parts.clone().appendTo(root);
+        const input = $('<input>', { class: 'input_integer_only uk-light tdinput', type: 'text', placeholder: 'f(60fps)', style: 'display: block; width:56px', onfocus: 'this.select();' });
+        clone.append(input);
+        input.val(frame[i]);
+        clone.removeAttr('uk-tooltip');
+    }
+    $('#animation_editor_thumbnail>ul>li').remove();
+    const thumbParts = partBoxRoot.find('[tree_path="' + target_JQElm.attr('tree_path') + '"]');
+    const thumbnail = thumbParts.clone().appendTo($('#animation_editor_thumbnail>ul'));
+    thumbnail.removeAttr('uk-tooltip');
+
+    let interval = target_JQElm.attr('anim_interval');
+    let range = target_JQElm.attr('anim_range');
+    $('#animation_editor_interval').val(interval);
+    $('#animation_editor_random_range').val(range);
+}
+
 function StartActorSetting() {
+    const actor_sequence_link = $('.actor_sequence_link');
     const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
     const actorName = target.children('.actor_sequence_link_label').html();
     csInterface.evalScript('$._PPP_.GetActorStructureMediaPath("' + actorName + '")', function(actorStructPath) {
@@ -494,16 +688,21 @@ function StartActorSetting() {
             ActorStructure[ActorIndexForSetting] = LoadActorStructure(path);
             ActorStructurePath[ActorIndexForSetting] = path;
 
+            actor_sequence_link.removeClass('enable');
+            target.addClass('enable');
+
             $('#actor_parts_box').removeAttr('hidden');
-            $('.actor_sequence_link').not("[sequence='" + ActorIndexForSetting + "']").attr('hidden', '');
+            actor_sequence_link.not('[sequence=' + ActorIndexForSetting + ']').attr('hidden', '');
             $('#actor_setting_save_button').removeAttr('hidden');
             $('#actor_setting_cancel_button').removeAttr('hidden');
             $('#actor_setting_start_button').addClass('events_disable');
             $('#actor_parts_box').removeAttr('hidden');
             $('#actor_switcher').find('[sequence]').removeClass('uk-active');
-            $('#actor_switcher').find("[sequence='" + ActorIndexForSetting + "']").addClass('uk-active');
+            const targetActorPanel = $('#actor_switcher').find("[sequence='" + ActorIndexForSetting + "']");
+            targetActorPanel.addClass('uk-active');
+            targetActorPanel.find('.animation_label').attr('hidden','');
             if(target.hasClass('unlink')) {
-                SetupActorComponent(ActorIndexForSetting);
+                SetupActorComponent(ActorIndexForSetting, actorName, true);
             }
             let actor_sequence_link_icon = target.find('.actor_sequence_link_icon');
             actor_sequence_link_icon.attr('uk-icon', 'cog');
@@ -590,9 +789,12 @@ function StartActorSetting() {
     });
 }
 
-function SortableCreateActor(groupElm){
+function SortableCreateActor(groupElm, pullAction=true, onAddFunc=null){
     new Sortable.create(groupElm, {
-        group: 'actor',
+        group: {
+            name: 'actor',
+            pull: pullAction,
+        },
         multiDrag: true,
         multiDragKey: 'CTRL',
         draggable: '.dragitem',
@@ -605,8 +807,11 @@ function SortableCreateActor(groupElm){
         swapThreshold: 0.65,
         dragoverBubble: false,
         onAdd: function (evt) {
-            $(evt.item).removeAttr('uk-tooltip');
-            $(evt.item).siblings('[uk-tooltip]').removeAttr('uk-tooltip');
+            var jqElm = $(evt.item);
+            jqElm.removeAttr('uk-tooltip');
+            jqElm.siblings('[uk-tooltip]').removeAttr('uk-tooltip');
+
+            if(onAddFunc) onAddFunc(evt);
         }
     });
 }
@@ -631,7 +836,7 @@ function SetupActorSettingUI() {
     const actor_component_root = $(".actor_component[sequence='" + ActorIndexForSetting + "']");
     let containers = actor_component_root[0].querySelectorAll('.actor_group');
     for (let i = 0; i < containers.length; i++) {
-        SortableCreateActor(containers[i]);
+        SortableCreateActor(containers[i], true, OnAddAnimationSetting);
     };
     $('#actor_switcher').addClass('setting');
     actor_component_root.find('.actor_parts_top').each(function() {
@@ -650,18 +855,31 @@ function SaveActorSetting() {
         const groupElm = groupList.eq(i);
         const group_obj = { 
             group : groupElm.find('.select_actor_group').html(),
-            clips : []
+            clips : [],
+            anim_type : groupElm.attr('anim-type'),
+            source : current_actor_structure.actor[i].source
         };
         const clips = groupElm.find('.actor_thumb_parent');
         for(let j = 0; j < clips.length; j++) {
             const clipElm = clips.eq(j);
             if(clipElm.attr('trash') == undefined)
             {
-                const clip_obj = {
+                if(clipElm.attr('data-type') == CLIP_TYPE_Animation) {
+                    group_obj.clips.push({
+                        type: CLIP_TYPE_Animation,
+                        clip: clipElm.attr('name'),
+                        tree_path: clipElm.attr('tree_path'),
+                        anim_clips: clipElm.attr('anim_clips'),
+                        frame: clipElm.attr('frame'),
+                        interval: clipElm.attr('anim_interval'),
+                        range: clipElm.attr('anim_range')
+                    });
+                } else {
+                    group_obj.clips.push({
                     clip: clipElm.attr('name'),
                     tree_path: clipElm.attr('tree_path')
-                };
-                group_obj.clips.push(clip_obj);
+                    });
+                }
             }
         }
         actor.push(group_obj);
@@ -700,12 +918,57 @@ function ActorSettingEnd(){
     actor_root.empty();
     if(target.hasClass('unlink')) {
         actor_sequence_link_icon.attr('uk-icon', 'ban');
+        target.removeClass('enable');
     } else {
         actor_sequence_link_icon.attr('uk-icon', 'link');
-        SetupActorComponent(ActorIndexForSetting);
+        var actorName = target.children('.actor_sequence_link_label').html();
+        console.log(actorName);
+        SetupActorComponent(ActorIndexForSetting, actorName);
     }
     $('.actor_sequence_link').removeAttr('hidden');
     $('[trash]').removeAttr('hidden');
+}
+
+function OnAddAnimationSetting(evt){
+    if(IsAnimationEditing){
+        const target = $(evt.item);
+        target.removeClass('dragitem');
+        target.attr('data-type', CLIP_TYPE_Animation);
+        target.trigger('click');
+    }
+}
+
+function AnimationSettingEnd() {
+    const type = $('#select_animation_type').val();
+    AnimationEditingGroupJQElm.attr('anim-type', type);
+
+    const prevClip = AnimationEditingGroupJQElm.find('.anim_selected');
+    if(prevClip.length > 0) {
+        SaveAnimationEdit(prevClip);
+    }
+
+    AnimationEditingGroupJQElm.find('.anim_selected').removeClass('anim_selected');
+    AnimationEditingGroupJQElm.find('.anim_unselect').removeClass('anim_unselect');
+    AnimationEditingGroupJQElm.find('.selected').removeClass('selected');
+    AnimationEditingGroupJQElm.siblings().removeAttr('hidden');
+    const clips = AnimationEditingGroupJQElm.find('.actor_thumb_parent');
+    clips.addClass('dragitem');
+    clips.filter('[data-type!=' + CLIP_TYPE_Animation + ']:not(.trash_icon)').removeAttr('hidden');
+    AnimationEditingGroupJQElm.addClass('dragitem');
+    AnimationEditingGroupJQElm.find('.td-thumbnav').removeClass('dragdrop-area-bg');
+    $('#animation_editor_name').val('');
+    $('#animation_editor_thumbnav>ul>li').remove();
+    $('#animation_editor_thumbnail>ul>li').remove();
+    $('#animation_editor_interval').val('');
+    $('#animation_editor_random_min').val('');
+    $('#animation_editor_random_max').val('');
+    $('#actor_setting_add_animation_clip_button').attr('hidden','');
+    $('#animation_editor_root').attr('hidden','');
+    $('#animation_type_root').attr('hidden','');
+    $('#actor_setting_save_button').removeAttr('hidden');
+    $('#actor_setting_cancel_button').removeAttr('hidden');
+    $('#actor_setting_animation_end_button').attr('hidden', '');
+    IsAnimationEditing = false;
 }
 
 function ActorStructureVersionConvert(actor_structure) {
@@ -759,7 +1022,7 @@ function ActorEditInitialize() {
         let parts_contextmenu = $('#parts_contextmenu');
         parts_contextmenu.css('left', e.pageX-window.scrollX + 'px');
         parts_contextmenu.css('top', e.pageY-window.scrollY + 'px');
-        if($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0 && $(this).hasClass('dragitem')) {
+        if($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0) {
             if($(this).hasClass('actor_clipset')) {
                 anim_clip.attr('hidden', '');
             } else {
@@ -772,10 +1035,11 @@ function ActorEditInitialize() {
     });
     $(document).on('contextmenu', '.actor_parts_top', function (e) {
         contextmenus.removeClass('contextmenu_show');
+        if($('#actor_switcher').hasClass('setting')){
         let group_contextmenu = $('#group_contextmenu');
         group_contextmenu.css('left', e.pageX-window.scrollX + 'px');
         group_contextmenu.css('top', e.pageY-window.scrollY + 'px');
-        if($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0 && $(this).hasClass('dragitem')) {
+            if($(this).closest('#actor_switcher').length > 0 && $(this).hasClass('dragitem')) {
             group_contextmenu.addClass('contextmenu_show');
             ContextmenuGroupSelectJQElm = $(this);
             if(ContextmenuGroupSelectJQElm.siblings('.actor_parts_top').length === 0) {
@@ -784,9 +1048,22 @@ function ActorEditInitialize() {
                 $('#actor_setting_remove_group_button').removeClass('events_disable');
             }
         }
+        } else {
+            let group_contextmenu = $('#bake_contextmenu');
+            group_contextmenu.css('left', e.pageX-window.scrollX + 'px');
+            group_contextmenu.css('top', e.pageY-window.scrollY + 'px');
+            if($(this).closest('#actor_switcher').length > 0) {
+                group_contextmenu.addClass('contextmenu_show');
+                ContextmenuGroupSelectJQElm = $(this);
+                if(ContextmenuGroupSelectJQElm.attr('has_anim') !== undefined) {
+                    $('#actor_bake_animation').removeClass('events_disable');
+                } else {
+                    $('#actor_bake_animation').addClass('events_disable');
+                }
+            }
+        }
     });
 
-    
     $('#actor_setting_remove_parts_button').on('mouseup', function(e) {
         if(e.which === 1) {
             DeleteSelectedParts();
@@ -794,8 +1071,8 @@ function ActorEditInitialize() {
     });
     $('#actor_setting_add_group_button').on('mouseup', function(e) {
         if(e.which === 1 && ContextmenuGroupSelectJQElm) {
-            const group = MakeGroupElement('New group', 0, [], null);
-            SortableCreateActor(group.find('.actor_group')[0]);
+            const group = MakeGroupElement('New group', 0, [], null, CLIP_TYPE_None, '', true);
+            SortableCreateActor(group.find('.actor_group')[0], true, OnAddAnimationSetting);
             ActorPartsToSetting(group);
             ContextmenuGroupSelectJQElm.before(group);
         }
@@ -811,12 +1088,57 @@ function ActorEditInitialize() {
     });
     $('#actor_setting_add_animation_clip_on_group').on('mouseup', function(e) {
         if(e.which === 1 && ContextmenuGroupSelectJQElm) {
-            ContextmenuGroupSelectJQElm.siblings().attr('hidden', '');
-            const clips = ContextmenuGroupSelectJQElm.find('.dragitem');
+            // #AnimationEditStart
+            IsAnimationEditing = true;
+            AnimationEditingGroupJQElm = ContextmenuGroupSelectJQElm;
+            AnimationEditingGroupJQElm.siblings().attr('hidden', '');
+            const clips = AnimationEditingGroupJQElm.find('.dragitem');
             clips.removeClass('dragitem');
-            clips.filter('[data-type!=Anim]').attr('hidden', '');
-            ContextmenuGroupSelectJQElm.removeClass('dragitem');
+            clips.filter('[data-type!=' + CLIP_TYPE_Animation + ']').attr('hidden', '');
+            const type = AnimationEditingGroupJQElm.attr('anim-type') ? AnimationEditingGroupJQElm.attr('anim-type') : 0;
+            const select_animation_type = $('#select_animation_type'); 
+            select_animation_type.val(type);
+            select_animation_type.change();
+
+            const firstAnimClip = clips.filter('[data-type=' + CLIP_TYPE_Animation + ']:first');
+            if(firstAnimClip.length > 0) {
+                $('#animation_editor_help1').attr('hidden', '');
+                firstAnimClip.trigger('click');
+            } else {
+                $('#animation_editor_help1').removeAttr('hidden');
+                $('#animation_editor_root').addClass('events_disable');
+            }
+
+            AnimationEditingGroupJQElm.removeClass('dragitem');
+            AnimationEditingGroupJQElm.find('.td-thumbnav').addClass('dragdrop-area-bg');
+            $('#actor_setting_add_animation_clip_button').removeAttr('hidden');
+            $('#animation_editor_root').removeAttr('hidden');
+            $('#animation_type_root').removeAttr('hidden');
+            $('#actor_setting_save_button').attr('hidden','');
+            $('#actor_setting_cancel_button').attr('hidden','');
+            $('#actor_setting_animation_end_button').removeAttr('hidden');
         }
+    });
+
+    $('#actor_setting_add_animation_clip_button').on('mouseup', function(e) {
+        const li = $('<li>', {'class':'actor_thumb_parent', name:"", group_index: 0, 'data-type':CLIP_TYPE_Animation});
+        const img = $('<img>', {'class':'actor_thumb thumb_background fix_size_img', src:'', hidden:''});
+        li.append(img);
+        li.append($('<span>', {'uk-icon':'icon: image; ratio:2'}));
+        AnimationEditingGroupJQElm.find('ul').append(li);
+    });
+
+    $('#actor_bake_animation').on('mouseup', function(e) {
+        const seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
+        const group_index = ContextmenuGroupSelectJQElm.attr('group_index');
+        const anim_type = ContextmenuGroupSelectJQElm.attr('anim-type');
+        let script = '';
+        if(anim_type == 0){
+            script = makeEvalScript('FrameAnimation_Random', seq_index, group_index);
+        } else if(anim_type == 1){
+            script = makeEvalScript('FrameAnimation_Audio', seq_index, group_index, 0);
+        }
+        csInterface.evalScript(script);
     });
 
     document.body.addEventListener('click', function () {
@@ -825,17 +1147,86 @@ function ActorEditInitialize() {
         ContextmenuGroupSelectJQElm = null;
     });
 
-    $('#animation_editor_thumbnav')[0].addEventListener('mousewheel', function(e) {
-        const amount = 60;
-        e.stopPropagation();
-        var oEvent = e, 
-            direction = oEvent.detail ? oEvent.detail * -amount : oEvent.wheelDelta, 
-            position = $(this).scrollLeft();
-        position += direction > 0 ? -amount : amount;
-        $(this).scrollLeft(position);
-        e.preventDefault();
-    }, { passive: false });
-    SortableCreateActor($('#animation_editor_thumbnav>ul')[0]);
+    $('#animation_editor_thumbnav')[0].addEventListener('mousewheel', HorizontalScroll, { passive: false });
+    SortableCreateActor($('#animation_editor_thumbnav>ul')[0], true, function(evt) {
+        const jqElm = $(evt.item);
+        jqElm.filter(':not(:has(input))').append($('<input>', { class: 'input_integer_only uk-light tdinput', type: 'text', placeholder: 'f(60fps)', style: 'display: block; width:56px', onfocus: 'this.select();' }));
+        jqElm.siblings(':not(:has(input))').append($('<input>', { class: 'input_integer_only uk-light tdinput', type: 'text', placeholder: 'f(60fps)', style: 'display: block; width:56px', onfocus: 'this.select();' }));
+        $('#animation_editor_help1').attr('hidden', '');
+    });
+    SortableCreateActor($('#animation_editor_thumbnail>ul')[0], 'clone', function(evt) {
+        const jqElm = $(evt.item);
+        jqElm.siblings().remove()
+        jqElm.find('input').remove();
+        const selectItem = AnimationEditingGroupJQElm.find('.anim_selected');
+        selectItem.attr('tree_path', jqElm.attr('tree_path'));
+        selectItem.find('img').attr('src', jqElm.find('img').attr('src'));
+    });
+
+    // $('#animation_preview>div').on('click', function(e){
+    //     const enable = enableSwitch($(this));
+    //     if(enable) {
+    //         AnimationPreviewInitialize();
+    //     } else {
+    //         if(previewTimeoutHandle != null) {
+    //             clearTimeout(previewTimeoutHandle);
+    //             previewTimeoutHandle = null;
+    //         }
+    //     }
+    // });
+
+    $('#animation_editor_name').change(function() {
+        $('.anim_selected').attr('name', $(this).val());
+    });
+
+    $('#select_animation_type').change(function() {
+        const type = $(this).val();
+        const elements_type0 = $('.animation_type0_elm');
+        const help2 = $('#animation_editor_help2');
+        const help3 = $('#animation_editor_help3');
+        if(type == 0){
+            elements_type0.removeAttr('hidden');
+            help2.html('通常');
+            help3.html('動作時');
+        } else if(type == 1){
+            elements_type0.attr('hidden', '');
+            help2.html('閉じ');
+            help3.html('開き');
+        }
+    });
+
+    $(document).on('click', '.actor_gruop_expand_button', function() {
+        const child = $(this).children();
+        child.toggleClass('expanded');
+        $(this).closest('.insert_mode').toggleClass('expanded');
+    });
+
+    $(document).on('keydown', '.input_auto_resize', function() {
+        this.style.width = ((this.value.length + 2) * 8) + "px";
+    });
+    $(document).on('change', '.input_auto_resize', function() {
+        this.style.width = ((this.value.length + 1) * 8) + "px";
+    });
+    $(document).on('change', '.input_source_track', function() {
+        if(this.value.length > 0){
+            $(this).addClass('filled');
+        } else {
+            $(this).removeClass('filled');
+        }
+        const seqIndex = $('.actor_sequence_link.enable').attr('sequence');
+        const groupName = $(this).parent().siblings('.select_actor_group').html();
+        for(let i = 0; i < ActorStructure[seqIndex].actor.length; i++){
+            if(ActorStructure[seqIndex].actor[i].group == groupName){
+                ActorStructure[seqIndex].actor[i].source = this.value;
+            }
+        }
+        SaveJson(ActorStructure[seqIndex], ActorStructurePath[seqIndex]);
+    });
+
+    // animationPreviewImgElm = $('#animation_preview_img');
+    // animationPreviewThumbRootElm = $('#animation_editor_thumbnav');
+}
+
 }
 
 function DeleteSelectedParts() {

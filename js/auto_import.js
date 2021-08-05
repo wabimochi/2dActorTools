@@ -171,7 +171,7 @@ function addAutoImportWatchDir() {
     const body = $('<tbody>');
     const table = $('<table>', {'class':'uk-table uk-table-small uk-table-middle uk-table-justify'});
         table.append(body);
-    
+
         const button = $('<button>', {'class':'uk-button uk-button-secondary uk-width-auto uk-flex uk-flex-center auto_import_add_rule_button'});
         button.html('ルール追加');
         button[0].addEventListener('click', function(e) {
@@ -203,7 +203,7 @@ function addAutoImportRule(jqTbody) {
     select1.append(s1_option2);
     const td1 = $('<td>', {'class':'uk-text-nowrap uk-table-shrink'});
         td1.append(select1);
-    
+
     const button1 = $('<button>', {'class':'uk-button uk-button-secondary uppercase_disable text_ellipsis uk-padding-small uk-padding-remove-vertical auto_import_bin'});
         button1.html('選択中のビンをセット');
         button1[0].addEventListener('click', function(e) {
@@ -335,7 +335,7 @@ CustomInitialize['auto_import_custum_initialize'] = function () {
                         binButton.addClass('tdact_setting_error');
                     }
                 });
-                
+
                 const trackNum = Number(rule['track_number']);
                 const trackSelectbox = selectbox.eq(1);
                 const currentTrackNum = trackSelectbox.children().length;
