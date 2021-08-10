@@ -15,11 +15,16 @@ function autoImportStart(dirPath, matchingPatternList, matchingSourceList, impor
     if(dirPath.lastIndexOf('/') != dirPath.length - 1) {
         dirPath += '/';
     }
-    watcher = chokidar.watch(dirPath + '*.{wav,mp3,wmv}', {
+    watcher = chokidar.watch(dirPath, {
         persistent:true,
         ignoreInitial:true,
-        depth:0
+        depth:0,
+        disableGlobbing:true
     }).on('add', (path, stat) => {
+        const ext = path.substr(path.lastIndexOf('.') + 1);
+        if(!/[wW][aA][vV]|[mM][pP]3|[wW][mM][vV]/.test(ext)) {
+            return;
+        }
         const filename = path.substr(path.lastIndexOf('/') + 1);
         const length = _matchingSourceList.length;
         for(let i = 0; i < length; i++) {
