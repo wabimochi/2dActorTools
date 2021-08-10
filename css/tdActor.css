@@ -538,11 +538,11 @@ summary{
   overflow: hidden;
   display: flex;
   align-items: center;
-  width:80px;
+  width:90px;
   transition: width 0.1s ease-out;
 }
 .insert_mode.expanded{
-  width:160px;
+  width:170px;
   transition: width 0.1s ease-out;
 }
 

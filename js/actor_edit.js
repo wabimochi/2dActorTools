@@ -443,10 +443,10 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_t
     label.append(partsName);
     actor.append(label);
 
-    const partsSelector = $('<div>', {'class':'uk-text-center uk-padding uk-padding-small uk-padding-remove-vertical remove-top-margine parts_selector'});
+    const partsSelector = $('<div>', {'class':'uk-text-center uk-padding uk-padding-small uk-padding-remove-vertical remove-top-margine parts_selector', style:'margin-left: -40px;'});
     partsSelector.attr('uk-grid', '');
     
-    const checkbox_div = $('<div>', {'class':'uk-width-auto uk-height-expand insert_mode'});
+    const checkbox_div = $('<div>', {'class':'uk-width-auto uk-height-expand insert_mode', style:'padding-left:40px'});
     checkbox_div.append($('<div>', {'uk-icon': 'unlock', 'class': 'uk-icon actor_insert_setting insert_setting_icon insert_disable'}));
     
     const inpointClipIcon = $('<div>', {'class': 'actor_insert_setting insert_setting_icon insert_inpoint enable'});
