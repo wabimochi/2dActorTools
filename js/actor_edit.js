@@ -1252,8 +1252,6 @@ function ActorEditInitialize() {
     // animationPreviewThumbRootElm = $('#animation_editor_thumbnav');
 }
 
-}
-
 function DeleteSelectedParts() {
     if(ContextmenuPartsSelectJQElm) {
         ContextmenuPartsSelectJQElm.remove();
