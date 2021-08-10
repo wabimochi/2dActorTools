@@ -16,7 +16,7 @@ var TIMEDISPLAY_35mmFeetFrames			= 112;
 var TIMEDISPLAY_48Timecode				= 113;
 var TIMEDISPLAY_AudioSamplesTimecode	= 200;
 var TIMEDISPLAY_AudioMsTimecode			= 201;
- 
+
 // field type constants
 
 var FIELDTYPE_Progressive	= 0;
@@ -31,17 +31,17 @@ var AUDIOCHANNELTYPE_51				= 2;
 var AUDIOCHANNELTYPE_Multichannel	= 3;
 var AUDIOCHANNELTYPE_4Channel		= 4;
 var AUDIOCHANNELTYPE_8Channel		= 5;
- 
+
 // vr projection type
 
 var VRPROJECTIONTYPE_None				= 0;
 var VRPROJECTIONTYPE_Equirectangular	= 1;
- 
+
 // vr stereoscopic type
 
-var VRSTEREOSCOPICTYPE_Monoscopic		= 0;        
-var VRSTEREOSCOPICTYPE_OverUnder		= 1;        
-var VRSTEREOSCOPICTYPE_SideBySide		= 2;        
+var VRSTEREOSCOPICTYPE_Monoscopic		= 0;
+var VRSTEREOSCOPICTYPE_OverUnder		= 1;
+var VRSTEREOSCOPICTYPE_SideBySide		= 2;
 
 // constants used when clearing cache
 
@@ -67,7 +67,6 @@ var LINKERROR_SELECT_ITEM_ISNOT_SEQUENCE = 4;
 var LINKERROR_UNKNOWN = 5;
 var linkSequence = [];
 var linkSequenceParents = [];
-var linkSequenceClip = [];
 var linkAnimationSequence = [];
 var linkAnimationProperties = [];
 
@@ -173,46 +172,46 @@ $._PPP_={
 
 	InsertSubtitle : function (mgtName, text){
 		var mgtClip = searchItemWithTreePath(MGT_BIN_NAME + '/' + mgtName, ProjectItemType.CLIP);
-			var seq = app.project.activeSequence;
-			
-			if(mgtClip && seq) {
-				var VTrackIndex = 0;
-				var ATrackIndex = 0;
-				for(; VTrackIndex < seq.videoTracks.numTracks; VTrackIndex++) {
-					if (seq.videoTracks[VTrackIndex].isTargeted()) break;
-				}
-				for(; ATrackIndex < seq.audioTracks.numTracks; ATrackIndex++) {
-					if (seq.audioTracks[ATrackIndex].isTargeted()) break;
-				}
-				var outPoint = new Time();
-				if (VTrackIndex < seq.videoTracks.numTracks && ATrackIndex < seq.audioTracks.numTracks) {
-					var targetVideoTrack = seq.videoTracks[VTrackIndex];
-					var targetAudioTrack = seq.audioTracks[ATrackIndex];
-					var splitText = text.split('/');
+		var seq = app.project.activeSequence;
+		
+		if(mgtClip && seq) {
+			var VTrackIndex = 0;
+			var ATrackIndex = 0;
+			for(; VTrackIndex < seq.videoTracks.numTracks; VTrackIndex++) {
+				if (seq.videoTracks[VTrackIndex].isTargeted()) break;
+			}
+			for(; ATrackIndex < seq.audioTracks.numTracks; ATrackIndex++) {
+				if (seq.audioTracks[ATrackIndex].isTargeted()) break;
+			}
+			var outPoint = new Time();
+			if (VTrackIndex < seq.videoTracks.numTracks && ATrackIndex < seq.audioTracks.numTracks) {
+				var targetVideoTrack = seq.videoTracks[VTrackIndex];
+				var targetAudioTrack = seq.audioTracks[ATrackIndex];
+				var splitText = text.split('/');
 
-					for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
-						var clip = targetAudioTrack.clips[i];
-						outPoint.seconds = clip.outPoint.seconds;
-						mgtClip.setOutPoint(outPoint.ticks, 4)
-						targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);							
+				for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
+					var clip = targetAudioTrack.clips[i];
+					outPoint.seconds = clip.outPoint.seconds;
+					mgtClip.setOutPoint(outPoint.ticks, 4)
+					targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);							
 
-						var mgtComponent = targetVideoTrack.clips[i].getMGTComponent();
-						var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
-						if(sourceText && i < splitText.length){
-							var textObj = JSON.parse(sourceText.getValue());
-							textObj.fontTextRunLength = [splitText[i].length];
-							textObj.textEditValue = splitText[i];
-							sourceText.setValue(JSON.stringify(textObj), (i === targetAudioTrack.clips.numItems - 1)); 
-						}
+					var mgtComponent = targetVideoTrack.clips[i].getMGTComponent();
+					var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+					if(sourceText && i < splitText.length){
+						var textObj = JSON.parse(sourceText.getValue());
+						textObj.fontTextRunLength = [splitText[i].length];
+						textObj.textEditValue = splitText[i];
+						sourceText.setValue(JSON.stringify(textObj), (i === targetAudioTrack.clips.numItems - 1)); 
 					}
 				}
-				else {
-				updateEventPanel("Track target is unset.");
-				}
 			}
-			else if(!seq)
+			else {
+				updateEventPanel("Track target is unset.");
+			}
+		}
+		else if(!seq)
 			updateEventPanel("No active sequence.");
-			else
+		else
 			updateEventPanel(mgtName + " clip is not found.");
 	},
 
@@ -414,9 +413,9 @@ $._PPP_={
 		if(seq) {
 			for(var i = 0; i < seq.videoTracks.numTracks; i++){
 				var clips = seq.videoTracks[i].clips;
-					var j = 0;
-					for(; j < clips.numItems; j++) {
-						if(currentTime >= clips[j].start.seconds && currentTime < clips[j].end.seconds) {
+				var j = 0;
+				for(; j < clips.numItems; j++) {
+					if(currentTime >= clips[j].start.seconds && currentTime < clips[j].end.seconds) {
 						if(clips[j].projectItem.isSequence()){
 							var animSeq = trackItemToSequence(clips[j]);
 							if(getAnimationSequenceLinkInfo(animSeq) !== null) {
@@ -424,21 +423,21 @@ $._PPP_={
 								if(marker !== null){
 									// '/' is animation mark
 									treePathList.push('/' + getTransitionForClipset(animSeq, marker));
-						}
+								}
 							} else {
 								treePathList.push('');	
 							}
 						} else {
 							treePathList.push(getTreePathFromActorClip(clips[j]));
 						}
-							break;
-						}
-					}
-					if(j === clips.numItems) {
-						treePathList.push('delete');
+						break;
 					}
 				}
+				if(j === clips.numItems) {
+					treePathList.push('delete');
+				}
 			}
+		}
 		return treePathList;
 	},
 
@@ -534,9 +533,8 @@ $._PPP_={
 					if(linkSeq !== null) {
 						linkSequence[index] = linkSeq;
 						linkSequenceParents[index] = seq;
-						linkSequenceClip[index] = sel[0];
-							return SEQUENCE_LINK_SUCCESS;
-						}
+						return SEQUENCE_LINK_SUCCESS;
+					}
 				} else {
 					return LINKERROR_SELECT_ITEM_ISNOT_SEQUENCE;
 				}
@@ -549,12 +547,15 @@ $._PPP_={
 
 	InsertActorClip: function(actorName, sequenceIndex, trackIndex, clipTreePath, startTime, endFlag) {
 		var activeSequence = app.project.activeSequence;
+		var seq = linkSequence[sequenceIndex];
 		if(startTime < 0) {
 			if(activeSequence) {
-				startTime = getClipLocalTime(linkSequenceClip[sequenceIndex], activeSequence.getPlayerPosition().seconds);
+				var sequenceList = getSequenceTrackItemsInSequence(activeSequence, seq.sequenceID);
+				var playerPosition = activeSequence.getPlayerPosition();
+				var targetSequence = getClipAtTime(sequenceList, playerPosition.seconds);
+				startTime = getClipLocalTime(targetSequence, playerPosition.seconds);
 			}
 		}
-		var seq = linkSequence[sequenceIndex];
 		var clip = null;
 		var deleteInsertClip = false;
 		if(clipTreePath === 'delete') {
@@ -597,19 +598,19 @@ $._PPP_={
 				for(var i = 0; i < tracks.numTracks; i++) {
 					if(tracks[i].isTargeted()) {
 						var targetTrack = tracks[i];
-					for(var j = 0; j < targetTrack.clips.numItems; j++){
-						if(currentPlayerPos.seconds < targetTrack.clips[j].start.seconds) {
-							minSeconds = Math.min(minSeconds, targetTrack.clips[j].start.seconds);
-							break;
-						}
-						if(currentPlayerPos.seconds < targetTrack.clips[j].end.seconds) {
-							minSeconds = Math.min(minSeconds, targetTrack.clips[j].end.seconds);
-							break;
+						for(var j = 0; j < targetTrack.clips.numItems; j++){
+							if(currentPlayerPos.seconds < targetTrack.clips[j].start.seconds) {
+								minSeconds = Math.min(minSeconds, targetTrack.clips[j].start.seconds);
+								break;
+							}
+							if(currentPlayerPos.seconds < targetTrack.clips[j].end.seconds) {
+								minSeconds = Math.min(minSeconds, targetTrack.clips[j].end.seconds);
+								break;
+							}
 						}
 					}
-				}
+				}	
 			}
-						}
 			check(seq.videoTracks);
 			check(seq.audioTracks);
 			var epsTime = seq.getSettings().videoFrameRate.seconds;
@@ -628,19 +629,19 @@ $._PPP_={
 				for(var i = 0; i < tracks.numTracks; i++) {
 					if(tracks[i].isTargeted()) {
 						var targetTrack = tracks[i];
-					for(var j = targetTrack.clips.numItems - 1; j >= 0; j--){
-						if(currentPlayerPos.seconds > targetTrack.clips[j].end.seconds) {
-							maxSeconds = Math.max(maxSeconds, targetTrack.clips[j].end.seconds);
-							break;
-						}
-						if(currentPlayerPos.seconds > targetTrack.clips[j].start.seconds) {
-							maxSeconds = Math.max(maxSeconds, targetTrack.clips[j].start.seconds);
-							break;
+						for(var j = targetTrack.clips.numItems - 1; j >= 0; j--){
+							if(currentPlayerPos.seconds > targetTrack.clips[j].end.seconds) {
+								maxSeconds = Math.max(maxSeconds, targetTrack.clips[j].end.seconds);
+								break;
+							}
+							if(currentPlayerPos.seconds > targetTrack.clips[j].start.seconds) {
+								maxSeconds = Math.max(maxSeconds, targetTrack.clips[j].start.seconds);
+								break;
+							}
 						}
 					}
 				}
 			}
-						}
 			check(seq.videoTracks);
 			check(seq.audioTracks);
 			var epsTime = seq.getSettings().videoFrameRate.seconds;
@@ -884,7 +885,7 @@ $._PPP_={
 					endClip.setOverrideFrameRate(0);
 				}
 			}
-								}
+		}
 	},
 
 	setLocale : function (localeFromCEP) {
@@ -922,8 +923,8 @@ $._PPP_={
 				if(info !== null && info[0] === sequenceID && info[1] == animationTrackIndex) {					
 					seq = app.project.sequences[i];
 					break;
+				}
 			}
-		}
 		}
 
 		if(seq === null) {
@@ -1025,7 +1026,10 @@ $._PPP_={
 		}
 		var clips = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex].clips;
 		var activeSequence = app.project.activeSequence;
-		var linkedSequenceTime = getClipLocalTime(linkSequenceClip[linkedSequenceIndex], activeSequence.getPlayerPosition().seconds);
+		var sequenceList = getSequenceTrackItemsInSequence(activeSequence, linkSequence[linkedSequenceIndex].sequenceID);
+		var playerPosition = activeSequence.getPlayerPosition();
+		var targetSequence = getClipAtTime(sequenceList, playerPosition.seconds);
+		var linkedSequenceTime = getClipLocalTime(targetSequence, playerPosition.seconds);
 
 		var seq = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
 		var epsTime = seq.getSettings().videoFrameRate.seconds;
@@ -1067,8 +1071,8 @@ $._PPP_={
 					removeList.push(marker);
 				}
 				marker = getNextTransitionMarker(markers, marker);
-				}
 			}
+		}
 
 		for(var i = 0; i < removeList.length; i++){
 			markers.deleteMarker(removeList[i]);
@@ -1098,7 +1102,7 @@ $._PPP_={
 			newMarker.name = TRANSITION_MARKER_NAME;
 			newMarker.comments = comment;
 			newMarker.setTypeAsSegmentation();
-			}
+		}
 	},
 
 	/* 
@@ -1118,7 +1122,7 @@ $._PPP_={
 			alert('assert');
 			return;
 		}
-	
+
 		if(sourceClips === undefined) {
 			fAnimationSourceClips = linkSequenceParents[fLinkedSequenceIndex].audioTracks[sourceIndex].clips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.numItems;
@@ -1127,11 +1131,11 @@ $._PPP_={
 			for(var i = 1; i < AnimationProperties.length; i++){
 				initializeKey(AnimationProperties[i], 0);
 			}
-			} else {
+		} else {
 			fAnimationSourceClips = sourceClips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.length;
 		}
-		
+
 		var samplerate = (1 / 15).toString();
 		fAnimationSourceSize = 0;
 		fAnimationSourceCount = 0;
@@ -1169,17 +1173,17 @@ $._PPP_={
 			if(clips[i].projectItem.isSequence()) {
 				var seq = trackItemToSequence(clips[i]);
 				if(seq.sequenceID === fAnimationSequence.sequenceID){
-				end = Math.max(10 * 60, clips[i].end.seconds);
-				break;
+					end = Math.max(10 * 60, clips[i].end.seconds);
+					break;
+				}
 			}
-		}
 		}
 
 		if(fAnimationSequence === null) {
 			alert('assert');
 			return;
 		}
-	
+
 		AnimationProperties = linkAnimationProperties[linkedSequenceIndex][animationTrackIndex];
 		initializeKey(AnimationProperties[0], 100);
 		for(var i = 1; i < AnimationProperties.length; i++){
@@ -1199,19 +1203,19 @@ $._PPP_={
 		if(enable){
 			if(!incrementalBake_clips[linkedSequenceIndex]){
 				incrementalBake_clips[linkedSequenceIndex] = [];
-		}
+			}
 			incrementalBake_clips[linkedSequenceIndex][animationTrackIndex] = [];
 
 			if(!incrementalBakeSource[linkedSequenceIndex]){
 				incrementalBakeSource[linkedSequenceIndex] = [];
-		}
+			}
 			incrementalBakeSource[linkedSequenceIndex][animationTrackIndex] = sourceIndex;
 
 			var clipList = [];
 			var sourceClips = linkSequenceParents[linkedSequenceIndex].audioTracks[sourceIndex].clips;
 			for(var i = 0; i < sourceClips.length; i++){
 				clipList.push(new ClipForIncrementalBake(sourceClips[i]));
-	}
+			}
 			incrementalBake_clips[linkedSequenceIndex][animationTrackIndex] = clipList;
 		}
 
@@ -1223,102 +1227,102 @@ $._PPP_={
 
 function getClipLocalTime (clip, time) {
 	return time + clip.inPoint.seconds - clip.start.seconds;
-							}
+}
 
 function getActorClipWithTreePath(actorName, treePath) {
 	return searchItemWithTreePath(ActorBinItem.name + '/' + actorName + '/' + treePath, ProjectItemType.CLIP);
-						}
+}
 
 function shallowSearch(root, name, projectItemType) {
 	for(var i = 0; i < root.children.numItems; i++) {
 		if(root.children[i].type === projectItemType && root.children[i].name === name) {
 			return root.children[i];
-								}
-							}
+		}
+	}
 	return null;
-						}
-		
+}
+
 function searchItemWithTreePath (treePath, type) {
     var sepIndex = treePath.indexOf('/', 0);
     var oldIndex = 0;
-    var root = app.project.rootItem;
+	var root = app.project.rootItem;
     while(sepIndex !== -1){
-        var binName = treePath.slice(oldIndex, sepIndex);
+		var binName = treePath.slice(oldIndex, sepIndex);
         root = shallowSearch(root, binName, ProjectItemType.BIN);
         if(!root) return null;
         oldIndex = sepIndex + 1;
         sepIndex = treePath.indexOf('/', sepIndex + 1);
     }
     if(root && oldIndex < treePath.length){
-        return shallowSearch(root, treePath.slice(oldIndex), type);
-    }
+		return shallowSearch(root, treePath.slice(oldIndex), type);
+	}
     return null;
-									}
+}
 
 function getDummyClip() {
 	return shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
-								}
+}
 
 function fixTimeError(seconds, epsTime) {
     var mod = (seconds % epsTime);
     if(mod * 2 < epsTime) {
         seconds -= mod;
-									} else {
+    } else {
         seconds += epsTime - mod;
-								}
+    }
     return seconds;
-							}
+}
 
 function trackItemToSequence(clip) {
     for(var i = 0; i < app.project.sequences.numSequences; i++){
         if(clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
             return app.project.sequences[i];
-						}
-					}
+        }
+    }
     return null;
-						}
+}
 
 function getNextClipTime(clips, endFlag, startSeconds, endSeconds) {
-						var i = clips.numItems - 1;
-						if(endFlag & ACT_CLIPEND_END) {
-							for(; i >= 0 ; i--){
+    var i = clips.numItems - 1;
+    if(endFlag & ACT_CLIPEND_END) {
+        for(; i >= 0 ; i--){
             if(startSeconds < clips[i].end.seconds ) {
                 endSeconds = Math.min(endSeconds, clips[i].end.seconds);
-								} else {
-									i = Math.min(i + 1, clips.numItems - 1);
-									break;
-								}
-							}
-						}
-						if(endFlag & ACT_CLIPEND_START) {
-							for(; i >= 0 ; i--){
+            } else {
+                i = Math.min(i + 1, clips.numItems - 1);
+                break;
+            }
+        }
+    }
+    if(endFlag & ACT_CLIPEND_START) {
+        for(; i >= 0 ; i--){
             if(startSeconds < clips[i].start.seconds) {
                 endSeconds = Math.min(endSeconds, clips[i].start.seconds);
-								} else {
-									break;
-								}
-							}
-						}
+            } else {
+                break;
+            }
+        }
+    }
     return endSeconds;
 }
-		
+
 function getNextMarkerTime(markers, startSeconds, endSeconds) {
     for(var i = markers.numMarkers - 1; i >= 0 ; i--){
         if(startSeconds < markers[i].start.seconds) {
             if(startSeconds < markers[i].start.seconds) {
                 endSeconds = Math.min(endSeconds, markers[i].start.seconds);
-									} else {
-										break;
-									}
-								}
+            } else {
+                break;
+            }
+        }
         if(markers[i].end.seconds < startSeconds) {
             if(startSeconds < markers[i].end.seconds) {
                 endSeconds = Math.min(endSeconds, markers[i].end.seconds);
-									} else {
-										break;
-									}
-								}
-							}
+            } else {
+                break;
+            }
+        }
+    }
     return endSeconds;
 }
 
@@ -1333,10 +1337,10 @@ function getComponentObject(clip, componentName) {
 	for(var i = 0; i < clip.components.numItems; i++) {
 		if(clip.components[i].displayName === componentName) {
 			component = clip.components[i];
-						}
-					}
+		}
+	}
 	return component;
-				}
+}
 
 function getPropertyObject (component, propertyNames) {
 	var propertyRoot = component;
@@ -1346,11 +1350,11 @@ function getPropertyObject (component, propertyNames) {
 			if(propertyRoot.properties[j].displayName === propertyName) {
 				propertyRoot = propertyRoot.properties[j];
 				break;
-				}
-				}
 			}
-	return propertyRoot;
 		}
+	}
+	return propertyRoot;
+}
 
 function reportProjectItemSelectionChanged(e) {
     var projectItems = e;
@@ -1364,7 +1368,7 @@ function reportProjectItemSelectionChanged(e) {
 }
 function reportSequenceItemSelectionChanged() {
     eventObj.type = "sequenceItemsSelectChanged";
-    eventObj.data = '';
+	eventObj.data = '';
     eventObj.dispatch();
 }
 
@@ -1374,8 +1378,8 @@ function trackIdToIndex(track){
 		for(var i = 0; i < seq.audioTracks.numTracks; i++){
 			if(seq.audioTracks[i].id === track.id) {
 				return i;
-}
-}
+			}
+		}
 	} else {
 		for(var i = 0; i < seq.videoTracks.numTracks; i++){
 			if(seq.videoTracks[i].id === track.id) {
@@ -1393,7 +1397,7 @@ function reportSequenceChanged() {
 				Ibake.end !== trackItem.end.seconds ||
 				Ibake.inPoint !== trackItem.inPoint.seconds ||
 				Ibake.outPoint !== trackItem.outPoint.seconds);
-}
+	}
 	for(var i = 0; i < incrementalBakeEnable.length; i++){
 		if(!incrementalBakeEnable[i]) continue;
 		for(var j = 0; j < incrementalBakeEnable[i].length; j++){
@@ -1462,7 +1466,7 @@ function reportSequenceChanged() {
 function getTransition_Random(sequence, targetMarker){
 	var epsTime = sequence.getSettings().videoFrameRate.seconds;
 	var infoList = targetMarker.comments.split('\n');
-	
+
 	var transition = [];
 
 	var indexes = infoList[2].split(',');
@@ -1473,12 +1477,12 @@ function getTransition_Random(sequence, targetMarker){
 	durations = infoList[1].split(',');
 	for(var i = 0; i < indexes.length; i++) {
 		transition.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
-			}
+	}
 	
 	var transition_property = infoList[4].split(',');
 
 	return [transition, transition_property];
-			}
+}
 
 function getTransition_Lip(sequence, targetMarker){
 	var epsTime = sequence.getSettings().videoFrameRate.seconds;
@@ -1494,10 +1498,10 @@ function getTransition_Lip(sequence, targetMarker){
 	durations = infoList[1].split(',');
 	for(var i = 0; i < indexes.length; i++) {
 		transition.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
-			}
+	}
 
 	return transition;
-		}
+}
 
 function getTransitionForClipset(sequence, targetMarker){
 	var infoList = targetMarker.comments.split('\n');
@@ -1514,13 +1518,13 @@ function getTransitionForClipset(sequence, targetMarker){
 	frameList.push(Math.round(Number(infoList[3].split(',')[0]) * 60));
 	for(var i = 0; i < durations.length; i++){
 		frameList.push(Math.round(Number(durations[i]) * 60));
-		}	
+	}
 
 	var result = '{"anim_clips":"' + treePathList.join(',') + '","frame":"' + frameList.join(',') + '"';;
 	if(infoList.length >= 5){
 		var randomInfo = infoList[4].split(',');
 		result += ',"interval":"' + randomInfo[0].toString() + '","min":"' + randomInfo[1].toString() + '","max":"' + randomInfo[2].toString() + '"';
-		}
+	}
 
 	result += '}';
 	return result;
@@ -1541,14 +1545,14 @@ function switchActiveTrack(fAnimationProperties, activateSeconds, activateTrackI
 			if(fAnimationProperties[i] === null) continue;
 			var prevKeyTime = fAnimationProperties[i].findPreviousKey(activateTime);
 			if(prevKeyTime !== undefined){
-			var lastValue = fAnimationProperties[i].getValueAtTime(prevKeyTime);
-			if(lastValue == 100) {
-				if(activateTrackIndex == i) return;
-				deactivateProperty = fAnimationProperties[i];
-				break;
+				var lastValue = fAnimationProperties[i].getValueAtTime(prevKeyTime);
+				if(lastValue == 100) {
+					if(activateTrackIndex == i) return;
+					deactivateProperty = fAnimationProperties[i];
+					break;
+				}
 			}
 		}
-	}
 
 		if(deactivateProperty === null) {
 			for(var i = 0; i < fAnimationProperties.length; i++){
@@ -1569,9 +1573,9 @@ function switchActiveTrack(fAnimationProperties, activateSeconds, activateTrackI
 	if(deactivateProperty !== null) {
 		var prevKeyTime = deactivateProperty.findPreviousKey(activateTime);
 		if(prevKeyTime !== undefined){
-		var lastValue = deactivateProperty.getValueAtKey(prevKeyTime);
-		deactivateProperty.addKey(lastTime);
-		deactivateProperty.setValueAtKey(lastTime, lastValue, 0);
+			var lastValue = deactivateProperty.getValueAtKey(prevKeyTime);
+			deactivateProperty.addKey(lastTime);
+			deactivateProperty.setValueAtKey(lastTime, lastValue, 0);
 		}
 		deactivateProperty.addKey(activateTime);
 		deactivateProperty.setValueAtKey(activateTime, 0, 0);
@@ -1579,15 +1583,15 @@ function switchActiveTrack(fAnimationProperties, activateSeconds, activateTrackI
 
 	var activateProperty = fAnimationProperties[activateTrackIndex];
 	if(activateProperty !== null){
-	var prevKeyTime = activateProperty.findPreviousKey(activateTime);
+		var prevKeyTime = activateProperty.findPreviousKey(activateTime);
 		if(prevKeyTime !== undefined){
-	var lastValue = activateProperty.getValueAtKey(prevKeyTime);
-	activateProperty.addKey(lastTime);
-	activateProperty.setValueAtKey(lastTime, lastValue, 0);
+			var lastValue = activateProperty.getValueAtKey(prevKeyTime);
+			activateProperty.addKey(lastTime);
+			activateProperty.setValueAtKey(lastTime, lastValue, 0);
 		}
-	activateProperty.addKey(activateTime);
-	activateProperty.setValueAtKey(activateTime, 100, 0);
-}
+		activateProperty.addKey(activateTime);
+		activateProperty.setValueAtKey(activateTime, 100, 0);
+	}
 }
 
 function clearFrameAnimation(animationSequence, fAnimationProperties, start, end, restoreChangeMarker) {
@@ -1662,16 +1666,16 @@ function bakeFrameAnimation_Audio(allDuration){
 	nextMarker = getNextTransitionMarker(markers, currentMarker);
 
 	var ChangeNextTransition = function(currentLevel){
-			currentMarker = nextMarker;
+		currentMarker = nextMarker;
 		if(currentMarker !== null) {
 			var prevLength = currentTransition.length;
 			currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
 			nextMarker = getNextTransitionMarker(markers, currentMarker);
 			currentLevel = Math.floor(currentLevel * currentTransition.length / prevLength);
 			return currentLevel;
-			}
-		return 0;
 		}
+		return 0;
+	}
 
 	var LevelRestriction = function(){
 		timeToClose = 0;
@@ -1681,16 +1685,16 @@ function bakeFrameAnimation_Audio(allDuration){
 				level = levelItr;
 				break;
 			}
-				}
-			}
+		}
+	}
 
 	var sequenceList = getSequenceTrackItemsInSequence(linkSequenceParents[fLinkedSequenceIndex], linkSequence[fLinkedSequenceIndex].sequenceID);
 	var finalKey = {};
 	if(allDuration){
-	currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
-	finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
+		currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
+		finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
 	}
-	
+
 	for(var clipIndex = 0; clipIndex < fAnimationSourceClipsLength; clipIndex++) {
 		if(fAnimationSourceClips[clipIndex].mediaType === 'Audio') {
 			var clipStart = fAnimationSourceClips[clipIndex].start.seconds;
@@ -1722,10 +1726,10 @@ function bakeFrameAnimation_Audio(allDuration){
 				if(offset < 0) continue;
 
 				targetTime = Math.max(clipStart + offset, clipStart + epsTime);
-					var limitTime = clipEnd;
-					if(i < startTime.length - 1) {
+				var limitTime = clipEnd;
+				if(i < startTime.length - 1) {
 					limitTime = Math.min(clipStart + Number(startTime[i + 1]) - clipInPoint, limitTime);
-					}
+				}
 				if(targetTime >= limitTime) break;
 
 				if(keypoints[i] == 1) {
@@ -1761,7 +1765,7 @@ function bakeFrameAnimation_Audio(allDuration){
 					var currentTransitionOutDuration = 0;
 					for(var j = 0; j < currentTransition.length - 1; j++) {
 						currentTransitionOutDuration += currentTransition[j].duration;
-							}
+					}
 					targetTime = Math.max(targetTime, limitTime - currentTransitionOutDuration);
 
 					// mid test
@@ -1774,7 +1778,7 @@ function bakeFrameAnimation_Audio(allDuration){
 						} else {
 							break;
 						}
-					} 
+					}
 
 					// transition out
 					level = Math.min(level, currentTransition.length - 2);
@@ -1791,10 +1795,10 @@ function bakeFrameAnimation_Audio(allDuration){
 							break;
 						}
 					}
-				} else {
+				} else {					
 					level = Math.min(level, currentTransition.length - 2);
 					for(; level >= 0; level--) {
-							targetTime = fixTimeError(targetTime, epsTime);
+						targetTime = fixTimeError(targetTime, epsTime);
 						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
 							level = ChangeNextTransition(level);
 							LevelRestriction();
@@ -1806,8 +1810,8 @@ function bakeFrameAnimation_Audio(allDuration){
 							break;
 						}
 					}
-						}
-					}
+				}
+			}
 			// force close
 			finalKey[Math.round((clipEnd + epsTime) / epsTime)] = currentTransition[0].index;
 		}
@@ -1819,21 +1823,21 @@ function bakeFrameAnimation_Audio(allDuration){
 			ChangeNextTransition(0);
 			if(currentMarker === null) break;
 			finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
-				}
-			}
+		}
+	}
 
-			var prevIndex = -1;
-			for(var key in finalKey) {
+	var prevIndex = -1;
+	for(var key in finalKey) {
 		if(finalKey[key] !== prevIndex) {
 			switchActiveTrack(AnimationProperties, Number(key) * epsTime, finalKey[key], prevIndex, epsTime);
-					prevIndex = finalKey[key];
-				}
-			}
+			prevIndex = finalKey[key];
+		}
+	}
 
 	if(allDuration){
 		$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 1);
-	alert('complete');
-}
+		alert('complete');
+	}
 }
 
 function bakeFrameAnimation_Random(end){
@@ -1865,9 +1869,9 @@ function bakeFrameAnimation_Random(end){
 			nextMarker = getNextTransitionMarker(markers, currentMarker);
 			currentLevel = Math.floor(currentLevel * currentTransition.length / prevLength);
 			return currentLevel;
-			}
+		}
 		return 0;
-			}
+	}
 
 	switchActiveTrack(AnimationProperties, 0, currentTransition[0].index, prevIndex, epsTime);
 	targetTime = Math.max(epsTime, period + (Math.random() * 2 - 1) * randomlyRange);
@@ -1880,8 +1884,8 @@ function bakeFrameAnimation_Random(end){
 				prevIndex = currentTransition[0].index;
 			} else {
 				break;
+			}
 		}
-	}
 
 		// transition in
 		for(var i = 1; i < currentTransition.length; i++) {
@@ -1893,7 +1897,7 @@ function bakeFrameAnimation_Random(end){
 			switchActiveTrack(AnimationProperties, targetTime, currentTransition[i].index, prevIndex, epsTime);			
 			prevIndex = currentTransition[i].index;
 			targetTime += currentTransition[i].duration;
-		}					
+		}
 
 		// transition out
 		for(var i = currentTransition.length - 2; i >= 0; i--) {
