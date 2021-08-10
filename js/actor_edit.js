@@ -400,7 +400,7 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_t
     const actor = $('<div>', {'class':'actor_parts_top', group_index: group_index, 'anim-type': anim_type});
 
     const label = $('<div>', {style:'align-items: center; margin-left:0px;', 'uk-grid':''});
-    label.append($('<div>', {'class':'actor_group_tracktxt', text:'V' + (group_index + 1).toString()}));
+    label.append($('<div>', {'class':'actor_group_tracktxt hidden_at_setting', text:'V' + (group_index + 1).toString()}));
 
     let hasAnimClip = false;
     for(let j = 0; j < clips.length; j++){
@@ -414,8 +414,21 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_t
     }
 
     const animLabel = $('<div>', {'class':'animation_label', style:'align-items: center;', 'uk-grid':''});
-    animLabel.append($('<div>', {'class':'actor_group_tracktxt', text:'Anim:A'}));
-    animLabel.append($('<input>', {class: 'input_integer_only uk-light tdinput input_auto_resize input_source_track', type: 'text', value:anim_source}));
+    const incrementalBakeDiv = $('<div>', {'class':'td-icon-button hidden_at_setting', name:'incremental_bake', 'uk-icon':'icon:bolt; ratio:0.8', style:'height:21px; margin:0 0 0 5px; padding:0 5px 0 5px;'});
+    incrementalBakeDiv.on('click', function(e){
+        const target = $(this);
+        const status = enableSwitch(target);
+        const seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
+        const group_index = target.closest('.actor_parts_top').attr('group_index');
+        const source = Number(target.siblings('.input_source_track').val()) - 1;
+        const enable = status ? 1 : 0;
+        const script = makeEvalScript('SetIncrementalBakeFlag', seq_index, group_index, source, enable);
+        csInterface.evalScript(script);
+    });
+    animLabel.append(incrementalBakeDiv);
+    animLabel.append($('<div>', {'class':'actor_group_tracktxt hidden_at_setting', text:'Anim:A'}));
+    animLabel.append($('<input>', {'class':'input_integer_only uk-light tdinput input_auto_resize input_source_track', type: 'text', value:anim_source}));
+
     label.append(animLabel);
 
     if(!hasAnimClip || anim_type != 1 || isSetting){
@@ -820,7 +833,7 @@ function ActorPartsToSetting(actor_parts_top_jqelm){
     actor_parts_top_jqelm.addClass('dragitem');
     actor_parts_top_jqelm.find('.select_actor_group').attr('contenteditable', 'true');
     actor_parts_top_jqelm.find('.select_actor_group').addClass('tdinput');
-    actor_parts_top_jqelm.find('.actor_group_tracktxt').attr('hidden', '');
+    actor_parts_top_jqelm.find('.hidden_at_setting').attr('hidden', '');
 
     const actor_thumb_parent = actor_parts_top_jqelm.find('.actor_thumb_parent');
     actor_thumb_parent.each(function() {
@@ -907,7 +920,7 @@ function ActorSettingEnd(){
     $('#actor_setting_save_button').attr('hidden', '');
     $('#actor_setting_cancel_button').attr('hidden', '');
     $('#actor_setting_start_button').removeClass('events_disable');
-    $('.actor_group_tracktxt').removeAttr('hidden');
+    $('.hidden_at_setting').removeAttr('hidden');
     $('.dragitem').removeClass('.dragitem');
     $('#actor_switcher').removeClass('setting');
     $('#actor_parts_box').html('');
@@ -922,7 +935,6 @@ function ActorSettingEnd(){
     } else {
         actor_sequence_link_icon.attr('uk-icon', 'link');
         var actorName = target.children('.actor_sequence_link_label').html();
-        console.log(actorName);
         SetupActorComponent(ActorIndexForSetting, actorName);
     }
     $('.actor_sequence_link').removeAttr('hidden');
@@ -1132,11 +1144,12 @@ function ActorEditInitialize() {
         const seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
         const group_index = ContextmenuGroupSelectJQElm.attr('group_index');
         const anim_type = ContextmenuGroupSelectJQElm.attr('anim-type');
+        const source = Number(ContextmenuGroupSelectJQElm.find('.input_source_track').val()) - 1;
         let script = '';
         if(anim_type == 0){
             script = makeEvalScript('FrameAnimation_Random', seq_index, group_index);
         } else if(anim_type == 1){
-            script = makeEvalScript('FrameAnimation_Audio', seq_index, group_index, 0);
+            script = makeEvalScript('FrameAnimation_Audio', seq_index, group_index, source);
         }
         csInterface.evalScript(script);
     });
@@ -1221,6 +1234,18 @@ function ActorEditInitialize() {
             }
         }
         SaveJson(ActorStructure[seqIndex], ActorStructurePath[seqIndex]);
+    });
+
+    csInterface.addEventListener('incrementalBakeNotification', function(e) {
+        const data = e.data.split(',');
+        const actor_root = $('.actor_component[sequence="' + data[0] + '"]');
+        const group = actor_root.find('.actor_parts_top[group_index=' + data[1] + ']');
+        const button = group.find('[name="incremental_bake"]');
+        if(data[2] === '0'){
+            setDisable(button);
+        } else {
+        setEnable(button);
+        }
     });
 
     // animationPreviewImgElm = $('#animation_preview_img');

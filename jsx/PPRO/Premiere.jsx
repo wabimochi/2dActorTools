@@ -66,8 +66,14 @@ var LINKERROR_SEQUENCE_MULTIPLE_SELECT = 3;
 var LINKERROR_SELECT_ITEM_ISNOT_SEQUENCE = 4;
 var LINKERROR_UNKNOWN = 5;
 var linkSequence = [];
+var linkSequenceParents = [];
 var linkSequenceClip = [];
 var linkAnimationSequence = [];
+var linkAnimationProperties = [];
+
+var incrementalBakeEnable = [];
+var incrementalBakeSource = [];
+var incrementalBake_clips = [];
 
 var ACT_CLIPEND_START = 1;
 var ACT_CLIPEND_END = 2;
@@ -82,15 +88,31 @@ var eventObj = new CSXSEvent();
 
 var fAnimationSourceClips = null;
 var fAnimationSourceClipsLength = 0;
-var fAnimationMarkers = null;
 var fAnimationSequence = null;
-var fAnimationProperties = null;
-var fLinkedSequence = null;
 var fAnimationKeypoints = null;
 var fAnimationStartTime = null;
+var fLinkedSequenceIndex = -1;
+var fAnimationSequenceIndex = -1;
+var fAnimationSourceIndex = -1;
 
 var fAnimationSourceCount = 0;
 var fAnimationSourceSize = 0;
+var AnimationProperties = null;
+var bakeAllDuration = false;
+
+var FrameAnimationKey = function(index, duration, epsTime) {
+    this.index = index;
+    this.duration = duration;
+    this.frame = duration / epsTime;
+}
+
+var ClipForIncrementalBake = function(trackItem) {
+	this.nodeId = trackItem.nodeId;
+    this.start = trackItem.start.seconds;
+    this.end = trackItem.end.seconds;
+    this.inPoint = trackItem.inPoint.seconds;
+    this.outPoint = trackItem.outPoint.seconds;
+}
 
 $._PPP_={
 	Setup: function(extPath){
@@ -130,10 +152,10 @@ $._PPP_={
 		app.bind('onActiveSequenceSelectionChanged', reportSequenceItemSelectionChanged);
 
 		app.unbind('onActiveSequenceTrackItemAdded');
-		app.bind('onActiveSequenceTrackItemAdded', reportSequenceItemAdd);
+		//app.bind('onActiveSequenceTrackItemAdded', reportSequenceItemAdd);
 
 		app.unbind('onActiveSequenceTrackItemRemoved');
-		app.bind('onActiveSequenceTrackItemRemoved', reportSequenceItemRemove);
+		//app.bind('onActiveSequenceTrackItemRemoved', reportSequenceItemRemove);
 
 		app.unbind('onActiveSequenceChanged');
 		app.bind('onActiveSequenceChanged', reportSequenceChanged);
@@ -511,6 +533,7 @@ $._PPP_={
 					var linkSeq = trackItemToSequence(sel[0]);
 					if(linkSeq !== null) {
 						linkSequence[index] = linkSeq;
+						linkSequenceParents[index] = seq;
 						linkSequenceClip[index] = sel[0];
 							return SEQUENCE_LINK_SUCCESS;
 						}
@@ -924,7 +947,7 @@ $._PPP_={
 
 		if(!linkAnimationSequence[linkedSequenceIndex]){
 			linkAnimationSequence[linkedSequenceIndex] = [];
-		};
+		}
 		linkAnimationSequence[linkedSequenceIndex][animationTrackIndex] = seq;
 
 		var indexes = {};
@@ -961,6 +984,25 @@ $._PPP_={
 				}
 			}
 		}
+
+		if(!linkAnimationProperties[linkedSequenceIndex]) {
+			linkAnimationProperties[linkedSequenceIndex] = [];
+		}
+		if(!linkAnimationProperties[linkedSequenceIndex][animationTrackIndex]) {
+			linkAnimationProperties[linkedSequenceIndex][animationTrackIndex] = [];
+		}
+
+		var fAnimationProperties = linkAnimationProperties[linkedSequenceIndex][animationTrackIndex];
+		for(var i = 0; i < seq.videoTracks.numTracks; i++){
+			if(seq.videoTracks[i].clips.length > 0){
+				var component = getComponentObject(seq.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
+				var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
+				fAnimationProperties.push(property);
+			} else {
+				fAnimationProperties.push(null);
+			}
+		}
+
 		for(var i = 0; i < seq.videoTracks.numTracks; i++){
 			if(seq.videoTracks[i].isLocked()){
 				seq.videoTracks[i].setLocked(0);
@@ -1059,44 +1101,35 @@ $._PPP_={
 			}
 	},
 
-	FrameAnimation_Audio : function(linkedSequenceIndex, animationTrackIndex, sourceIndex) {
-		fLinkedSequence = linkSequence[linkedSequenceIndex];
-		var clips = fLinkedSequence.videoTracks[animationTrackIndex].clips;
-		fAnimationMarkers = null;
-		fAnimationSequence = null;
-		for(var i = 0; i < clips.numItems; i++) {
-			if(clips[i].projectItem.isSequence()) {
-				fAnimationSequence = trackItemToSequence(clips[i]);
-				fAnimationMarkers = fAnimationSequence.markers;
-			}
-		}
-		if(fAnimationSequence === null || fAnimationMarkers === null) {
+	/* 
+		Parameters
+		----------
+		sourceClips
+	 		trackItems sorted by time
+	*/
+	FrameAnimation_Audio : function(linkedSequenceIndex, animationTrackIndex, sourceIndex, sourceClips) {
+		fLinkedSequenceIndex = linkedSequenceIndex;
+		fAnimationSequenceIndex = animationTrackIndex;
+		fAnimationSourceIndex = sourceIndex;
+		fAnimationSequence = linkAnimationSequence[fLinkedSequenceIndex][fAnimationSequenceIndex];
+		AnimationProperties = linkAnimationProperties[fLinkedSequenceIndex][fAnimationSequenceIndex];
+
+		if(fAnimationSequence === null) {
 			alert('assert');
 			return;
 		}
 	
-		if(!app.project.activeSequence){
-			updateEventPanel("[ERROR] No active sequence.");
-			return;
-		}
-
-			fAnimationSourceClips = app.project.activeSequence.audioTracks[sourceIndex].clips;
+		if(sourceClips === undefined) {
+			fAnimationSourceClips = linkSequenceParents[fLinkedSequenceIndex].audioTracks[sourceIndex].clips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.numItems;
-
-		fAnimationProperties = [];
-		for(var i = 0; i < fAnimationSequence.videoTracks.numTracks; i++){
-			if(fAnimationSequence.videoTracks[i].clips.length > 0){
-			var component = getComponentObject(fAnimationSequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
-			var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
-			fAnimationProperties.push(property);
+			bakeAllDuration = true;
+			initializeKey(AnimationProperties[0], 100);
+			for(var i = 1; i < AnimationProperties.length; i++){
+				initializeKey(AnimationProperties[i], 0);
+			}
 			} else {
-				fAnimationProperties.push(null);
-		}
-		}
-
-		initializeKey(fAnimationProperties[0], 100);
-		for(var i = 1; i < fAnimationProperties.length; i++){
-			initializeKey(fAnimationProperties[i], 0);
+			fAnimationSourceClips = sourceClips;
+			fAnimationSourceClipsLength = fAnimationSourceClips.length;
 		}
 		
 		var samplerate = (1 / 15).toString();
@@ -1123,52 +1156,68 @@ $._PPP_={
 		fAnimationStartTime[Number(clipIndex)] = startTime;
 		fAnimationSourceCount++;
 		if(fAnimationSourceCount === fAnimationSourceSize){
-			bakeFrameAnimation_Audio();
+			bakeFrameAnimation_Audio(bakeAllDuration);
 		}
 	},
 
 	FrameAnimation_Random : function(linkedSequenceIndex, animationTrackIndex) {
-		fLinkedSequence = linkSequence[linkedSequenceIndex];
-		var clips = fLinkedSequence.videoTracks[animationTrackIndex].clips;
 		var end = 0;
-		fAnimationMarkers = null;
-		fAnimationSequence = null;
+		fAnimationSequence = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
 
+		var clips = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex].clips;
 		for(var i = clips.numItems - 1; i >= 0; i--) {
 			if(clips[i].projectItem.isSequence()) {
-				fAnimationSequence = trackItemToSequence(clips[i]);
-				fAnimationMarkers = fAnimationSequence.markers;
+				var seq = trackItemToSequence(clips[i]);
+				if(seq.sequenceID === fAnimationSequence.sequenceID){
 				end = Math.max(10 * 60, clips[i].end.seconds);
 				break;
 			}
 		}
+		}
 
-		if(fAnimationSequence === null || fAnimationMarkers === null) {
+		if(fAnimationSequence === null) {
 			alert('assert');
 			return;
 		}
 	
-		if(!app.project.activeSequence){
-			updateEventPanel("[ERROR] No active sequence.");
-			return;
-		}
-
-		fAnimationProperties = [];
-		for(var i = 0; i < fAnimationSequence.videoTracks.numTracks; i++){
-			if(fAnimationSequence.videoTracks[i].clips.length > 0){
-			var component = getComponentObject(fAnimationSequence.videoTracks[i].clips[0], OPACITY_COMPONENT_NAME);
-			var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
-			fAnimationProperties.push(property);
-			} else {
-				fAnimationProperties.push(null);
-		}
-		}
-
-		initializeKey(fAnimationProperties[0], 100);
-		for(var i = 1; i < fAnimationProperties.length; i++){
-			initializeKey(fAnimationProperties[i], 0);
+		AnimationProperties = linkAnimationProperties[linkedSequenceIndex][animationTrackIndex];
+		initializeKey(AnimationProperties[0], 100);
+		for(var i = 1; i < AnimationProperties.length; i++){
+			initializeKey(AnimationProperties[i], 0);
 		}
 		bakeFrameAnimation_Random(end);
+	},
+
+	SetIncrementalBakeFlag : function(linkedSequenceIndex, animationTrackIndex, sourceIndex, enable){
+		enable = Number(enable);
+
+		if(!incrementalBakeEnable[linkedSequenceIndex]){
+			incrementalBakeEnable[linkedSequenceIndex] = [];
+		}
+		incrementalBakeEnable[linkedSequenceIndex][animationTrackIndex] = enable;
+
+		if(enable){
+			if(!incrementalBake_clips[linkedSequenceIndex]){
+				incrementalBake_clips[linkedSequenceIndex] = [];
+		}
+			incrementalBake_clips[linkedSequenceIndex][animationTrackIndex] = [];
+
+			if(!incrementalBakeSource[linkedSequenceIndex]){
+				incrementalBakeSource[linkedSequenceIndex] = [];
+		}
+			incrementalBakeSource[linkedSequenceIndex][animationTrackIndex] = sourceIndex;
+
+			var clipList = [];
+			var sourceClips = linkSequenceParents[linkedSequenceIndex].audioTracks[sourceIndex].clips;
+			for(var i = 0; i < sourceClips.length; i++){
+				clipList.push(new ClipForIncrementalBake(sourceClips[i]));
+	}
+			incrementalBake_clips[linkedSequenceIndex][animationTrackIndex] = clipList;
+		}
+
+		eventObj.type = "incrementalBakeNotification";
+		eventObj.data = linkedSequenceIndex.toString() + ',' + animationTrackIndex.toString() + ',' + enable.toString();
+		eventObj.dispatch();
 	}
 };
 
@@ -1319,17 +1368,95 @@ function reportSequenceItemSelectionChanged() {
     eventObj.dispatch();
 }
 
-function reportSequenceItemAdd(track, trackItem) {
+function trackIdToIndex(track){
+	var seq = app.project.activeSequence;
+	if(track.mediaType === 'Audio'){
+		for(var i = 0; i < seq.audioTracks.numTracks; i++){
+			if(seq.audioTracks[i].id === track.id) {
+				return i;
 }
-function reportSequenceItemRemove(track, trackItem) {
 }
-function reportSequenceChanged() {
+	} else {
+		for(var i = 0; i < seq.videoTracks.numTracks; i++){
+			if(seq.videoTracks[i].id === track.id) {
+				return i;
+			}
+		}
+	}
+	return -1;
 }
 
-var FrameAnimationKey = function(index, duration, epsTime) {
-    this.index = index;
-    this.duration = duration;
-    this.frame = duration / epsTime;
+function reportSequenceChanged() {
+	// Incremental Bake
+	var IsDifferent = function(Ibake, trackItem){
+		return (Ibake.start !== trackItem.start.seconds ||
+				Ibake.end !== trackItem.end.seconds ||
+				Ibake.inPoint !== trackItem.inPoint.seconds ||
+				Ibake.outPoint !== trackItem.outPoint.seconds);
+}
+	for(var i = 0; i < incrementalBakeEnable.length; i++){
+		if(!incrementalBakeEnable[i]) continue;
+		for(var j = 0; j < incrementalBakeEnable[i].length; j++){
+			if(incrementalBakeEnable[i][j] && app.project.activeSequence.sequenceID === linkSequenceParents[i].sequenceID){
+				var oldClipList = incrementalBake_clips[i][j];
+				var sourceIndex = incrementalBakeSource[i][j];
+				var currentClips = linkSequenceParents[i].audioTracks[sourceIndex].clips;
+				var removeList = [];
+				var addList = [];
+
+				var oldIdx = 0;
+				for(var currentIdx = 0; currentIdx < currentClips.numItems; currentIdx++){
+					var clip = currentClips[currentIdx];
+					var itr = oldIdx;
+					for(; itr < oldClipList.length; itr++){
+						if(oldClipList[itr].nodeId === clip.nodeId){
+							if(IsDifferent(oldClipList[itr], clip)){
+								addList.push(clip);
+								removeList.push(oldClipList[itr]);
+							}
+							for(; oldIdx < itr; oldIdx++){
+								removeList.push(oldClipList[oldIdx]);
+							}
+							oldIdx = itr + 1;
+							break;
+						}
+					}
+
+					if(itr === oldClipList.length){
+						addList.push(clip);
+					}
+				}
+				for(; oldIdx < oldClipList.length; oldIdx++){
+					removeList.push(oldClipList[oldIdx]);
+				}
+
+				if(removeList.length > 0){
+					var animationSequence = linkAnimationSequence[i][j];
+					var properties = linkAnimationProperties[i][j];
+					var epsTime = animationSequence.getSettings().videoFrameRate.seconds;
+					var sequenceList = getSequenceTrackItemsInSequence(linkSequenceParents[i], linkSequence[i].sequenceID);
+					for(var k = 0; k < removeList.length; k++){
+						var targetSequence = getClipAtTime(sequenceList, removeList[k].start);
+						var start = getClipLocalTime(targetSequence, removeList[k].start);
+						var end = getClipLocalTime(targetSequence, removeList[k].end);
+						clearFrameAnimation(animationSequence, properties, start, end - epsTime, true);
+					}
+				}
+				if(addList.length > 0){
+					bakeAllDuration = false;
+					$._PPP_.FrameAnimation_Audio(i, j, sourceIndex, addList)
+				}
+
+				if(addList.length !== 0 || removeList.length !== 0){
+					var newClipList = [];
+					for(var k = 0; k < currentClips.length; k++){
+						newClipList.push(new ClipForIncrementalBake(currentClips[k]));
+					}
+					incrementalBake_clips[i][j] = newClipList;
+				}
+			}
+		}
+	}
 }
 
 function getTransition_Random(sequence, targetMarker){
@@ -1399,7 +1526,7 @@ function getTransitionForClipset(sequence, targetMarker){
 	return result;
 }
 
-function switchActiveTrack(activateSeconds, activateTrackIndex, deactivateTrackIndex, epsTime) {
+function switchActiveTrack(fAnimationProperties, activateSeconds, activateTrackIndex, deactivateTrackIndex, epsTime) {
 	activateSeconds = fixTimeError(activateSeconds, epsTime);
 	var lastTime = new Time();
 	lastTime.seconds = fixTimeError(activateSeconds - epsTime, epsTime);
@@ -1422,6 +1549,7 @@ function switchActiveTrack(activateSeconds, activateTrackIndex, deactivateTrackI
 			}
 		}
 	}
+
 		if(deactivateProperty === null) {
 			for(var i = 0; i < fAnimationProperties.length; i++){
 				if(fAnimationProperties[i] === null) continue;
@@ -1462,20 +1590,42 @@ function switchActiveTrack(activateSeconds, activateTrackIndex, deactivateTrackI
 }
 }
 
-function clearFrameKey(sequence, trackIndex, start, end) {
-	var epsTime = sequence.getSettings().videoFrameRate.seconds;
-	var component = getComponentObject(sequence.videoTracks[trackIndex].clips[0], OPACITY_COMPONENT_NAME);
-	var property = getPropertyObject(component, [OPACITY_PROPERTY_NAME]);
-
-	if (!property.isTimeVarying()) {
-		property.setTimeVarying(true);
-	}
-
+function clearFrameAnimation(animationSequence, fAnimationProperties, start, end, restoreChangeMarker) {
+	var epsTime = animationSequence.getSettings().videoFrameRate.seconds;
 	var startTime = new Time();
-	startTime.seconds =  fixTimeError(start, epsTime);;
+	startTime.seconds = fixTimeError(start, epsTime);
 	var endTime = new Time();
 	endTime.seconds = fixTimeError(end, epsTime);
-	property.removeKeyRange(startTime, endTime);
+	for(var i = 0; i < fAnimationProperties.length; i++){
+		if(fAnimationProperties[i]){
+			fAnimationProperties[i].removeKeyRange(startTime, endTime);
+		}
+	}
+
+	if(!restoreChangeMarker) return;
+
+	// Restore change marker
+	var markers = animationSequence.markers;
+	var nextMarker = getFirstTransitionMarker(markers);
+	while(nextMarker !== null && nextMarker.start.seconds < startTime.seconds){
+		nextMarker = getNextTransitionMarker(markers, nextMarker);
+	}
+	var currentMarker = null;
+
+	var prevIndex = -1;
+	var currentTransition = null;
+	while(true){
+		if(HasPassedMarkerChangeTime(endTime.seconds, nextMarker)) {
+			currentMarker = nextMarker;
+			if(currentMarker !== null) {
+				currentTransition = getTransition_Lip(animationSequence, currentMarker);
+				nextMarker = getNextTransitionMarker(markers, currentMarker);
+			}
+			switchActiveTrack(fAnimationProperties, currentMarker.start.seconds , currentTransition[0].index, prevIndex, epsTime);
+		} else {
+			break;
+		}
+	}
 }
 
 function initializeKey(property, init){
@@ -1498,7 +1648,7 @@ function HasPassedMarkerChangeTime (time, nextMarker) {
 	return false;
 }
 
-function bakeFrameAnimation_Audio(){
+function bakeFrameAnimation_Audio(allDuration){
 	var epsTime = fAnimationSequence.getSettings().videoFrameRate.seconds;
 	var markers = fAnimationSequence.markers;
 
@@ -1534,29 +1684,52 @@ function bakeFrameAnimation_Audio(){
 				}
 			}
 
+	var sequenceList = getSequenceTrackItemsInSequence(linkSequenceParents[fLinkedSequenceIndex], linkSequence[fLinkedSequenceIndex].sequenceID);
 	var finalKey = {};
+	if(allDuration){
 	currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
 	finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
+	}
 	
 	for(var clipIndex = 0; clipIndex < fAnimationSourceClipsLength; clipIndex++) {
 		if(fAnimationSourceClips[clipIndex].mediaType === 'Audio') {
-			var clipStart = fAnimationSourceClips[clipIndex].start.seconds - epsTime * 0;
-			var clipEnd = fAnimationSourceClips[clipIndex].end.seconds - epsTime * 1;
+			var clipStart = fAnimationSourceClips[clipIndex].start.seconds;
+			var targetSequence = getClipAtTime(sequenceList, clipStart);
+			if(targetSequence === null) continue;
+			clipStart = getClipLocalTime(targetSequence, clipStart);
+			var clipEnd = getClipLocalTime(targetSequence, fAnimationSourceClips[clipIndex].end.seconds - epsTime * 2);
+			var clipInPoint = fAnimationSourceClips[clipIndex].inPoint.seconds;
 			var keypoints = fAnimationKeypoints[clipIndex].split(',');
 			var startTime = fAnimationStartTime[clipIndex].split(',');
+
+			if(!allDuration){
+				clearFrameAnimation(fAnimationSequence, AnimationProperties, clipStart, clipEnd + epsTime, false);
+				while(true){
+					if(HasPassedMarkerChangeTime(clipStart, nextMarker)) {
+						currentMarker = nextMarker;
+						nextMarker = getNextTransitionMarker(markers, currentMarker);
+					} else {
+						break;
+					}
+				}
+			}
 
 			currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
 			var level = 1;
 			for(var i = 0; i < startTime.length; i++) {
 				level = Math.max(level, 0);
-				if(keypoints[i] == 1) {
-					level = Math.max(level, 1);
-					targetTime = clipStart + Number(startTime[i]);
+				var offset = Number(startTime[i]) - clipInPoint;
+				if(offset < 0) continue;
+
+				targetTime = Math.max(clipStart + offset, clipStart + epsTime);
 					var limitTime = clipEnd;
 					if(i < startTime.length - 1) {
-						limitTime = clipStart + Number(startTime[i + 1]);
+					limitTime = Math.min(clipStart + Number(startTime[i + 1]) - clipInPoint, limitTime);
 					}
+				if(targetTime >= limitTime) break;
 
+				if(keypoints[i] == 1) {
+					level = Math.max(level, 1);
 					while(true){
 						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
 							ChangeNextTransition(0);
@@ -1565,6 +1738,7 @@ function bakeFrameAnimation_Audio(){
 							break;
 						}
 					}
+					
 					// transition in
 					var timeToClose = 0;
 					for(; level < currentTransition.length; level++) {
@@ -1618,11 +1792,6 @@ function bakeFrameAnimation_Audio(){
 						}
 					}
 				} else {
-					targetTime = clipStart + Number(startTime[i]);
-					var limitTime = clipEnd;
-					if(i < startTime.length - 1) {
-						limitTime = clipStart + Number(startTime[i + 1]);
-					}
 					level = Math.min(level, currentTransition.length - 2);
 					for(; level >= 0; level--) {
 							targetTime = fixTimeError(targetTime, epsTime);
@@ -1639,16 +1808,32 @@ function bakeFrameAnimation_Audio(){
 					}
 						}
 					}
+			// force close
+			finalKey[Math.round((clipEnd + epsTime) / epsTime)] = currentTransition[0].index;
+		}
+	}
+
+	if(allDuration){
+		// Check for marker changes until end.
+		while(true){
+			ChangeNextTransition(0);
+			if(currentMarker === null) break;
+			finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
 				}
 			}
+
 			var prevIndex = -1;
 			for(var key in finalKey) {
-				if(finalKey[key] != prevIndex) {
-					switchActiveTrack(Number(key) * epsTime, finalKey[key], prevIndex, epsTime);			
+		if(finalKey[key] !== prevIndex) {
+			switchActiveTrack(AnimationProperties, Number(key) * epsTime, finalKey[key], prevIndex, epsTime);
 					prevIndex = finalKey[key];
 				}
 			}
+
+	if(allDuration){
+		$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 1);
 	alert('complete');
+}
 }
 
 function bakeFrameAnimation_Random(end){
@@ -1684,14 +1869,14 @@ function bakeFrameAnimation_Random(end){
 		return 0;
 			}
 
-	switchActiveTrack(0, currentTransition[0].index, prevIndex, epsTime);
+	switchActiveTrack(AnimationProperties, 0, currentTransition[0].index, prevIndex, epsTime);
 	targetTime = Math.max(epsTime, period + (Math.random() * 2 - 1) * randomlyRange);
 
 	while(targetTime < end) {
 		while(true){
 			if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
 				ChangeNextTransition(0);
-				switchActiveTrack(targetTime, currentTransition[0].index, prevIndex, epsTime);
+				switchActiveTrack(AnimationProperties, targetTime, currentTransition[0].index, prevIndex, epsTime);
 				prevIndex = currentTransition[0].index;
 			} else {
 				break;
@@ -1705,7 +1890,7 @@ function bakeFrameAnimation_Random(end){
 				i = ChangeNextTransition(i);
 				i = Math.max(i, 1);
 			}
-			switchActiveTrack(targetTime, currentTransition[i].index, prevIndex, epsTime);			
+			switchActiveTrack(AnimationProperties, targetTime, currentTransition[i].index, prevIndex, epsTime);			
 			prevIndex = currentTransition[i].index;
 			targetTime += currentTransition[i].duration;
 		}					
@@ -1716,7 +1901,7 @@ function bakeFrameAnimation_Random(end){
 			if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
 				i = ChangeNextTransition(i);
 			}
-			switchActiveTrack(targetTime, currentTransition[i].index, prevIndex, epsTime);			
+			switchActiveTrack(AnimationProperties, targetTime, currentTransition[i].index, prevIndex, epsTime);			
 			prevIndex = currentTransition[i].index;
 			targetTime += currentTransition[i].duration;
 		}
@@ -1880,4 +2065,33 @@ function makeVideoTrack(sequence, trackIndex) {
 			sequence.videoTracks[lastIndex].setLocked(0);
 		}
 	}
+}
+
+function getSequenceTrackItemsInSequence(parentSequence, targetSequenceID){
+	var sequenceList = [];
+	for(var i = 0; i < parentSequence.videoTracks.numTracks; i++){
+		var clips = parentSequence.videoTracks[i].clips;
+		for(var j = 0; j < clips.numItems; j++){
+			if(clips[j].projectItem.isSequence()){
+				var seq = trackItemToSequence(clips[j]);
+				if(seq.sequenceID === targetSequenceID){
+					sequenceList.push(clips[j]);
+				}
+			}
+		}
+	}
+
+	sequenceList.sort(function(a, b) {
+		return a.start.seconds - b.start.seconds;
+	});
+	return sequenceList;
+}
+
+function getClipAtTime(trackItemList, time){
+	for(var i = 0; i < trackItemList.length; i++){
+		if(trackItemList[i].start.seconds <= time && time < trackItemList[i].end.seconds){
+			return trackItemList[i];
+		}
+	}
+	return null;
 }
