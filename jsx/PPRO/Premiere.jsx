@@ -912,7 +912,10 @@ $._PPP_={
 		startTime.seconds = -60*60;
 		var duration = new Time();
 		duration.seconds = 60*60*11;
-		var clips = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex].clips;
+		var clips = [];
+		if(animationTrackIndex < linkSequence[linkedSequenceIndex].videoTracks.numTracks){
+			clips = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex].clips;
+		}
 		var seq = getFirstSequenceFromTrackItems(clips);
 		var newAnimationSequence = false;
 
@@ -1020,6 +1023,7 @@ $._PPP_={
 	InsertFrameAnimationMarker : function(linkedSequenceIndex, animationTrackIndex, comment, endFlag) {
 		linkedSequenceIndex = Number(linkedSequenceIndex);
 		animationTrackIndex = Number(animationTrackIndex);
+		makeVideoTrack(linkSequence[linkedSequenceIndex], animationTrackIndex);
 		var track = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex];
 		if(track.isLocked()){
 			return;
@@ -1033,7 +1037,6 @@ $._PPP_={
 
 		var seq = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
 		var epsTime = seq.getSettings().videoFrameRate.seconds;
-		makeVideoTrack(seq, animationTrackIndex);
 		overwriteVideoClip(seq.projectItem, linkSequence[linkedSequenceIndex], track, linkedSequenceTime, endFlag, activeSequence);
 		var trackItem = getTrackItemAtTime(clips, linkedSequenceTime);
 		var newStartTime = fixTimeError(getClipLocalTime(trackItem, linkedSequenceTime), epsTime);
@@ -1949,7 +1952,7 @@ function getParentBin(projectItem){
 		treePath = treePath.slice(0, index);
 		return searchItemWithTreePath(treePath, ProjectItemType.BIN);
 	} else {
-		return app.project.rootItem.treePath.replace(/\\/g, '/');
+		return app.project.rootItem;
 	}
 }
 
