@@ -549,8 +549,8 @@ async function SetupActorComponent(index, actorName, isSetting=false){
                 for(let j = 0; j < clips.length; j++){
                     if(clips[j].type === CLIP_TYPE_Animation){
                         Array.prototype.push.apply(treePathList, clips[j].anim_clips.split(','));
-        }
-    }
+                   }
+                }
 
                 if(treePathList.length > 0) {
                     treePathList = Array.from(new Set(treePathList));
@@ -559,7 +559,7 @@ async function SetupActorComponent(index, actorName, isSetting=false){
                     csInterface.evalScript(script, function(actorStructPath) {
                         if(!AnimationIndexes[index]) {
                             AnimationIndexes[index] = {};
-}
+                        }
                         AnimationIndexes[index][group_index] = actorStructPath.split(',');
                         mutex = true;
                     });
@@ -636,8 +636,8 @@ $(document).on('click', '.actor_thumb_parent', function(e) {
             } else {
                 $('.selected').not(this).removeClass('selected');
                 target.addClass('selected');
+            }
         }
-    }
     }
 });
 
@@ -870,7 +870,7 @@ function SaveActorSetting() {
             group : groupElm.find('.select_actor_group').html(),
             clips : [],
             anim_type : groupElm.attr('anim-type'),
-            source : current_actor_structure.actor[i].source
+            source : groupElm.find('.input_source_track').val()
         };
         const clips = groupElm.find('.actor_thumb_parent');
         for(let j = 0; j < clips.length; j++) {
