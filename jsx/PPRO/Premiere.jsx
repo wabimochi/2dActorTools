@@ -918,7 +918,6 @@ $._PPP_={
 		}
 		var seq = getFirstSequenceFromTrackItems(clips);
 		var newAnimationSequence = false;
-
 		if(seq === null) {
 			var sequenceID = linkSequence[linkedSequenceIndex].sequenceID;
 			for(var i = 0; i < app.project.sequences.numSequences; i++){
@@ -1523,10 +1522,10 @@ function getTransitionForClipset(sequence, targetMarker){
 		frameList.push(Math.round(Number(durations[i]) * 60));
 	}
 
-	var result = '{"anim_clips":"' + treePathList.join(',') + '","frame":"' + frameList.join(',') + '"';;
+	var result = '{"anim_clips":"' + treePathList.join(',') + '","frame":"' + frameList.join(',') + '"';
 	if(infoList.length >= 5){
 		var randomInfo = infoList[4].split(',');
-		result += ',"interval":"' + randomInfo[0].toString() + '","min":"' + randomInfo[1].toString() + '","max":"' + randomInfo[2].toString() + '"';
+		result += ',"interval":"' + randomInfo[0].toString() + '","range":"' + randomInfo[1].toString() + '"';
 	}
 
 	result += '}';

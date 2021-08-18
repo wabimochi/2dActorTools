@@ -141,18 +141,13 @@ $(document).on('click', '.actor_thumb_parent', function() {
     const flag = getClipEndFlag(insert_mode);
     const type = target.attr('data-type');
     if(type == CLIP_TYPE_None){
-    insertActorClip(actorName, seq_index, group_index, tree_path, flag);
+        insertActorClip(actorName, seq_index, group_index, tree_path, flag);
     } else if(type == CLIP_TYPE_Animation) {
         let anim_clips = target.attr('anim_clips');
         let frame = target.attr('frame');
 
         const anim_indexes = convertTreePathToAnimationIndex(seq_index, group_index, anim_clips);
-
-        frame = frame.split(',').map(x => (Number(x) / 60).toFixed(3));
-        comment = anim_indexes.slice(1).join(',') + '\\n' + 
-                    frame.slice(1).join(',') + '\\n' +
-                    anim_indexes.reverse().slice(1).join(',') + '\\n' + 
-                    frame.reverse().slice(1).join(','); 
+        let comment = makeMarkerComment(anim_indexes, frame);
         const animType = target.closest('.actor_parts_top').attr('anim-type');
 
         if(animType == 0) {
@@ -177,6 +172,15 @@ $(document).on('mouseleave ', '.actor_thumb_parent', function() {
     const actor_label = $(this).parents('.actor_parts_top').find('.select_actor_label');
     actor_label.html('');
 });
+
+function makeMarkerComment(anim_indexes, frame){
+    frame = frame.split(',').map(x => (Number(x) / 60).toFixed(3));
+    const comment = anim_indexes.slice(1).join(',') + '\\n' + 
+                frame.slice(1).join(',') + '\\n' +
+                anim_indexes.reverse().slice(1).join(',') + '\\n' + 
+                frame.reverse().slice(1).join(',');
+    return comment;
+}
 
 function actorSelectBoxUpdate() {
     const actor_linknav = $('.actor_linknav ul');
@@ -251,14 +255,20 @@ function setActorClipSet(shortcutKey) {
                 if(!insert_mode.find('.insert_disable').hasClass('enable')) {
                     const flag = getClipEndFlag(insert_mode);
                     if(treePathList[j][0] === '/') {
-                        // todo anim
+                        const anim_info = ActorStructure[seqIndex].clipset[treePathList[j].slice(1)];
+                        const anim_indexes = convertTreePathToAnimationIndex(seqIndex, j, anim_info.anim_clips);
+                        let comment = makeMarkerComment(anim_indexes, anim_info.frame);
+                        if(anim_info.interval){
+                            comment += '\\n' + anim_info.interval + ',' + anim_info.range;
+                        }
+                        insertAnimationMarker(seqIndex, j, comment, flag);
                     } else {
-                    insertActorClip(actorName, seqIndex, j, treePathList[j], flag);
+                        insertActorClip(actorName, seqIndex, j, treePathList[j], flag);
+                    }
                 }
             }
         }
     }
-}
 }
 
 function getActorClipSet(shortcutKey) {
@@ -511,8 +521,10 @@ async function SetupActorComponent(index, actorName, isSetting=false){
         const ul = $('<ul>', {'class':'uk-flex actor_clipset_root'});
         const clipset = actorObj.clipset;
         for(shortcutKey in clipset){
-            const li = $('<li>', {'class':'actor_clipset', text:shortcutKey.toString()});
-            ul.append(li);
+            if(shortcutKey.length === 1){
+                const li = $('<li>', {'class':'actor_clipset', text:shortcutKey.toString()});
+                ul.append(li);
+            }
         }
         thumbnav.append(ul);
         actor_root.append(thumbnav);
