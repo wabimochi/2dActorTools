@@ -430,37 +430,17 @@ $._PPP_={
 	},
 
 	ImportMOGRTFile: function(pathList) {
-		var seq = app.project.activeSequence;
-		if(seq) {
-			var vlocked = [];
-			var alocked = [];
-			for(var i = 0; i < seq.videoTracks.numTracks; i++){
-				vlocked.push(seq.videoTracks[i].isLocked());
-				seq.videoTracks[i].setLocked(1);
-			}
-			for(var i = 0; i < seq.audioTracks.numTracks; i++){
-				alocked.push(seq.audioTracks[i].isLocked());
-				seq.audioTracks[i].setLocked(1);
-			}
-			var path = pathList.split(',');
-			
-			for(var i = 0; i < path.length; i++) {
-				var newTrackItem = seq.importMGT(path[i], 0, 0, 0);
-				newTrackItem.setSelected(true, false);
-				newTrackItem.remove(true, true);
-			}
-
-			for(var i = 0; i < seq.videoTracks.numTracks; i++){
-				if(!vlocked[i]){
-					seq.videoTracks[i].setLocked(0);
-				}
-			}
-			for(var i = 0; i < seq.audioTracks.numTracks; i++){
-				if(!alocked[i]){
-					seq.audioTracks[i].setLocked(0);
-				}
-			}
+		var dummyClip = getDummyClip()
+		var seq = app.project.createNewSequenceFromClips('importmogrt', [dummyClip], ActorBinItem);
+		var path = pathList.split(',');			
+		for(var i = 0; i < path.length; i++) {
+			seq.importMGT(path[i], 0, 0, 0);
 		}
+		app.project.deleteSequence(seq);
+
+		eventObj.type = 'completeImportMogrt';
+		eventObj.data = '';
+		eventObj.dispatch();
 	},
 
 	GetActorStructureMediaPath: function(actorName) {

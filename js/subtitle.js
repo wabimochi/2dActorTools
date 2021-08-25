@@ -90,3 +90,8 @@ function insertSubtitleFromTextFile() {
     });	
 }
 
+function SubtitleInitialize() {
+    csInterface.addEventListener('completeImportMogrt', function() {
+        mogrtUpdate();
+    });
+}
