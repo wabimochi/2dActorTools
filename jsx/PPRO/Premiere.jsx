@@ -95,14 +95,12 @@ var fAnimationSequenceIndex = -1;
 var fAnimationSourceIndex = -1;
 
 var fAnimationSourceCount = 0;
-var fAnimationSourceSize = 0;
 var AnimationProperties = null;
 var bakeAllDuration = false;
 
-var FrameAnimationKey = function(index, duration, epsTime) {
+var FrameAnimationKey = function(index, duration) {
     this.index = index;
     this.duration = duration;
-    this.frame = duration / epsTime;
 }
 
 var ClipForIncrementalBake = function(trackItem) {
@@ -143,22 +141,12 @@ $._PPP_={
 		}
 		app.unbind('onActiveSequenceStructureChanged');
 		app.bind('onActiveSequenceStructureChanged', $._PPP_.SequenceStructureChanged);
-
 		app.unbind('onSourceClipSelectedInProjectPanel');
 		app.bind('onSourceClipSelectedInProjectPanel', reportProjectItemSelectionChanged);
-
 		app.unbind('onActiveSequenceSelectionChanged');
 		app.bind('onActiveSequenceSelectionChanged', reportSequenceItemSelectionChanged);
-
-		app.unbind('onActiveSequenceTrackItemAdded');
-		//app.bind('onActiveSequenceTrackItemAdded', reportSequenceItemAdd);
-
-		app.unbind('onActiveSequenceTrackItemRemoved');
-		//app.bind('onActiveSequenceTrackItemRemoved', reportSequenceItemRemove);
-
 		app.unbind('onActiveSequenceChanged');
-		app.bind('onActiveSequenceChanged', reportSequenceChanged);
-		
+		app.bind('onActiveSequenceChanged', incrementalBake);
 	},
 
 	SequenceStructureChanged : function () {
@@ -1019,7 +1007,7 @@ $._PPP_={
 		return sorted.join(',');
 	},
 
-	InsertFrameAnimationMarker : function(linkedSequenceIndex, animationTrackIndex, comment, endFlag) {
+	InsertFrameAnimationMarker : function(linkedSequenceIndex, animationTrackIndex, comment, endFlag, type, sourceIndex) {
 		linkedSequenceIndex = Number(linkedSequenceIndex);
 		animationTrackIndex = Number(animationTrackIndex);
 		makeVideoTrack(linkSequence[linkedSequenceIndex], animationTrackIndex);
@@ -1105,6 +1093,51 @@ $._PPP_={
 			newMarker.comments = comment;
 			newMarker.setTypeAsSegmentation();
 		}
+
+		// Simple bake
+		fAnimationSequence = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
+		AnimationProperties = linkAnimationProperties[linkedSequenceIndex][animationTrackIndex];
+		if(type == 0){
+			bakeFrameAnimation_Random(newStartTime, newEndTime - epsTime, true, true);
+		} else if(type == 1 && sourceIndex !== undefined && sourceIndex >= 0){
+			sourceIndex = Number(sourceIndex);
+			var seq = linkSequenceParents[linkedSequenceIndex];
+			if(seq.audioTracks.numTracks > sourceIndex){
+				var sourceClips = seq.audioTracks[sourceIndex].clips;
+				var clipFound = false;
+				var bakeClips = [];
+				var simpleBakeClips = [];
+				var clipLength = sourceClips.numItems;
+				for(var i = 0; i < clipLength; i++){
+					if(!clipFound){
+						if(playerPosition.seconds <= sourceClips[i].start.seconds){
+							bakeClips.push(sourceClips[i]);
+							clipFound = true;
+						}
+					}else{
+						if(sourceClips[i].start.seconds < newEndTime){
+							simpleBakeClips.push(sourceClips[i]);
+						} else {
+							break;
+						}
+					}
+				}
+
+				clearFrameAnimation(fAnimationSequence, AnimationProperties, newStartTime, newEndTime, true);
+				if(simpleBakeClips.length > 0){
+					bakeFrameAnimationSimple(simpleBakeClips, linkedSequenceIndex, animationTrackIndex, newEndTime);
+				}
+				if(bakeClips.length > 0){
+					$._PPP_.FrameAnimation_Audio(linkedSequenceIndex, animationTrackIndex, sourceIndex, bakeClips);
+				}else{
+					for(var i = 0; i < AnimationProperties.length; i++){
+						if(AnimationProperties[i] === null) continue;
+						updateUI(AnimationProperties[i]);
+						break;
+					}
+				}
+			}
+		}
 	},
 
 	/* 
@@ -1119,7 +1152,6 @@ $._PPP_={
 		fAnimationSourceIndex = sourceIndex;
 		fAnimationSequence = linkAnimationSequence[fLinkedSequenceIndex][fAnimationSequenceIndex];
 		AnimationProperties = linkAnimationProperties[fLinkedSequenceIndex][fAnimationSequenceIndex];
-
 		if(fAnimationSequence === null) {
 			alert('assert');
 			return;
@@ -1129,31 +1161,30 @@ $._PPP_={
 			fAnimationSourceClips = linkSequenceParents[fLinkedSequenceIndex].audioTracks[sourceIndex].clips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.numItems;
 			bakeAllDuration = true;
-			initializeKey(AnimationProperties[0], 100);
-			for(var i = 1; i < AnimationProperties.length; i++){
-				initializeKey(AnimationProperties[i], 0);
+			var markers = fAnimationSequence.markers;
+			if(markers.numMarkers <= 1) return;
+			var currentMarker = getFirstTransitionMarker(markers);
+			var transition = getTransition(currentMarker);
+			for(var i = 0; i < AnimationProperties.length; i++){
+				if(transition[0].index === i){
+					initializeKey(AnimationProperties[i], 100);
+				}else{
+					initializeKey(AnimationProperties[i], 0);
+				}
 			}
 		} else {
+			bakeAllDuration = false;
 			fAnimationSourceClips = sourceClips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.length;
 		}
-
 		var samplerate = (1 / 15).toString();
-		fAnimationSourceSize = 0;
 		fAnimationSourceCount = 0;
-		for(var i = 0; i < fAnimationSourceClipsLength; i++) {
-			if(fAnimationSourceClips[i].mediaType === 'Audio') {
-				fAnimationSourceSize++;
-			}
-		}
 		fAnimationKeypoints = [];
 		fAnimationStartTime = [];
 		for(var i = 0; i < fAnimationSourceClipsLength; i++) {
-			if(fAnimationSourceClips[i].mediaType === 'Audio') {
-				eventObj.type = "getAudioAnimKeyPoint";
-				eventObj.data = fAnimationSourceClips[i].projectItem.getMediaPath() + ',' + samplerate + ',' + i.toString();
-				eventObj.dispatch();
-			}
+			eventObj.type = "getAudioAnimKeyPoint";
+			eventObj.data = fAnimationSourceClips[i].projectItem.getMediaPath() + ',' + samplerate + ',' + i.toString();
+			eventObj.dispatch();
 		}
 	},
 
@@ -1161,25 +1192,17 @@ $._PPP_={
 		fAnimationKeypoints[Number(clipIndex)] = keypoints;
 		fAnimationStartTime[Number(clipIndex)] = startTime;
 		fAnimationSourceCount++;
-		if(fAnimationSourceCount === fAnimationSourceSize){
+		if(fAnimationSourceCount === fAnimationSourceClipsLength){
 			bakeFrameAnimation_Audio(bakeAllDuration);
 		}
 	},
 
 	FrameAnimation_Random : function(linkedSequenceIndex, animationTrackIndex) {
-		var end = 0;
 		fAnimationSequence = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
-
-		var clips = linkSequence[linkedSequenceIndex].videoTracks[animationTrackIndex].clips;
-		for(var i = clips.numItems - 1; i >= 0; i--) {
-			if(clips[i].projectItem.isSequence()) {
-				var seq = trackItemToSequence(clips[i]);
-				if(seq.sequenceID === fAnimationSequence.sequenceID){
-					end = Math.max(10 * 60, clips[i].end.seconds);
-					break;
-				}
-			}
-		}
+		var activeSequence = app.project.activeSequence;
+		var sequenceList = getSequenceTrackItemsInSequence(activeSequence, linkSequence[linkedSequenceIndex].sequenceID);
+		if(sequenceList.length === 0) return;
+		var end = sequenceList[sequenceList.length - 1].outPoint.seconds;
 
 		if(fAnimationSequence === null) {
 			alert('assert');
@@ -1187,11 +1210,20 @@ $._PPP_={
 		}
 
 		AnimationProperties = linkAnimationProperties[linkedSequenceIndex][animationTrackIndex];
-		initializeKey(AnimationProperties[0], 100);
-		for(var i = 1; i < AnimationProperties.length; i++){
-			initializeKey(AnimationProperties[i], 0);
+
+		var markers = fAnimationSequence.markers;
+		if(markers.numMarkers <= 1) return;
+		var currentMarker = getFirstTransitionMarker(markers);
+		var transition = getTransition(currentMarker);
+		for(var i = 0; i < AnimationProperties.length; i++){
+			if(transition[0].index === i){
+				initializeKey(AnimationProperties[i], 100);
+			}else{
+				initializeKey(AnimationProperties[i], 0);
+			}
 		}
-		bakeFrameAnimation_Random(end);
+
+		bakeFrameAnimation_Random(0, end, false, false);
 	},
 
 	SetIncrementalBakeFlag : function(linkedSequenceIndex, animationTrackIndex, sourceIndex, enable){
@@ -1392,8 +1424,7 @@ function trackIdToIndex(track){
 	return -1;
 }
 
-function reportSequenceChanged() {
-	// Incremental Bake
+function incrementalBake() {
 	var IsDifferent = function(Ibake, trackItem){
 		return (Ibake.start !== trackItem.start.seconds ||
 				Ibake.end !== trackItem.end.seconds ||
@@ -1449,7 +1480,6 @@ function reportSequenceChanged() {
 					}
 				}
 				if(addList.length > 0){
-					bakeAllDuration = false;
 					$._PPP_.FrameAnimation_Audio(i, j, sourceIndex, addList)
 				}
 
@@ -1465,44 +1495,27 @@ function reportSequenceChanged() {
 	}
 }
 
-function getTransition_Random(sequence, targetMarker){
-	var epsTime = sequence.getSettings().videoFrameRate.seconds;
-	var infoList = targetMarker.comments.split('\n');
-
+function getTransition(targetMarker){
 	var transition = [];
-
+	var infoList = targetMarker.comments.split('\n');
 	var indexes = infoList[2].split(',');
 	var durations = infoList[3].split(',');
-	transition.push(new FrameAnimationKey(Number(indexes[indexes.length - 1]), Number(durations[durations.length - 1]), epsTime));
 
+	transition.push(new FrameAnimationKey(Number(indexes[indexes.length - 1]), Number(durations[durations.length - 1])));
 	indexes = infoList[0].split(',');
 	durations = infoList[1].split(',');
 	for(var i = 0; i < indexes.length; i++) {
-		transition.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
-	}
-	
-	var transition_property = infoList[4].split(',');
-
-	return [transition, transition_property];
-}
-
-function getTransition_Lip(sequence, targetMarker){
-	var epsTime = sequence.getSettings().videoFrameRate.seconds;
-	var infoList = targetMarker.comments.split('\n');
-
-	var transition = [];
-
-	var indexes = infoList[2].split(',');
-	var durations = infoList[3].split(',');
-	transition.push(new FrameAnimationKey(Number(indexes[indexes.length - 1]), Number(durations[durations.length - 1]), epsTime));
-
-	indexes = infoList[0].split(',');
-	durations = infoList[1].split(',');
-	for(var i = 0; i < indexes.length; i++) {
-		transition.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i]), epsTime));
+		transition.push(new FrameAnimationKey(Number(indexes[i]), Number(durations[i])));
 	}
 
 	return transition;
+}
+
+function getRandomInfo(targetMarker){
+	var infoList = targetMarker.comments.split('\n');
+	var random_info = infoList[4].split(',');
+
+	return random_info;
 }
 
 function getTransitionForClipset(sequence, targetMarker){
@@ -1539,48 +1552,32 @@ function switchActiveTrack(fAnimationProperties, activateSeconds, activateTrackI
 	var activateTime = new Time();
 	activateTime.seconds = fixTimeError(activateSeconds, epsTime);
 
-	var deactivateProperty = null;
-	if(deactivateTrackIndex >= 0) {
-		deactivateProperty = fAnimationProperties[deactivateTrackIndex];
-	} else {
+	if(deactivateTrackIndex < 0) {
 		for(var i = 0; i < fAnimationProperties.length; i++){
-			if(fAnimationProperties[i] === null) continue;
+			if(fAnimationProperties[i] === null || activateTrackIndex === i) continue;
 			var prevKeyTime = fAnimationProperties[i].findPreviousKey(activateTime);
 			if(prevKeyTime !== undefined){
-				var lastValue = fAnimationProperties[i].getValueAtTime(prevKeyTime);
+				var lastValue = fAnimationProperties[i].getValueAtKey(prevKeyTime);
 				if(lastValue == 100) {
-					if(activateTrackIndex == i) return;
-					deactivateProperty = fAnimationProperties[i];
+					deactivateTrackIndex = i;
 					break;
-				}
-			}
-		}
-
-		if(deactivateProperty === null) {
-			for(var i = 0; i < fAnimationProperties.length; i++){
-				if(fAnimationProperties[i] === null) continue;
-				var prevKeyTime = fAnimationProperties[i].getValueAtKey(activateTime);		
-				if(prevKeyTime !== null){
-					var lastValue = fAnimationProperties[i].getValueAtTime(prevKeyTime);
-					if(lastValue == 100) {
-						if(activateTrackIndex == i) return;
-						deactivateProperty = fAnimationProperties[i];
-						break;
-					}
 				}
 			}
 		}
 	}
 
-	if(deactivateProperty !== null) {
-		var prevKeyTime = deactivateProperty.findPreviousKey(activateTime);
-		if(prevKeyTime !== undefined){
-			var lastValue = deactivateProperty.getValueAtKey(prevKeyTime);
-			deactivateProperty.addKey(lastTime);
-			deactivateProperty.setValueAtKey(lastTime, lastValue, 0);
+	if(deactivateTrackIndex >= 0){
+		var deactivateProperty = fAnimationProperties[deactivateTrackIndex];
+		if(deactivateProperty !== null) {
+			var prevKeyTime = deactivateProperty.findPreviousKey(activateTime);
+			if(prevKeyTime !== undefined){
+				var lastValue = deactivateProperty.getValueAtKey(prevKeyTime);
+				deactivateProperty.addKey(lastTime);
+				deactivateProperty.setValueAtKey(lastTime, lastValue, 0);
+			}
+			deactivateProperty.addKey(activateTime);
+			deactivateProperty.setValueAtKey(activateTime, 0, 0);
 		}
-		deactivateProperty.addKey(activateTime);
-		deactivateProperty.setValueAtKey(activateTime, 0, 0);
 	}
 
 	var activateProperty = fAnimationProperties[activateTrackIndex];
@@ -1604,7 +1601,24 @@ function clearFrameAnimation(animationSequence, fAnimationProperties, start, end
 	endTime.seconds = fixTimeError(end, epsTime);
 	for(var i = 0; i < fAnimationProperties.length; i++){
 		if(fAnimationProperties[i]){
+			var value = fAnimationProperties[i].getValueAtKey(endTime);
+			if(value !== null){
+				var endNextTime = new Time();
+				endNextTime.seconds = fixTimeError(endTime.seconds + epsTime, epsTime);
+				var nextValue = fAnimationProperties[i].getValueAtKey(endNextTime);
+				if(nextValue !== null){
+					fAnimationProperties[i].removeKey(endNextTime);
+				}
+			}
 			fAnimationProperties[i].removeKeyRange(startTime, endTime);
+		}
+	}
+
+	if(start < epsTime){
+		var initMarker = getFirstTransitionMarker(animationSequence.markers);
+		if(initMarker){
+			var initTransition = getTransition(initMarker);
+			setInitialKey(AnimationProperties, initTransition);
 		}
 	}
 
@@ -1624,12 +1638,41 @@ function clearFrameAnimation(animationSequence, fAnimationProperties, start, end
 		if(HasPassedMarkerChangeTime(endTime.seconds, nextMarker)) {
 			currentMarker = nextMarker;
 			if(currentMarker !== null) {
-				currentTransition = getTransition_Lip(animationSequence, currentMarker);
+				currentTransition = getTransition(currentMarker);
 				nextMarker = getNextTransitionMarker(markers, currentMarker);
 			}
 			switchActiveTrack(fAnimationProperties, currentMarker.start.seconds , currentTransition[0].index, prevIndex, epsTime);
 		} else {
 			break;
+		}
+	}
+}
+
+function fixWrongKey(properties, time, epsTime){
+	var _time = new Time();
+	_time.seconds = time;
+	var lastTime = null;
+	for(var i = 0; i < properties.length; i++){
+		var property = properties[i];
+		if(property){
+			var hasKey = property.getValueAtKey(_time);
+			if(hasKey === null){
+				lastTime = property.findPreviousKey(_time);
+			}else{
+				lastTime = new Time();
+				lastTime.seconds = _time.seconds;
+			}
+			var nextKeyTime = property.findNextKey(_time);
+
+			if(lastTime && nextKeyTime && (nextKeyTime.seconds - lastTime.seconds) > epsTime * 1.5){
+				var lastValue = property.getValueAtKey(lastTime);
+				var nextValue = property.getValueAtKey(nextKeyTime);
+				if(lastValue !== nextValue){
+					lastTime.seconds = fixTimeError(nextKeyTime.seconds - epsTime, epsTime);
+					property.addKey(lastTime);
+					property.setValueAtKey(lastTime, lastValue, 0);
+				}
+			}
 		}
 	}
 }
@@ -1647,7 +1690,19 @@ function initializeKey(property, init){
 	property.setValueAtKey(startTime, init, 0);
 }
 
-function HasPassedMarkerChangeTime (time, nextMarker) {
+function setInitialKey(animationProperties, transition){
+	var time = new Time();
+	time.seconds = 0;
+	for(var i = 0; i < animationProperties.length; i++){
+		if(animationProperties[i]){
+			var value = transition[0].index === i ? 100 : 0;
+			animationProperties[i].addKey(time);
+			animationProperties[i].setValueAtKey(time, value, 0);
+		}
+	}
+}
+
+function HasPassedMarkerChangeTime(time, nextMarker) {
 	if(nextMarker !== null) {
 		return nextMarker.start.seconds <= time;
 	}
@@ -1671,7 +1726,7 @@ function bakeFrameAnimation_Audio(allDuration){
 		currentMarker = nextMarker;
 		if(currentMarker !== null) {
 			var prevLength = currentTransition.length;
-			currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
+			currentTransition = getTransition(currentMarker);
 			nextMarker = getNextTransitionMarker(markers, currentMarker);
 			currentLevel = Math.floor(currentLevel * currentTransition.length / prevLength);
 			return currentLevel;
@@ -1693,130 +1748,135 @@ function bakeFrameAnimation_Audio(allDuration){
 	var sequenceList = getSequenceTrackItemsInSequence(linkSequenceParents[fLinkedSequenceIndex], linkSequence[fLinkedSequenceIndex].sequenceID);
 	var finalKey = {};
 	if(allDuration){
-		currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
+		currentTransition = getTransition(currentMarker);
 		finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
 	}
 
+	var endTimeList = [];
 	for(var clipIndex = 0; clipIndex < fAnimationSourceClipsLength; clipIndex++) {
-		if(fAnimationSourceClips[clipIndex].mediaType === 'Audio') {
-			var clipStart = fAnimationSourceClips[clipIndex].start.seconds;
-			var targetSequence = getClipAtTime(sequenceList, clipStart);
-			if(targetSequence === null) continue;
-			clipStart = getClipLocalTime(targetSequence, clipStart);
-			var clipEnd = getClipLocalTime(targetSequence, fAnimationSourceClips[clipIndex].end.seconds - epsTime * 2);
-			var clipInPoint = fAnimationSourceClips[clipIndex].inPoint.seconds;
-			var keypoints = fAnimationKeypoints[clipIndex].split(',');
-			var startTime = fAnimationStartTime[clipIndex].split(',');
+		var clipStart = fAnimationSourceClips[clipIndex].start.seconds;
+		var targetSequence = getClipAtTime(sequenceList, clipStart);
+		if(targetSequence === null) continue;
+		clipStart = getClipLocalTime(targetSequence, clipStart);
+		var clipEnd = getClipLocalTime(targetSequence, fAnimationSourceClips[clipIndex].end.seconds - epsTime * 2);
+		var clipInPoint = fAnimationSourceClips[clipIndex].inPoint.seconds;
+		var keypoints = fAnimationKeypoints[clipIndex].split(',');
+		var startTime = fAnimationStartTime[clipIndex].split(',');
 
-			if(!allDuration){
-				clearFrameAnimation(fAnimationSequence, AnimationProperties, clipStart, clipEnd + epsTime, false);
+		if(!allDuration){
+			clearFrameAnimation(fAnimationSequence, AnimationProperties, clipStart, clipEnd + epsTime, false);
+			while(true){
+				if(HasPassedMarkerChangeTime(clipStart, nextMarker)) {
+					currentMarker = nextMarker;
+					nextMarker = getNextTransitionMarker(markers, currentMarker);
+					if(currentMarker.start.seconds >= clipStart){
+						currentTransition = getTransition(currentMarker);
+						finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
+					}
+				} else {
+					break;
+				}
+			}
+		}
+
+		currentTransition = getTransition(currentMarker);
+		var level = 1;
+		for(var i = 0; i < startTime.length; i++) {
+			level = Math.max(level, 0);
+			var offset = Number(startTime[i]) - clipInPoint;
+			if(offset < 0) continue;
+
+			targetTime = Math.max(clipStart + offset, clipStart + epsTime);
+			var limitTime = clipEnd;
+			if(i < startTime.length - 1) {
+				limitTime = Math.min(clipStart + Number(startTime[i + 1]) - clipInPoint, limitTime);
+			}
+			if(targetTime >= limitTime) break;
+
+			if(keypoints[i] == 1) {
+				level = Math.max(level, 1);
 				while(true){
-					if(HasPassedMarkerChangeTime(clipStart, nextMarker)) {
-						currentMarker = nextMarker;
-						nextMarker = getNextTransitionMarker(markers, currentMarker);
+					if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+						ChangeNextTransition(0);
+						finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
+					} else {
+						break;
+					}
+				}
+				
+				// transition in
+				var timeToClose = 0;
+				for(; level < currentTransition.length; level++) {
+					targetTime = fixTimeError(targetTime, epsTime);
+					if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+						level = ChangeNextTransition(level);
+						level = Math.max(level, 1);
+						LevelRestriction();
+					}
+					finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
+					targetTime += currentTransition[level].duration;
+					timeToClose += currentTransition[level].duration;
+					if(targetTime + timeToClose >= limitTime) {
+						break;
+					}
+				}
+				level = Math.min(level, currentTransition.length - 1);
+				LevelRestriction();
+
+				var currentTransitionOutDuration = 0;
+				for(var j = 0; j < currentTransition.length - 1; j++) {
+					currentTransitionOutDuration += currentTransition[j].duration;
+				}
+				targetTime = Math.max(targetTime, limitTime - currentTransitionOutDuration);
+
+				// mid test
+				while(true){
+					if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+						level = ChangeNextTransition(level);
+						level = Math.max(level, 1);
+						LevelRestriction();
+						finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[level].index;
+					} else {
+						break;
+					}
+				}
+
+				// transition out
+				level = Math.min(level, currentTransition.length - 2);
+				for(; level >= 0; level--) {
+					targetTime = fixTimeError(targetTime, epsTime);
+					if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+						level = ChangeNextTransition(level);
+						LevelRestriction();
+					}
+					if(targetTime <= limitTime){
+						finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
+						targetTime += currentTransition[level].duration;
+					} else {
+						break;
+					}
+				}
+			} else {					
+				level = Math.min(level, currentTransition.length - 2);
+				for(; level >= 0; level--) {
+					targetTime = fixTimeError(targetTime, epsTime);
+					if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
+						level = ChangeNextTransition(level);
+						LevelRestriction();
+					}
+					if(targetTime + currentTransition[level].duration < limitTime){
+						finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
+						targetTime += currentTransition[level].duration;
 					} else {
 						break;
 					}
 				}
 			}
-
-			currentTransition = getTransition_Lip(fAnimationSequence, currentMarker);
-			var level = 1;
-			for(var i = 0; i < startTime.length; i++) {
-				level = Math.max(level, 0);
-				var offset = Number(startTime[i]) - clipInPoint;
-				if(offset < 0) continue;
-
-				targetTime = Math.max(clipStart + offset, clipStart + epsTime);
-				var limitTime = clipEnd;
-				if(i < startTime.length - 1) {
-					limitTime = Math.min(clipStart + Number(startTime[i + 1]) - clipInPoint, limitTime);
-				}
-				if(targetTime >= limitTime) break;
-
-				if(keypoints[i] == 1) {
-					level = Math.max(level, 1);
-					while(true){
-						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
-							ChangeNextTransition(0);
-							finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
-						} else {
-							break;
-						}
-					}
-					
-					// transition in
-					var timeToClose = 0;
-					for(; level < currentTransition.length; level++) {
-						targetTime = fixTimeError(targetTime, epsTime);
-						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
-							level = ChangeNextTransition(level);
-							level = Math.max(level, 1);
-							LevelRestriction();
-						}
-						finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
-						targetTime += currentTransition[level].duration;
-						timeToClose += currentTransition[level].duration;
-						if(targetTime + timeToClose >= limitTime) {
-							break;
-						}
-					}
-					level = Math.min(level, currentTransition.length - 1);
-					LevelRestriction();
-
-					var currentTransitionOutDuration = 0;
-					for(var j = 0; j < currentTransition.length - 1; j++) {
-						currentTransitionOutDuration += currentTransition[j].duration;
-					}
-					targetTime = Math.max(targetTime, limitTime - currentTransitionOutDuration);
-
-					// mid test
-					while(true){
-						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
-							level = ChangeNextTransition(level);
-							level = Math.max(level, 1);
-							LevelRestriction();
-							finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[level].index;
-						} else {
-							break;
-						}
-					}
-
-					// transition out
-					level = Math.min(level, currentTransition.length - 2);
-					for(; level >= 0; level--) {
-						targetTime = fixTimeError(targetTime, epsTime);
-						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
-							level = ChangeNextTransition(level);
-							LevelRestriction();
-						}
-						if(targetTime <= limitTime){
-							finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
-							targetTime += currentTransition[level].duration;
-						} else {
-							break;
-						}
-					}
-				} else {					
-					level = Math.min(level, currentTransition.length - 2);
-					for(; level >= 0; level--) {
-						targetTime = fixTimeError(targetTime, epsTime);
-						if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
-							level = ChangeNextTransition(level);
-							LevelRestriction();
-						}
-						if(targetTime + currentTransition[level].duration < limitTime){
-							finalKey[Math.round(targetTime / epsTime)] = currentTransition[level].index;
-							targetTime += currentTransition[level].duration;
-						} else {
-							break;
-						}
-					}
-				}
-			}
-			// force close
-			finalKey[Math.round((clipEnd + epsTime) / epsTime)] = currentTransition[0].index;
 		}
+		// force close
+		clipEnd = clipEnd + epsTime;
+		finalKey[Math.round(clipEnd / epsTime)] = currentTransition[0].index;
+		if(!allDuration) endTimeList.push(clipEnd);
 	}
 
 	if(allDuration){
@@ -1836,17 +1896,96 @@ function bakeFrameAnimation_Audio(allDuration){
 		}
 	}
 
+	if(!allDuration){
+		for(var i = 0; i < fAnimationSourceClipsLength; i++) {
+			fixWrongKey(AnimationProperties, endTimeList[i], epsTime);
+		}
+	}
+
+	for(var i = 0; i < AnimationProperties.length; i++){
+		if(AnimationProperties[i] === null) continue;
+		updateUI(AnimationProperties[i]);
+		break;
+	}
+
 	if(allDuration){
 		$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 1);
 		alert('complete');
 	}
 }
 
-function bakeFrameAnimation_Random(end){
+/* 
+	Parameters
+	----------
+	endTime
+		charactor sequence local time
+*/
+function bakeFrameAnimationSimple(clips, linkedSequenceIndex, animationTrackIndex, endTime){
+	var animationSequence = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
+	var animationProperties = linkAnimationProperties[linkedSequenceIndex][animationTrackIndex];
+	var epsTime = animationSequence.getSettings().videoFrameRate.seconds;
+	var markers = animationSequence.markers;
+
+	if(markers.numMarkers == 0) return;
+	var currentMarker = getFirstTransitionMarker(markers);
+	var nextMarker = null;
+	var currentTransition = null;
+
+	nextMarker = getNextTransitionMarker(markers, currentMarker);
+
+	var ChangeNextTransition = function(){
+		currentMarker = nextMarker;
+		if(currentMarker !== null) {
+			currentTransition = getTransition(currentMarker);
+			nextMarker = getNextTransitionMarker(markers, currentMarker);
+		}
+	}
+
+	// todo first marker
+	var sequenceList = getSequenceTrackItemsInSequence(linkSequenceParents[linkedSequenceIndex], linkSequence[linkedSequenceIndex].sequenceID);
+	var finalKey = {};
+
+	for(var clipIndex = 0; clipIndex < clips.length; clipIndex++) {
+		if(endTime && endTime < clips[clipIndex].end.seconds) break;
+		var clipStart = clips[clipIndex].start.seconds;
+		var targetSequence = getClipAtTime(sequenceList, clipStart);
+		if(targetSequence === null) continue;
+		clipStart = getClipLocalTime(targetSequence, clipStart + epsTime);
+		var clipEnd = getClipLocalTime(targetSequence, clips[clipIndex].end.seconds - epsTime * 1);
+
+		currentTransition = getTransition(currentMarker);
+
+		while(true){
+			if(HasPassedMarkerChangeTime(clipStart, nextMarker)) {
+				ChangeNextTransition();
+				finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
+			} else {
+				break;
+			}
+		}
+		finalKey[Math.round(clipStart / epsTime)] = currentTransition[currentTransition.length - 1].index;
+		finalKey[Math.round(clipEnd / epsTime)] = currentTransition[0].index;
+	}
+
+	var prevIndex = -1;
+	for(var key in finalKey) {
+		if(finalKey[key] !== prevIndex) {
+			switchActiveTrack(animationProperties, Number(key) * epsTime, finalKey[key], prevIndex, epsTime);
+			prevIndex = finalKey[key];
+		}
+	}
+	for(var i = 0; i < animationProperties.length; i++){
+		if(animationProperties[i] === null) continue;
+		updateUI(animationProperties[i]);
+		break;
+	}
+}
+
+function bakeFrameAnimation_Random(start, end, clearKeyframe, once){
 	var epsTime = fAnimationSequence.getSettings().videoFrameRate.seconds;
 	var markers = fAnimationSequence.markers;
 
-	if(markers.numMarkers == 0) return;
+	if(markers.numMarkers <= 1) return;
 	var currentMarker = getFirstTransitionMarker(markers);
 	var nextMarker = getNextTransitionMarker(markers, currentMarker);
 	var currentTransition = null;
@@ -1855,19 +1994,32 @@ function bakeFrameAnimation_Random(end){
 	var period = Number(epsTime);
 	var randomlyRange = 0;
 
-	var _transition = getTransition_Random(fAnimationSequence, currentMarker);
-	currentTransition = _transition[0];
-	period = Number(_transition[1][0]);
-	randomlyRange = Number(_transition[1][1]);
+	while(true){
+		if(HasPassedMarkerChangeTime(start, nextMarker)) {
+			currentMarker = nextMarker;
+			nextMarker = getNextTransitionMarker(markers, currentMarker);
+		} else {
+			break;
+		}
+	}
+
+	currentTransition = getTransition(currentMarker);
+	var randomInfo = getRandomInfo(currentMarker);
+	period = Number(randomInfo[0]);
+	randomlyRange = Number(randomInfo[1]);
+	if(clearKeyframe){
+		clearFrameAnimation(fAnimationSequence, AnimationProperties, start, end, false);
+		switchActiveTrack(AnimationProperties, start, currentTransition[0].index, prevIndex, epsTime);
+	}
 
 	var ChangeNextTransition = function(currentLevel){
 		currentMarker = nextMarker;
 		if(currentMarker !== null) {
 			var prevLength = currentTransition.length;
-			var _transition = getTransition_Random(fAnimationSequence, currentMarker);
-			currentTransition = _transition[0];
-			period = Number(_transition[1][0]);
-			randomlyRange = Number(_transition[1][1]);
+			currentTransition = getTransition(currentMarker);
+			var randomInfo = getRandomInfo(currentMarker);
+			period = Number(randomInfo[0]);
+			randomlyRange = Number(randomInfo[1]);
 			nextMarker = getNextTransitionMarker(markers, currentMarker);
 			currentLevel = Math.floor(currentLevel * currentTransition.length / prevLength);
 			return currentLevel;
@@ -1875,20 +2027,17 @@ function bakeFrameAnimation_Random(end){
 		return 0;
 	}
 
-	switchActiveTrack(AnimationProperties, 0, currentTransition[0].index, prevIndex, epsTime);
-	targetTime = Math.max(epsTime, period + (Math.random() * 2 - 1) * randomlyRange);
-
+	targetTime = Math.max(epsTime * 2, Number(start) + period + (Math.random() * 2 - 1) * randomlyRange);
 	while(targetTime < end) {
 		while(true){
 			if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
 				ChangeNextTransition(0);
-				switchActiveTrack(AnimationProperties, targetTime, currentTransition[0].index, prevIndex, epsTime);
+				switchActiveTrack(AnimationProperties, currentMarker.start.seconds, currentTransition[0].index, prevIndex, epsTime);
 				prevIndex = currentTransition[0].index;
 			} else {
 				break;
 			}
 		}
-
 		// transition in
 		for(var i = 1; i < currentTransition.length; i++) {
 			targetTime = fixTimeError(targetTime, epsTime);
@@ -1900,7 +2049,7 @@ function bakeFrameAnimation_Random(end){
 			prevIndex = currentTransition[i].index;
 			targetTime += currentTransition[i].duration;
 		}
-
+	
 		// transition out
 		for(var i = currentTransition.length - 2; i >= 0; i--) {
 			targetTime = fixTimeError(targetTime, epsTime);
@@ -1911,9 +2060,31 @@ function bakeFrameAnimation_Random(end){
 			prevIndex = currentTransition[i].index;
 			targetTime += currentTransition[i].duration;
 		}
-		targetTime += Math.max(epsTime, period + (Math.random() * 2 - 1) * randomlyRange);
+		if(once) break;
+		targetTime += Math.max(epsTime * 2, period + (Math.random() * 2 - 1) * randomlyRange);
 	}
-	alert('complete');
+
+	if(clearKeyframe){
+		end = end + epsTime;
+		while(true){
+			if(HasPassedMarkerChangeTime(end, nextMarker)) {
+				ChangeNextTransition(0);
+				switchActiveTrack(AnimationProperties, currentMarker.start.seconds, currentTransition[0].index, prevIndex, epsTime);
+				prevIndex = currentTransition[0].index;
+			} else {
+				break;
+			}
+		}
+	}
+
+	fixWrongKey(AnimationProperties, end, epsTime);
+
+	for(var i = 0; i < AnimationProperties.length; i++){
+		if(AnimationProperties[i] === null) continue;
+		updateUI(AnimationProperties[i]);
+		break;
+	}
+	if(!once) alert('complete');
 }
 
 function getFirstSequenceFromTrackItems(clips) {
@@ -2100,4 +2271,17 @@ function getClipAtTime(trackItemList, time){
 		}
 	}
 	return null;
+}
+
+function updateUI(property){
+	if(property.isTimeVarying()){
+		var time = new Time();
+		time.seconds = -1;
+		var keyTime = property.findNextKey(time);
+		var value = property.getValueAtKey(keyTime);
+		property.setValueAtKey(keyTime, value, true);
+	} else {
+		var value = property.getValue();
+		property.setValue(value, true);
+	}
 }

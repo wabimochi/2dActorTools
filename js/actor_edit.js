@@ -143,19 +143,24 @@ $(document).on('click', '.actor_thumb_parent', function() {
     if(type == CLIP_TYPE_None){
         insertActorClip(actorName, seq_index, group_index, tree_path, flag);
     } else if(type == CLIP_TYPE_Animation) {
+        const actor_parts_top = target.closest('.actor_parts_top');
         let anim_clips = target.attr('anim_clips');
         let frame = target.attr('frame');
+        let sourceIndex = -1;
 
         const anim_indexes = convertTreePathToAnimationIndex(seq_index, group_index, anim_clips);
         let comment = makeMarkerComment(anim_indexes, frame);
-        const animType = target.closest('.actor_parts_top').attr('anim-type');
+        const animType = actor_parts_top.attr('anim-type');
 
         if(animType == 0) {
             const interval = target.attr('anim_interval');
             const range = target.attr('anim_range');
             comment += '\\n' + interval.toString() + ',' + range.toString();
+        } else if(animType == 1) {
+            sourceIndex = Number(actor_parts_top.find('.input_source_track').val()) - 1;
         }
-        insertAnimationMarker(seq_index, group_index, comment, flag);
+
+        insertAnimationMarker(seq_index, group_index, comment, flag, animType, sourceIndex);
     }
 });
 
@@ -257,11 +262,13 @@ function setActorClipSet(shortcutKey) {
                     if(treePathList[j][0] === '/') {
                         const anim_info = ActorStructure[seqIndex].clipset[treePathList[j].slice(1)];
                         const anim_indexes = convertTreePathToAnimationIndex(seqIndex, j, anim_info.anim_clips);
+                        let anim_type = 1;
                         let comment = makeMarkerComment(anim_indexes, anim_info.frame);
                         if(anim_info.interval){
                             comment += '\\n' + anim_info.interval + ',' + anim_info.range;
+                            anim_type = 0;
                         }
-                        insertAnimationMarker(seqIndex, j, comment, flag);
+                        insertAnimationMarker(seqIndex, j, comment, flag, anim_type);
                     } else {
                         insertActorClip(actorName, seqIndex, j, treePathList[j], flag);
                     }
@@ -321,8 +328,8 @@ function insertActorClip(actor_name, seq_index, group_index, tree_path, flag) {
     csInterface.evalScript('$._PPP_.InsertActorClip("' + actor_name + '",' + seq_index + ','+ group_index + ',"' + tree_path + '",-1,' + flag + ')');	
 }
 
-function insertAnimationMarker(seq_index, group_index, comment, flag) {
-    const script = makeEvalScript('InsertFrameAnimationMarker', seq_index, group_index, comment, flag);
+function insertAnimationMarker(seq_index, group_index, comment, flag, type, sourceIndex) {
+    const script = makeEvalScript('InsertFrameAnimationMarker', seq_index, group_index, comment, flag, type, sourceIndex);
     csInterface.evalScript(script);
 }
 
