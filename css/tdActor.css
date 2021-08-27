@@ -77,11 +77,6 @@ body {
 #subtitles::-webkit-scrollbar-corner{
   background-color: #333;
 }
-#subtitles::-webkit-resizer {
-  background-color: #333;
-  margin:0px !important;
-  padding:0px !important;
-}
 
 .propertyDeploy {
   cursor: default;
@@ -105,10 +100,6 @@ body {
 }
 hr {
   border-top:1px solid #333 !important;
-}
-#param_table>*>*>input {
-  border-color:#555;
-  color:#eee;
 }
 
 .group_label{
@@ -181,8 +172,9 @@ hr {
   cursor: default;
   display: inline-block;
   border: solid 1px transparent;
-  transition: border 0.5s ease-out;
   position: relative;
+  opacity: 1.0;
+  transition: border 0.5s ease-out, opacity 0.1s ease-out;
 }
 .actor_thumb_parent[data-type="none"]::before {
   display: none;
@@ -208,13 +200,13 @@ hr {
   transform: translate(0%, -10%);
   z-index: 1;
 }
-
 .td-thumbnav li:hover {
   border: solid 1px #7CCEF4;
   transition: border 0.1s ease-out;
 }
 .td-thumbnav li:active{
-  background-color: rgba(124, 206, 244, 0.1);
+  opacity: 0.8;
+  transition: border 0.5s ease-out, opacity 0.1s ease-out;
 }
 .td-thumbnav>*>::after{
   background: inherit !important;
@@ -316,14 +308,6 @@ hr {
   stroke:#666666;
   fill:#666666;
 }
-.insert_outpoint.enable .insert_outpoint2{
-  stroke:#7CCEF4;
-  fill:none;
-}
-.insert_outpoint.disable .insert_outpoint2{
-  stroke:#666666;
-  fill:#666666;
-}
 .insert_outpoint3 {
   stroke-width:5;
 }
@@ -347,26 +331,8 @@ hr {
 summary{
   padding-left: 5px;
 }
-.add_container {
-  height: 40px !important;
-}
 .uk-input{
   background-color: #333 !important;
-}
-.actor_setup_thumb{
-  background-color: #666;
-  background-image: 
-    linear-gradient(45deg, #777 25%, transparent 25%),
-    linear-gradient(45deg, #777 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #777 75%),
-    linear-gradient(45deg, transparent 75%, #777 75%);
-  background-position: 0 0, 30px 30px;
-  background-size: 60px 60px;
-  width: auto; 
-  height:auto;
-  max-width: 100%;
-  max-height: 90vh;
-  box-sizing: border-box;
 }
 .actor_parts_top{
   background-color:#232323;
@@ -458,13 +424,6 @@ summary{
 ::-webkit-scrollbar-thumb:hover {
   background: #888;
 }
-#actor_setup{
-    background-color:#232323;
-}
-.actor_setting_control>* {
-  padding-left: 0px !important;
-  padding-right: 0px !important;
-}
 .tdactor_selectbox {
   color: #eee !important;
   background-color: #333 !important;
@@ -478,29 +437,11 @@ summary{
   margin-right: 15px;
   background-color: #232323;
 }
-#actor_setup_zoom {
-  width: 100%;
-  box-sizing: border-box;
-}
-#actor_setting_save_button.disable {
-  pointer-events: none;
-  opacity: 0.1;
-}
-#actor_setting_initialize.disable {
-  pointer-events: none;
-  opacity: 0.1;
-}
-#actor_setting_initialize:hover {
-  background-color: #F29DC1 !important;
-}
 #mainfunc.disable {
   pointer-events: none;
   opacity: 0.3;
 }
 #busy_notification>.uk-modal-body{
-  background-color:#232323;
-}
-#settigs_file_modal>.uk-modal-body{
   background-color:#232323;
 }
 @media (min-width: 320px) {
@@ -809,47 +750,4 @@ input.td_check[type="checkbox"]:checked{
 
 .dragdrop-area-bg {
   background-color: #1e1e1e;
-}
-
-.row {
-  display: flex;
-  flex-direction: row; 
-}
-.accordion-box {
-    justify-content: center;
-    align-items: center;
-    padding: 0 5%; 
-  }
-.accordion-box + .accordion-box {
-    margin-top: 20px; 
-}
-#accordion-check2{
-  display: none;
-}
-.accordion-label-side{
-  border: 1px solid #ccc;
-  width: 50%;
-  height:100%;
-  text-align: left;
-  position: relative;
-  cursor: pointer;
-  background-color: #232323;
-  padding: 8px 8px 8px 3%;
-  z-index: 1;
-}
-
-.accordion-content-css-side {
-  opacity: 1;
-  padding: 8px 3% 8px 3%;
-  width: 100%;
-  text-align: center;
-  background-color: #e1a948;
-  transition: all .5s;
-  transform: translateX(-100%);
-  z-index: 0;
-}
-#accordion-check2:checked~.accordion-content-css-side {
-  padding: 8px 3% 8px 3%;
-  opacity: 1;
-  transform: translateX(0);
 }
