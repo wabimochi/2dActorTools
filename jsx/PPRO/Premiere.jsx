@@ -1513,19 +1513,13 @@ function getRandomInfo(targetMarker){
 
 function getTransitionForClipset(sequence, targetMarker){
 	var infoList = targetMarker.comments.split('\n');
-	var indexes = infoList[0].split(',');
-	var durations = infoList[1].split(',');
+	var transition = getTransition(targetMarker);
+	
 	var treePathList = [];
-
-	treePathList.push(getTreePathFromActorClip(sequence.videoTracks[Number(infoList[2].split(',')[0])].clips[0]));
-	for(var i = 0; i < indexes.length; i++){
-		treePathList.push(getTreePathFromActorClip(sequence.videoTracks[Number(indexes[i])].clips[0]));
-	}
-
 	var frameList = [];
-	frameList.push(Math.round(Number(infoList[3].split(',')[0]) * 60));
-	for(var i = 0; i < durations.length; i++){
-		frameList.push(Math.round(Number(durations[i]) * 60));
+	for(var i = 0; i < transition.length; i++){
+		treePathList.push(getTreePathFromActorClip(sequence.videoTracks[transition[i].index].clips[0]));
+		frameList.push(Math.round(transition[i].duration * 60));
 	}
 
 	var result = '{"anim_clips":"' + treePathList.join(',') + '","frame":"' + frameList.join(',') + '"';

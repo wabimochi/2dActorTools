@@ -573,6 +573,22 @@ async function SetupActorComponent(index, actorName, isSetting=false){
                    }
                 }
 
+                const clipset = actorObj.clipset;
+                for(key in clipset){
+                    if(key.length === 1){
+                        const shortcutClips = clipset[key].split(',');
+                        if(shortcutClips.length > group_index){
+                            const animKey = shortcutClips[group_index];
+                            if(animKey[0] === '/'){
+                                const animClipset = clipset[animKey.slice(1)];
+                                if(animClipset){
+                                    Array.prototype.push.apply(treePathList, animClipset.anim_clips.split(','));
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if(treePathList.length > 0) {
                     treePathList = Array.from(new Set(treePathList));
                     const script = makeEvalScript('SetupAnimationMarker', actorName, actorObj.actor[i].group, index, group_index, treePathList.join(','));
