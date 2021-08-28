@@ -1,3 +1,6 @@
+let loadSettingsTimeoutId = null;
+let retryLoadingCount = 0;
+
 function SaveSettings() {
     if(ExtensionSettingsFilePath) {
         return SaveJson(ExtensionSettings, ExtensionSettingsFilePath);
@@ -5,21 +8,36 @@ function SaveSettings() {
 }
 
 function LoadSettings()	{
+    if(loadSettingsTimeoutId != null) {
+        clearTimeout(loadSettingsTimeoutId);
+    }
+    loadSettingsTimeoutId = setTimeout(_LoadSettings, 1000);
+}
+
+function _LoadSettings() {
     csInterface.evalScript('$._PPP_.GetSettingsMediaPath()', function(result){
         if(result) {
             const json = window.cep.fs.readFile(result);
             if(json.err){
-                $('#setting_file_not_exist_icon').css('visibility','visible');
+                $('#setting_file_not_exist_icon').css('display','inherit');
                 if(json.err != window.cep.fs.ERR_NOT_FOUND) {
                     alert(CEP_ERROR_TO_MESSAGE[json.err]);
                 }
             } else {
-                $('#setting_file_not_exist_icon').css('visibility','hidden');
+                $('#setting_file_loading_icon').css('display','none');
+                $('#setting_file_not_exist_icon').css('display','none');
                 ExtensionSettingsFilePath = result;
                 ExtensionSettings = JSON.parse(json.data);
             }
         } else {
-            $('#setting_file_not_exist_icon').css('visibility','visible');
+            if (retryLoadingCount < 9) {
+                retryLoadingCount += 1;
+                $('#setting_file_loading_text').html('Retry loading(' + retryLoadingCount.toString() + ')');
+            } else {
+                $('#setting_file_loading_text').html('Retry loading(9+)');
+            }
+            loadSettingsTimeoutId = setTimeout(_LoadSettings, 2000);
+            $('#setting_file_not_exist_icon').css('display','inherit');
         }
         ApplySettings();
     });
@@ -69,7 +87,7 @@ function ImportSettingFile() {
     const settingFilePath = window.cep.fs.showOpenDialog(false, false, '2dActorTools setting file', '', ['.txt']).data;
     if(settingFilePath != '') {
         csInterface.evalScript('$._PPP_.ImportSettingsFile("' + settingFilePath + '")', function(e) {
-            LoadSettings();
+            _LoadSettings();
         });
         $('#setting_file_not_exist_icon').css('visibility','hidden');
         $('#setting_save_modal_close').click();

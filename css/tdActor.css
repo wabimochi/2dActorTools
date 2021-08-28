@@ -22,7 +22,7 @@ body {
 }
 #function_switch {
   margin-top: 0px;
-  margin-left: 0px;
+  margin-left: -10px;
 }
 #function_switch>.uk-active>a {
   color:#eee !important;
@@ -441,7 +441,7 @@ summary{
   pointer-events: none;
   opacity: 0.3;
 }
-#busy_notification>.uk-modal-body{
+.uk-modal-body{
   background-color:#232323;
 }
 @media (min-width: 320px) {
@@ -751,3 +751,6 @@ input.td_check[type="checkbox"]:checked{
 .dragdrop-area-bg {
   background-color: #1e1e1e;
 }
+/* .weak_text{
+
+} */
