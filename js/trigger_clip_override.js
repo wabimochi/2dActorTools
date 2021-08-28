@@ -10,7 +10,7 @@ $(document).on('click', '.triggerclip_insert_setting', function() {
     }
 });
 
-$('#trigger_clip_override_target_seq').on('change', function() {
+$(document).on('change', '#trigger_clip_override_target_seq', function() {
     const target = $(this);
     const trackNumSelectbox = $('#trigger_clip_override_target_track');
     if(target.val() === '1') {
@@ -55,7 +55,7 @@ $('#trigger_clip_override_target_seq').on('change', function() {
     }
 });
 
-$('#trigger_clip_override_target_track').on('change', function() {
+$(document).on('change', '#trigger_clip_override_target_track', function() {
     const selectbox = $(this);
     const max_value = Number(selectbox.attr('max_track_num'));
     const select_value = Number(selectbox.val());
