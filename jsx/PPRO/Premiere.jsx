@@ -194,13 +194,14 @@ $._PPP_={
 				}
 			}
 			else {
-				updateEventPanel("Track target is unset.");
+				MessageWarning("Track target is unset.");
 			}
 		}
-		else if(!seq)
-			updateEventPanel("No active sequence.");
-		else
-			updateEventPanel(mgtName + " clip is not found.");
+		else if(!seq) {
+			MessageWarning("No active sequence.");
+		} else {
+			MessageWarning(mgtName + " clip is not found.");
+		}
 	},
 
 	GetTragetAudioClipMediaPath: function() {
@@ -445,21 +446,19 @@ $._PPP_={
 
 	GetActorStructureMediaPath: function(actorName) {
 		var actBin = shallowSearch(ActorBinItem, actorName, ProjectItemType.BIN);
-		var mediaPathList = [];
 		if(actBin) {
 			for(var i = 0; i < actBin.children.numItems; i++) {
 				if(actBin.children[i].type === ProjectItemType.FILE) {
 					var mediaPath = actBin.children[i].getMediaPath();
 					var lastIndex = mediaPath.lastIndexOf(".");
 					if(mediaPath.substr(lastIndex + 1) === 'txt'){
-						mediaPathList.push(mediaPath);
+						return mediaPath;
 					}
 				}
 			}
 		}
 
-		if(mediaPathList.length === 0) return '';
-		return mediaPathList.join(',');
+		return '';
 	},
 
 	GetActorClipMediaPath: function(actorName, treePathCSV) {
@@ -1236,6 +1235,16 @@ $._PPP_={
 		eventObj.type = "incrementalBakeNotification";
 		eventObj.data = linkedSequenceIndex.toString() + ',' + animationTrackIndex.toString() + ',' + enable.toString();
 		eventObj.dispatch();
+	},
+
+	MessageInfo : function(message) {
+		app.setSDKEventMessage('2dActorTools:' + message, 'info');
+	},
+	MessageWarning : function(message) {
+		app.setSDKEventMessage('2dActorTools:' + message, 'warning');
+	},
+	MessageError : function(message){
+		app.setSDKEventMessage('2dActorTools:' + message, 'error');
 	}
 };
 
@@ -1340,10 +1349,14 @@ function getNextMarkerTime(markers, startSeconds, endSeconds) {
     return endSeconds;
 }
 
-function updateEventPanel(message) {
-    app.setSDKEventMessage(message, 'info');
-    //app.setSDKEventMessage('Here is a warning.', 'warning');
-    //app.setSDKEventMessage('Here is an error.', 'error');  // Very annoying; use sparingly.
+function MessageInfo(message) {
+    app.setSDKEventMessage('2dActorTools:' + message, 'info');
+}
+function MessageWarning(message) {
+	app.setSDKEventMessage('2dActorTools:' + message, 'warning');
+}
+function MessageError(message){
+	app.setSDKEventMessage('2dActorTools:' + message, 'error');
 }
 
 function getComponentObject(clip, componentName) {

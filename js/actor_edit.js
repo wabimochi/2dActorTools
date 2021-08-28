@@ -34,6 +34,7 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
             StartActorSetting();
         } else {
             ActorStructure[index] = LoadActorStructure(actorStructPath);
+            if(ActorStructure[index] === null) return;
             ActorStructurePath[index] = actorStructPath;
             csInterface.evalScript('$._PPP_.SetLinkSequence("' + index + '")', function(result) {
                 if(result === '0') {
@@ -55,10 +56,10 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                             errormsg += 'クリップが選択されていません';
                             break;
                         case '3':
-                            errormsg += '複数のクリップを選択してます';
+                            errormsg += '複数のシーケンスを選択してます';
                             break;
                         case '4':
-                            errormsg += 'シーケンスが選択されていません';
+                            errormsg += 'シーケンス以外のクリップを選択しています';
                             break;
                         default:
                             errormsg += 'Unknown';
@@ -309,10 +310,9 @@ function getActorClipSet(shortcutKey) {
 
                 ActorStructure[seqIndex].clipset[shortcutKey] = treePathList;
 
-                csInterface.evalScript('$._PPP_.GetActorStructureMediaPath("' + actorName + '")', function(result) {
-                    const mediaPathList = result.split(',');
-                    if(result !== '' && mediaPathList.length == 1) {
-                        const err = SaveJson(ActorStructure[seqIndex], mediaPathList[0]);
+                csInterface.evalScript('$._PPP_.GetActorStructureMediaPath("' + actorName + '")', function(mediaPath) {
+                    if(mediaPath !== '') {
+                        const err = SaveJson(ActorStructure[seqIndex], mediaPath);
                         if(err != window.cep.fs.NO_ERROR) {
                             alert(CEP_ERROR_TO_MESSAGE[err]);
                         }
@@ -595,12 +595,14 @@ async function SetupActorComponent(index, actorName, isSetting=false){
 function LoadActorStructure(path) {
     const json = window.cep.fs.readFile(path);
     if(json.err){
+        let script = '';
         if(json.err == window.cep.fs.ERR_NOT_FOUND) {
-            alert('"' + path + '"が見つかりません。');
-            return null;
+            script = makeEvalScript('MessageWarning', 'ファイルが見つかりません: ' + path.replace(/\\/g, '/'));
         } else {
-            alert("err : " + json.err);
+            script = makeEvalScript('MessageError', json.err);
         }
+        csInterface.evalScript(script);
+        return null;
     }
     return ActorStructureVersionConvert(JSON.parse(json.data));
 }
@@ -718,6 +720,7 @@ function StartActorSetting() {
     csInterface.evalScript('$._PPP_.GetActorStructureMediaPath("' + actorName + '")', function(actorStructPath) {
         const _startActorSetting = function(path) {
             ActorStructure[ActorIndexForSetting] = LoadActorStructure(path);
+            if(ActorStructure[ActorIndexForSetting] === null) return;
             ActorStructurePath[ActorIndexForSetting] = path;
 
             actor_sequence_link.removeClass('enable');
@@ -1263,7 +1266,7 @@ function ActorEditInitialize() {
         if(data[2] === '0'){
             setDisable(button);
         } else {
-        setEnable(button);
+            setEnable(button);
         }
     });
 
