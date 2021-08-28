@@ -374,13 +374,15 @@ function AddPartsBoxGroup(name) {
 }
 
 function AddActorClip(rootNode, name, tree_path, crop_path) {
+    if(!fs.existsSync(crop_path)){
+        crop_path = '';
+    }
     const li = $('<li>', {'class':'actor_thumb_parent dragitem', name:name, tree_path:tree_path, group_index: 0, 'uk-flex':'', 'uk-flex-column':'', 'data-type':CLIP_TYPE_None, 
      'uk-tooltip': 'pos:top-right; duration:0; title:<img class="actor_tooltip thumb_background" src="' + crop_path + '"><div>' + name +'</div>'});
 
     const img = $('<img>', {'class':'thumb_background fix_size_img'});
-    const crop = crop_path;
-    if (crop && fs.existsSync(crop)) {
-        img.attr('src', crop);
+    if (crop_path) {
+        img.attr('src', crop_path);
         li.append(img);
     } else {
         li.append($('<span>', {'uk-icon':'icon: question; ratio:2'}));
@@ -503,7 +505,7 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_t
             img.attr('src', crop);
             li.append(img);
         } else {
-            li.append($('<span>', {'uk-icon':'icon: question; ratio:2'}));
+            li.append($('<span>', {'uk-icon':'icon: question; ratio:2', style:'width:max-content;'}));
         }
         ul.append(li);
     }
@@ -609,26 +611,37 @@ function LoadActorStructure(path) {
 
 let cropImageCounter = 0;
 let cropImageSize = 0;
-
-
+let startActorSettingTimeoutId = null;
 function cropImageCallback(){
     cropImageCounter += 1;
+    BusyNotificationProgress.val(cropImageCounter);
     if(cropImageCounter === cropImageSize){
         $('#mainfunc').removeClass('disable');
         $('#busy_notification').removeClass('uk-open');
         $('#busy_notification').attr('style', '');
+        if(startActorSettingTimeoutId != null) {
+            clearTimeout(startActorSettingTimeoutId);
+        }
+        startActorSettingTimeoutId = setTimeout(_startActorSetting, 300);
+        if(CropErrorPathList.length > 0){
+            const path = CropErrorPathList.join('\n');
+            alert( 'サムネイルの作成に失敗したファイルがあります: \n' + path.replace(/\\/g, '/'));
+        }
     }
 }
 
 const Jimp = require('jimp');
-const autocrop = require('autocropmodule/autocropmodule.js');
-
+let CropErrorPathList = [];
 function save_transparent_crop(src_path, dist_path, callback) {
     Jimp.read(src_path, (err, image) => {
         if (!err) {
             image.autocrop = autocrop;
-            image.autocrop(5);
-            image.write(dist_path);
+            const result = image.autocrop(5);
+            if(result === null){
+                CropErrorPathList.push(src_path);
+            } else {
+                image.write(dist_path);
+            }
             if(callback) callback();
         }
     });
@@ -713,39 +726,47 @@ function LoadAnimationEdit(target_JQElm){
     $('#animation_editor_random_range').val(range);
 }
 
-function StartActorSetting() {
+let ActorStructureFilePath = '';
+let StartSettingActorName = '';
+let BusyNotificationProgress = null;
+function _startActorSetting() {
+    const path = ActorStructureFilePath;
+    const actorName = StartSettingActorName;
+    ActorStructure[ActorIndexForSetting] = LoadActorStructure(path);
+    if(ActorStructure[ActorIndexForSetting] === null) return;
+    ActorStructurePath[ActorIndexForSetting] = path;
+
     const actor_sequence_link = $('.actor_sequence_link');
     const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
+
+    actor_sequence_link.removeClass('enable');
+    target.addClass('enable');
+
+    $('#actor_parts_box').removeAttr('hidden');
+    actor_sequence_link.not('[sequence=' + ActorIndexForSetting + ']').attr('hidden', '');
+    $('#actor_setting_save_button').removeAttr('hidden');
+    $('#actor_setting_cancel_button').removeAttr('hidden');
+    $('#actor_setting_start_button').addClass('events_disable');
+    $('#actor_parts_box').removeAttr('hidden');
+    $('#actor_switcher').find('[sequence]').removeClass('uk-active');
+    const targetActorPanel = $('#actor_switcher').find("[sequence='" + ActorIndexForSetting + "']");
+    targetActorPanel.addClass('uk-active');
+    targetActorPanel.find('.animation_label').attr('hidden','');
+    if(target.hasClass('unlink')) {
+        SetupActorComponent(ActorIndexForSetting, actorName, true);
+    }
+    let actor_sequence_link_icon = target.find('.actor_sequence_link_icon');
+    actor_sequence_link_icon.attr('uk-icon', 'cog');
+
+    SetupActorSettingUI();
+    actorSettingStart(actorName, ActorIndexForSetting);
+}
+
+function StartActorSetting() {
+    const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
     const actorName = target.children('.actor_sequence_link_label').html();
+    StartSettingActorName = actorName;
     csInterface.evalScript('$._PPP_.GetActorStructureMediaPath("' + actorName + '")', function(actorStructPath) {
-        const _startActorSetting = function(path) {
-            ActorStructure[ActorIndexForSetting] = LoadActorStructure(path);
-            if(ActorStructure[ActorIndexForSetting] === null) return;
-            ActorStructurePath[ActorIndexForSetting] = path;
-
-            actor_sequence_link.removeClass('enable');
-            target.addClass('enable');
-
-            $('#actor_parts_box').removeAttr('hidden');
-            actor_sequence_link.not('[sequence=' + ActorIndexForSetting + ']').attr('hidden', '');
-            $('#actor_setting_save_button').removeAttr('hidden');
-            $('#actor_setting_cancel_button').removeAttr('hidden');
-            $('#actor_setting_start_button').addClass('events_disable');
-            $('#actor_parts_box').removeAttr('hidden');
-            $('#actor_switcher').find('[sequence]').removeClass('uk-active');
-            const targetActorPanel = $('#actor_switcher').find("[sequence='" + ActorIndexForSetting + "']");
-            targetActorPanel.addClass('uk-active');
-            targetActorPanel.find('.animation_label').attr('hidden','');
-            if(target.hasClass('unlink')) {
-                SetupActorComponent(ActorIndexForSetting, actorName, true);
-            }
-            let actor_sequence_link_icon = target.find('.actor_sequence_link_icon');
-            actor_sequence_link_icon.attr('uk-icon', 'cog');
-
-            SetupActorSettingUI();
-            actorSettingStart(actorName, ActorIndexForSetting);
-        }
-        
         if(actorStructPath === '') {
             csInterface.evalScript('$._PPP_.GetActorStructure("'+ actorName + '")', function(struct) {
                 if(struct) {
@@ -761,6 +782,7 @@ function StartActorSetting() {
                     
                     save_structure_file_path = window.cep.fs.showSaveDialogEx('構成ファイルの保存先', '', ['txt'], actorName + '.txt').data;
                     if(!save_structure_file_path) return;
+                    ActorStructureFilePath = save_structure_file_path;
 
                     let crop_dir = window.cep.fs.showOpenDialogEx(false, true, 'サムネイルの保存先', null).data;
                     if(crop_dir == '') return;
@@ -804,22 +826,29 @@ function StartActorSetting() {
                         $('#mainfunc').addClass('disable');
                         $('#busy_notification').addClass('uk-open');
                         $('#busy_notification').attr('style', 'display: block;');
+                        BusyNotificationProgress = $('#busy_notification_progress');
+                        BusyNotificationProgress.val(0);
+                        BusyNotificationProgress.attr('max', cropImageSize);
+                        CropErrorPathList = [];
                         for(let i = 0; i < cropImageSize; i++) {
-                            save_transparent_crop(crop_list[i].src, crop_list[i].dst, cropImageCallback);
+                            requestIdleCallback(() => save_transparent_crop(crop_list[i].src, crop_list[i].dst, cropImageCallback));
                         }
                     }
                     SaveJson(new_actor_structure, save_structure_file_path);
                     csInterface.evalScript('$._PPP_.ImportActorStructureFile("' + save_structure_file_path.replace(/\\/g, '/') + '","'+ actorName + '")', function(result) {
                         if(!result) {
                             alert('構成ファイルのインポートに失敗しました');
-                            return; // TODO キャンセル
+                            return;
                         }
-                        _startActorSetting(save_structure_file_path)
+                        if(cropImageSize === 0){
+                            _startActorSetting();
+                        }
                     });
                 }
             });   
         } else {
-            _startActorSetting(actorStructPath)
+            ActorStructureFilePath = actorStructPath;
+            _startActorSetting();
         }
     });
 }

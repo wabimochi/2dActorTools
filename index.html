@@ -12,6 +12,7 @@
 	<script src="./js/svg.js"></script>
 	<script src="./js/util.js"></script>
 	<script src="./js/setting.js"></script>
+	<script src="./js/autocropmodule.js"></script>
 	<script src="./js/actor_edit.js"></script>
 	<script src="./js/auto_import.js"></script>
 	<script src="./js/auto_newline.js"></script>
@@ -46,7 +47,9 @@
 	
 	<div id="busy_notification" uk-modal='esc-close:false; bg-close:false' class="uk-modal">
 		<div class="uk-modal-dialog uk-modal-body">
+			<button class="uk-modal-close-default" type="button" uk-close></button>
 			<div style="text-align:center">サムネイル用画像の処理中</div>
+			<progress id="busy_notification_progress" class="td_progress uk-progress" value="0" max="10"></progress>
 		</div>
 	</div>
 

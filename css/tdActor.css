@@ -751,6 +751,15 @@ input.td_check[type="checkbox"]:checked{
 .dragdrop-area-bg {
   background-color: #1e1e1e;
 }
-/* .weak_text{
-
-} */
+.td_progress[value] {
+  border: 1px solid #333;
+  border-radius: 10px;
+  background-color: #333;
+  height: 7px;
+}
+.td_progress[value]::-webkit-progress-bar {
+  background-color: #333;
+}
+.td_progress[value]::-webkit-progress-value {
+  background-color: #7CCEF4;
+}
