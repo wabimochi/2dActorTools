@@ -452,7 +452,7 @@ $._PPP_={
 					var mediaPath = actBin.children[i].getMediaPath();
 					var lastIndex = mediaPath.lastIndexOf(".");
 					if(mediaPath.substr(lastIndex + 1) === 'txt'){
-						return mediaPath;
+						return mediaPath.replace(/\\/g, '/');
 					}
 				}
 			}

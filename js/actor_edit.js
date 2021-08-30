@@ -91,17 +91,20 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
 
 $(document).on('click', '.actor_sequence_link.linked', function(e){
     if(e.shiftKey) {
-        if(!confirm('シーケンスとのリンクを解除します')){
-            return false;
-        } else {
-            var index = $(this).attr('sequence');
-            var actor_root = $('.actor_component[sequence="' + index + '"]');
-            actor_root.empty();
-            $('.actor_sequence_link').removeClass('enable');
-            $(this).removeClass('linked');
-            $(this).addClass('unlink');
-            $(this).find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
-            $('#actor_switcher').find('li').removeClass('uk-active');
+        const isSetting = $('#actor_switcher').hasClass('setting');
+        if(!isSetting){
+            if(!confirm('シーケンスとのリンクを解除します')){
+                return false;
+            } else {
+                var index = $(this).attr('sequence');
+                var actor_root = $('.actor_component[sequence="' + index + '"]');
+                actor_root.empty();
+                $('.actor_sequence_link').removeClass('enable');
+                $(this).removeClass('linked');
+                $(this).addClass('unlink');
+                $(this).find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
+                $('#actor_switcher').find('li').removeClass('uk-active');
+            }
         }
     } else {
         $('.actor_sequence_link').removeClass('enable');
@@ -390,14 +393,6 @@ function AddActorClip(rootNode, name, tree_path, crop_path) {
     rootNode.append(li);
 }
 
-function InitializeActorStructure() {
-    if(!confirm('設定を初期化しますか？')){
-        return false;
-    } else {
-
-    }
-}
-
 function HorizontalScroll(e) {
         const amount = 60;
         e.stopPropagation();
@@ -617,7 +612,7 @@ function LoadActorStructure(path) {
         if(json.err == window.cep.fs.ERR_NOT_FOUND) {
             script = makeEvalScript('MessageWarning', 'ファイルが見つかりません: ' + path.replace(/\\/g, '/'));
         } else {
-            script = makeEvalScript('MessageError', json.err);
+            script = makeEvalScript('MessageError', 'code ' + json.err.toString() + ' :' + CEP_ERROR_TO_MESSAGE[json.err]);
         }
         csInterface.evalScript(script);
         return null;
@@ -628,6 +623,7 @@ function LoadActorStructure(path) {
 let cropImageCounter = 0;
 let cropImageSize = 0;
 let startActorSettingTimeoutId = null;
+let startActorSettingCallback = false;
 function cropImageCallback(){
     cropImageCounter += 1;
     BusyNotificationProgress.val(cropImageCounter);
@@ -638,7 +634,9 @@ function cropImageCallback(){
         if(startActorSettingTimeoutId != null) {
             clearTimeout(startActorSettingTimeoutId);
         }
-        startActorSettingTimeoutId = setTimeout(_startActorSetting, 300);
+        if(startActorSettingCallback){
+            startActorSettingTimeoutId = setTimeout(_startActorSetting, 300);
+        }
         if(CropErrorPathList.length > 0){
             const path = CropErrorPathList.join('\n');
             alert( 'サムネイルの作成に失敗したファイルがあります: \n' + path.replace(/\\/g, '/'));
@@ -746,6 +744,7 @@ let ActorStructureFilePath = '';
 let StartSettingActorName = '';
 let BusyNotificationProgress = null;
 function _startActorSetting() {
+    startActorSettingTimeoutId = null;
     const path = ActorStructureFilePath;
     const actorName = StartSettingActorName;
     ActorStructure[ActorIndexForSetting] = LoadActorStructure(path);
@@ -836,27 +835,16 @@ function StartActorSetting() {
                     new_actor_structure[ACT_ST_version] = 1;
 
                     // クロップイメージの作成
-                    cropImageCounter = 0;
-                    cropImageSize = crop_list.length;
-                    if(cropImageSize > 0) {
-                        $('#mainfunc').addClass('disable');
-                        $('#busy_notification').addClass('uk-open');
-                        $('#busy_notification').attr('style', 'display: block;');
-                        BusyNotificationProgress = $('#busy_notification_progress');
-                        BusyNotificationProgress.val(0);
-                        BusyNotificationProgress.attr('max', cropImageSize);
-                        CropErrorPathList = [];
-                        for(let i = 0; i < cropImageSize; i++) {
-                            requestIdleCallback(() => save_transparent_crop(crop_list[i].src, crop_list[i].dst, cropImageCallback));
-                        }
-                    }
+                    startActorSettingCallback = true;
+                    MakeThumbnail(crop_list);
+
                     SaveJson(new_actor_structure, save_structure_file_path);
                     csInterface.evalScript('$._PPP_.ImportActorStructureFile("' + save_structure_file_path.replace(/\\/g, '/') + '","'+ actorName + '")', function(result) {
                         if(!result) {
                             alert('構成ファイルのインポートに失敗しました');
                             return;
                         }
-                        if(cropImageSize === 0){
+                        if(crop_list.length === 0){
                             _startActorSetting();
                         }
                     });
@@ -867,6 +855,23 @@ function StartActorSetting() {
             _startActorSetting();
         }
     });
+}
+
+function MakeThumbnail(crop_list){
+    cropImageCounter = 0;
+    cropImageSize = crop_list.length;
+    if(cropImageSize > 0) {
+        $('#mainfunc').addClass('disable');
+        $('#busy_notification').addClass('uk-open');
+        $('#busy_notification').attr('style', 'display: block;');
+        BusyNotificationProgress = $('#busy_notification_progress');
+        BusyNotificationProgress.val(0);
+        BusyNotificationProgress.attr('max', cropImageSize);
+        CropErrorPathList = [];
+        for(let i = 0; i < cropImageSize; i++) {
+            requestIdleCallback(() => save_transparent_crop(crop_list[i].src, crop_list[i].dst, cropImageCallback));
+        }
+    }
 }
 
 function SortableCreateActor(groupElm, pullAction=true, onAddFunc=null){
@@ -1094,6 +1099,21 @@ function ActorEditInitialize() {
         actor_contextmenu.css('top', e.pageY-window.scrollY + 'px');
         actor_contextmenu.addClass('contextmenu_show');
         ActorIndexForSetting = Number($(this).attr('sequence'));
+
+        const isSetting = $('#actor_switcher').hasClass('setting');
+        if($(this).hasClass('unlink') && !isSetting){
+            $('#actor_setting_make_thumbnail').removeClass('events_disable');
+            $('#actor_setting_delete_thumbnail').removeClass('events_disable');
+            $('#actor_setting_unlink').addClass('events_disable');
+        } else {
+            $('#actor_setting_make_thumbnail').addClass('events_disable');
+            $('#actor_setting_delete_thumbnail').addClass('events_disable');
+            if(isSetting){
+                $('#actor_setting_unlink').addClass('events_disable');
+            } else {
+                $('#actor_setting_unlink').removeClass('events_disable');
+            }
+        }
     });
     const anim_clip = $('#actor_setting_add_animation_clip');
     $(document).on('contextmenu', '.actor_thumb_parent, .actor_clipset', function (e) {
@@ -1143,6 +1163,111 @@ function ActorEditInitialize() {
         }
     });
 
+    $('#actor_setting_make_thumbnail').on('mouseup', function(e) {
+        if(e.which === 1) {
+            const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
+            const actorName = target.children('.actor_sequence_link_label').html();
+
+            let script = makeEvalScript('GetActorStructureMediaPath', actorName);
+            csInterface.evalScript(script, function(actorStructPath) {
+                if(actorStructPath !== '') {
+                    ActorStructure[ActorIndexForSetting] = LoadActorStructure(actorStructPath);
+                    if(!ActorStructure[ActorIndexForSetting]) return;
+
+                    script = makeEvalScript('GetActorStructure', actorName);
+                    csInterface.evalScript(script, function(struct){
+                        if(!struct) return;
+
+                        const srcList = [];    
+                        const structList = struct.split(',');
+                        const elmNum = 4;
+                        const length = structList.length / elmNum;
+                        for(let i = 0; i < length; i++) {
+                            srcList[structList[i * elmNum + 3]] = [structList[i * elmNum], structList[i * elmNum + 2]];
+                        }
+                        
+                        let crop_dir = null;
+                        const actorStructure = ActorStructure[ActorIndexForSetting];
+                        const cropPathList = actorStructure[ACT_ST_crop_path];
+                        for(key in cropPathList){
+                            if(fs.existsSync(cropPathList[key])){
+                                delete srcList[key];
+                                if(crop_dir === null){
+                                    crop_dir = path_js.dirname(cropPathList[key]) + '/';
+                                }
+                            }
+                        }
+                    
+                        if(crop_dir === null){    
+                            crop_dir = window.cep.fs.showOpenDialogEx(false, true, 'サムネイルの保存先', null).data;
+                            if(crop_dir == '') return;
+                            crop_dir += '/';
+                        }
+
+                        const crop_list = [];
+                        for(key in srcList){
+                            let src_path = srcList[key][1];
+                            let lastIndex = src_path.lastIndexOf(".");
+                            let crop_path = crop_dir + srcList[key][0] + GetUUID() + src_path.substr(lastIndex);
+                            crop_list.push({src:src_path, dst:crop_path});
+                            cropPathList[key] = crop_path;
+                        }
+
+                        startActorSettingCallback = false;
+                        MakeThumbnail(crop_list);
+                        SaveJson(ActorStructure[ActorIndexForSetting], actorStructPath);
+                    });
+                } else {
+                    alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
+                    StartActorSetting();
+                };
+            });
+        }
+    });
+    $('#actor_setting_delete_thumbnail').on('mouseup', function(e) {
+        if(e.which === 1) {
+            const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
+            const actorName = target.children('.actor_sequence_link_label').html();
+            let script = makeEvalScript('GetActorStructureMediaPath', actorName);
+            csInterface.evalScript(script, function(actorStructPath) {
+                if(actorStructPath !== '') {
+                    ActorStructure[ActorIndexForSetting] = LoadActorStructure(actorStructPath);
+                    if(!ActorStructure[ActorIndexForSetting]) return;
+                    ActorStructurePath[ActorIndexForSetting] = actorStructPath;
+                    if(confirm('この変更は取り消せません。削除しますか？')){
+                        const actorStructure = ActorStructure[ActorIndexForSetting];
+                        if(actorStructure){
+                            const saveCropPathList = actorStructure[ACT_ST_crop_path];
+                            let count = 0;
+                            for(key in saveCropPathList){
+                                if(fs.existsSync(saveCropPathList[key])){
+                                    window.cep.fs.deleteFile(saveCropPathList[key]);
+                                    count++;
+                                }
+                            }
+                            const script = makeEvalScript('MessageInfo', count.toString() + '個のサムネイルを削除しました');
+                            csInterface.evalScript(script);
+                        }
+                    }
+                } else {
+                    alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
+                    StartActorSetting();
+                }
+            });
+        }
+    });
+    $('#actor_setting_unlink').on('mouseup', function(e) {
+        if(e.which === 1) {
+            const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
+            var actor_root = $('.actor_component[sequence="' + ActorIndexForSetting + '"]');
+            actor_root.empty();
+            $('.actor_sequence_link').removeClass('enable');
+            target.removeClass('linked');
+            target.addClass('unlink');
+            target.find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
+            $('#actor_switcher').find('li').removeClass('uk-active');
+        }
+    });
     $('#actor_setting_remove_parts_button').on('mouseup', function(e) {
         if(e.which === 1) {
             DeleteSelectedParts();

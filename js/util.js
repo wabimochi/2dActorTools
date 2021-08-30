@@ -1,6 +1,7 @@
 const newLineReg = /\r\n|\n|\r/g;
 const asciiReg = /[a-zA-Z0-9!-/:-@¥[-`{-~ ]/g;
 const fs = require('fs');
+const path_js = require('path');
 const ApplySettingEvent = new CustomEvent('apply_setting');
 let CustomInitialize = {};
 let CEP_ERROR_TO_MESSAGE = {};
