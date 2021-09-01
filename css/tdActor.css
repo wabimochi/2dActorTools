@@ -29,15 +29,24 @@ body {
   border-bottom:5px solid #7CCEF4;
 }
 .tdactor_label {
-  background-color: rgba(124, 206, 244, 0.1) !important;
-  color: #aaa !important;
-  margin-top:10px;
-  margin-bottom:10px;
-  white-space: normal !important;
-}
-.mogrt_source_summary{
   background-color: rgba(124, 206, 244, 0.1);
+  color: #ccc;
+  margin-top:20px;
+  margin-bottom:5px;
+  padding: 4px 8px 4px 8px;
+  white-space: normal;
+}
+.tdactor_label_secondary{
+  background-color: inherit;
   color: #aaa;
+  margin-top:5px;
+  margin-bottom:5px;
+  white-space: normal;
+}
+.td_summary{
+  background: linear-gradient(90deg, rgba(124, 206, 244, 0.1),rgba(124, 206, 244, 0));
+  color: #ccc;
+  padding: 4px 8px 4px 8px;
   margin-top:10px;
   cursor: default;
   user-select: none;
@@ -46,9 +55,6 @@ body {
 }
 #actor_functions {
   background-color:#232323;
-}
-#select_mogrt {
-  margin-top:10px;
 }
 .tdinput{
   border: 1px solid #555 ;
@@ -425,13 +431,13 @@ summary{
   background: #888;
 }
 .tdactor_selectbox {
-  color: #eee !important;
+  color: #ccc !important;
   background-color: #333 !important;
   border-color:#555 !important;
   margin-bottom:10px;
 }
 .uk-select:not([multiple]):not([size]) option {
-  color: #eee !important;
+  color: #ccc;
 }
 #actor_controle_div {
   margin-right: 15px;

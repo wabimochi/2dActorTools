@@ -78,14 +78,14 @@
 						<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace_after" value="" placeholder="Replace後">
 					</div>
 					<details open>
-						<summary class="mogrt_source_summary">ソース：Audioと同じフォルダにあるtxtファイル</summary>
+						<summary class="td_summary">ソース：Audioと同じフォルダにあるtxtファイル</summary>
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id='actor_controle_div'>
 							<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-right" style='margin-top:8px;' onClick="insertSubtitleFromTextFile()">ターゲットトラックにMOGRTを並べる</button>
 						</div>
 					</details>
 
 					<details style="margin-top:10px;padding-bottom:10px;">
-						<summary class="mogrt_source_summary">ソース：テキストエリア</summary>
+						<summary class="td_summary">ソース：テキストエリア</summary>
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id='actor_controle_div'>
 							<span class="uk-label tdactor_label uk-width-auto">トラックに並べるテキストを入力</span>
 							<textarea id="subtitles" rows="12" wrap="off" placeholder="input subtitles"></textarea>
@@ -115,7 +115,7 @@
 				<ul class="uk-switcher my-class uk-margin">
 					<li class="uk-active">
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
-							<span class="uk-label tdactor_label uk-width-auto">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
+							<span class="uk-label tdactor_label uk-width-auto uk-margin-remove-top">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
 							<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
 								<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyCapture()">コピー</button>
 								<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyDeploy()">ペースト</button>
@@ -170,7 +170,7 @@
 					<li>
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id="overwriteclip_trigger_root">
 							<div class="uk-flex uk-flex-left uk-margin-small-top uk-margin-remove-bottom">
-								<span class="uk-label tdactor_label uk-width-expand">アクティブシーケンスのターゲットオーディオトラックにあるクリップをトリガーの対象とします</span>
+								<span class="uk-label tdactor_label uk-width-expand uk-margin-remove-top">アクティブシーケンスのターゲットオーディオトラックにあるクリップをトリガーの対象とします</span>
 							</div>	
 							<div class="uk-flex uk-flex-left uk-margin-remove-top">
 								<span class="uk-label tdactor_label uk-width-auto">トリガー：クリップの開始</span>
@@ -222,7 +222,6 @@
 			<li>
 				<div id="actor_list_root" class="uk-thumbnav td-thumbnav uk-padding uk-padding-small uk-padding-remove-vertical actor_linknav">
 					<ul>
-
 					</ul>
 					<button id="actor_setting_save_button" class="uk-button uk-button-secondary highlight uk-animation-slide-right-medium uk-width-auto" onClick="SaveActorSetting()" style="margin-left:5px;" hidden>設定の保存</button>
 					<button id="actor_setting_cancel_button" class="uk-button uk-button-secondary uk-animation-slide-right-medium uk-width-auto" onClick="ActorSettingEnd()" style="margin-left:5px;" hidden>キャンセル</button>
@@ -320,8 +319,8 @@
 			</li>
 			<li>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
-					<span class="uk-label tdactor_label uk-margin-remove-bottom uppercase_disable">wav, mp3, wmvファイルが作成された際に指定のビンにインポートし、指定のトラックに並べます</span>
-					<span class="uk-label tdactor_label">設定は監視を開始したとき、またはルールを削除したときに保存されます</span>
+					<span class="uk-label tdactor_label_secondary uk-margin-remove-bottom uppercase_disable">wav, mp3, wmvファイルが作成された際に指定のビンにインポートし、指定のトラックに並べます。</span>
+					<span class="uk-label tdactor_label_secondary">設定は監視を開始したとき、またはルールを削除したときに保存されます。</span>
 				</div>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" id="auto_import_root">
 				</div>
@@ -330,17 +329,47 @@
 				</div>
 			</li>
 			<li>
-				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
-					<span class="uk-label tdactor_label uk-width-auto">テキストファイルの文字コード</span>
-					<select type="selectbox" class="tdactor_selectbox uk-width-expand uk-select save_setting_value_on_change" category="general" id="select_encoding">
-						<option value="SJIS">Shift-JIS</option>
-						<option value="UTF8">UTF-8</option>
-						<option value="UTF16">UTF-16</option>
-						<option value="UTF16BE">UTF-16BE</option>
-						<option value="UTF16LE">UTF-16LE</option>
-						<option value="EUCJP">EUCJP</option>
-						<option value="AUTO">AUTO</option>
-					</select>
+				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right uk-margin-bottom">
+				
+					<details open>
+						<summary class="td_summary">共通</summary>
+						<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
+							<span class="uk-label tdactor_label uk-width-auto">テキストファイルの文字コード</span>
+							<select type="selectbox" class="tdactor_selectbox uk-width-expand uk-select save_setting_value_on_change" category="general" id="select_encoding">
+								<option value="SJIS">Shift-JIS</option>
+								<option value="UTF8">UTF-8</option>
+								<option value="UTF16">UTF-16</option>
+								<option value="UTF16BE">UTF-16BE</option>
+								<option value="UTF16LE">UTF-16LE</option>
+								<option value="EUCJP">EUCJP</option>
+								<option value="AUTO">AUTO</option>
+							</select>
+						</div>
+					</details>
+
+					<details open>
+						<summary class="td_summary">立ち絵</summary>
+						<div class="uk-child-width-expand@ss uk-margin-left uk-margin-right">
+							<span class="uk-label tdactor_label uk-margin-remove-bottom uk-width-auto">方向キーの追加割り当て</span>
+							<span class="uk-label tdactor_label_secondary uk-width-auto">設定されたキーは立ち絵変更ショートカットキーとして使用できなくなります。割り当てない場合は空白にしてください。</span>
+							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
+								<div class="uk-width-small uk-text-center">↑</div>
+								<input class="uk-width-small uk-text-center uk-input uk-light tdinput input_keycode save_setting_value_on_change" type="text" category="setting_actor" id="shortcut_up_arrow" value="" readonly>
+							</div>
+							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
+								<div class="uk-width-small uk-text-center">↓</div>
+								<input class="uk-width-small uk-text-center uk-input uk-light tdinput input_keycode save_setting_value_on_change" type="text" category="setting_actor" id="shortcut_down_arrow" value="" readonly>
+							</div>
+							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
+								<div class="uk-width-small uk-text-center">←</div>
+								<input class="uk-width-small uk-text-center uk-input uk-light tdinput input_keycode save_setting_value_on_change" type="text" category="setting_actor" id="shortcut_left_arrow" value="" readonly>
+							</div>
+							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
+								<div class="uk-width-small uk-text-center">→</div>
+								<input class="uk-width-small uk-text-center uk-input uk-light tdinput input_keycode save_setting_value_on_change" type="text" category="setting_actor" id="shortcut_right_arrow" value="" readonly>
+							</div>
+						</div>
+					</details>
 				</div>
 			</li>
 		</ul>
@@ -352,16 +381,39 @@
 		return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 	}
 
-	const KEYCODE_Delete = 46;
-	const KEYCODE_ArrowLeft = 37;
-	const KEYCODE_ArrowUp = 38;
-	const KEYCODE_ArrowRight = 39;
-	const KEYCODE_ArrowDown = 40;
+	const KEYCODE_Delete = 'Delete';
+	const KEYCODE_ArrowLeft = 'ArrowLeft';
+	const KEYCODE_ArrowUp = 'ArrowUp';
+	const KEYCODE_ArrowRight = 'ArrowRight';
+	const KEYCODE_ArrowDown = 'ArrowDown';
+	const altUpKeyElm = $('#shortcut_up_arrow');
+	const altDownKeyElm = $('#shortcut_down_arrow');
+	const altLeftKeyElm = $('#shortcut_left_arrow');
+	const altRightKeyElm = $('#shortcut_right_arrow');
 	document.body.addEventListener('keydown', function(e) {
+		const keycodeInputElm = $('input.input_keycode:focus');
+		if(keycodeInputElm.length > 0){
+			if(e.code === 'Escape'){
+				keycodeInputElm.blur();
+			} else if(e.code === 'Backspace' || e.code === 'Delete') {
+				keycodeInputElm.val('');
+			} else {
+				keycodeInputElm.val(e.code);
+			}
+			keycodeInputElm.change();
+			return;
+		}
+
 		if($('input:focus').length > 0) return;
 		if(!$('#actor_switcher').hasClass('setting')) {
 			if($('#function_actor').hasClass('uk-active')) {
-				if (e.keyCode === KEYCODE_ArrowLeft) {
+				if (e.code === KEYCODE_ArrowUp || (altUpKeyElm.val() !== '' && e.code === altUpKeyElm.val())) {
+					csInterface.evalScript('$._PPP_.PrevEditPoint()');
+					e.preventDefault();
+				} else if (e.code === KEYCODE_ArrowDown || (altDownKeyElm.val() !== '' && e.code === altDownKeyElm.val())) {
+					csInterface.evalScript('$._PPP_.NextEditPoint()');
+					e.preventDefault();
+				} else if (e.code === KEYCODE_ArrowLeft || (altLeftKeyElm.val() !== '' && e.code === altLeftKeyElm.val())) {
 					const linkdActor = $('.actor_sequence_link.linked');
 					for(let i = linkdActor.length - 1; i >= 0; i--) {
 						if(linkdActor.eq(i).hasClass('enable')) {
@@ -372,7 +424,7 @@
 						}
 					}
 					e.preventDefault();
-				} else if (e.keyCode === KEYCODE_ArrowRight) {
+				} else if (e.code === KEYCODE_ArrowRight || (altRightKeyElm.val() !== '' && e.code === altRightKeyElm.val())) {
 					const linkdActor = $('.actor_sequence_link.linked');
 					for(let i = 0; i < linkdActor.length; i++) {
 						if(linkdActor.eq(i).hasClass('enable')) {
@@ -382,12 +434,6 @@
 							break;
 						}
 					}
-					e.preventDefault();
-				} else if (e.keyCode === KEYCODE_ArrowUp) {
-					csInterface.evalScript('$._PPP_.PrevEditPoint()');
-					e.preventDefault();
-				} else if (e.keyCode === KEYCODE_ArrowDown) {
-					csInterface.evalScript('$._PPP_.NextEditPoint()');
 					e.preventDefault();
 				} else if((e.key >= '0' && e.key <= '9') || (e.key >= 'a' && e.key <= 'z')){
 					if(e.ctrlKey) {
@@ -399,7 +445,7 @@
 				}
 			}
 		} else {
-			if (e.keyCode === KEYCODE_Delete) {
+			if (e.code === KEYCODE_Delete) {
 				DeleteSelectedParts();
 			}
 		}

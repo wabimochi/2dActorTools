@@ -113,8 +113,10 @@ function SettingUpdate(category, id, value) {
     if(!ExtensionSettings[category]) {
         ExtensionSettings[category] = {};
     }
-    ExtensionSettings[category][id] = value;
-    SaveSettings();
+    if(ExtensionSettings[category][id] !== value){
+        ExtensionSettings[category][id] = value;
+        SaveSettings();
+    }
 }
 
 $(document).on('change', '.save_setting_value_on_change', function() {
