@@ -113,9 +113,9 @@
 				</div>
 
 				<ul class="uk-switcher my-class uk-margin">
-					<li class="uk-active">
+					<li>
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
-							<span class="uk-label tdactor_label uk-width-auto uk-margin-remove-top">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
+							<span class="uk-label tdactor_label_secondary uk-width-auto uk-margin-remove-top">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
 							<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
 								<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyCapture()">コピー</button>
 								<button class="uk-button uk-button-secondary uk-button-small uk-padding-remove-left uk-margin-small-left uk-margin-small-right" onClick="propertyDeploy()">ペースト</button>
@@ -167,7 +167,7 @@
 							<button class="uk-button uk-button-secondary uk-width-expand uk-margin-bottom" onClick="autoNewLine_ExecuteButton()">実行</button>
 						</div>
 					</li>
-					<li>
+					<li class="uk-active">
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id="overwriteclip_trigger_root">
 							<div class="uk-flex uk-flex-left uk-margin-small-top uk-margin-remove-bottom">
 								<span class="uk-label tdactor_label uk-width-expand uk-margin-remove-top">アクティブシーケンスのターゲットオーディオトラックにあるクリップをトリガーの対象とします</span>
@@ -175,9 +175,9 @@
 							<div class="uk-flex uk-flex-left uk-margin-remove-top">
 								<span class="uk-label tdactor_label uk-width-auto">トリガー：クリップの開始</span>
 							</div>
-							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
+							<div class="uk-flex-left uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
 								<button category="trigger_clip_override" id="trigger_clipstart_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
-								<div class="uk-flex uk-flex-middle uk-width-auto insert_mode uk-margin-small-top uk-flex-nowrap" uk-grid>
+								<div class="uk-flex uk-flex-middle uk-width-auto insert_mode uk-flex-nowrap" uk-grid>
 									<div category="trigger_clip_override" id="trgclp_str_ins_in" class="triggerclip_insert_setting insert_setting_icon insert_inpoint enable" style="padding-left:15px; padding-right:15px"></div>
 									<div category="trigger_clip_override" id="trgclp_str_ins_out" class="triggerclip_insert_setting insert_setting_icon insert_outpoint disable" style="padding-left:15px; padding-right:15px"></div>
 									<div category="trigger_clip_override" id="trgclp_str_ins_mkr" class="triggerclip_insert_setting insert_setting_icon insert_marker disable" style="padding-left:15px; padding-right:15px"></div>
@@ -189,9 +189,9 @@
 							<div class="uk-flex uk-flex-left uk-margin-small-top">
 								<span class="uk-label tdactor_label uk-width-auto">トリガー：クリップの終了</span>
 							</div>
-							<div class="uk-flex-center uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
+							<div class="uk-flex-left uk-margin-left uk-margin-remove-vertical uk-flex-nowrap" uk-grid>
 								<button category="trigger_clip_override" id="trigger_clipend_clippath" class="uk-button uk-button-secondary uk-width-large uk-margin-small uk-margin-left uk-margin-remove-bottom uppercase_disable text_ellipsis get_select_project_clip">選択中のクリップをセット</button>
-								<div class="uk-flex uk-flex-middle uk-width-auto insert_mode uk-margin-small-top uk-flex-nowrap" uk-grid>
+								<div class="uk-flex uk-flex-middle uk-width-auto insert_mode uk-flex-nowrap" uk-grid>
 									<div category="trigger_clip_override" id="trgclp_end_ins_in" class="triggerclip_insert_setting insert_setting_icon insert_inpoint enable" style="padding-left:15px; padding-right:15px"></div>
 									<div category="trigger_clip_override" id="trgclp_end_ins_out" class="triggerclip_insert_setting insert_setting_icon insert_outpoint disable" style="padding-left:15px; padding-right:15px"></div>
 									<div category="trigger_clip_override" id="trgclp_end_ins_mkr" class="triggerclip_insert_setting insert_setting_icon insert_marker disable" style="padding-left:15px; padding-right:15px"></div>

@@ -209,7 +209,7 @@ function addAutoImportRule(jqTbody) {
     const td1 = $('<td>', {'class':'uk-text-nowrap uk-table-shrink'});
         td1.append(select1);
 
-    const button1 = $('<button>', {'class':'uk-button uk-button-secondary uppercase_disable text_ellipsis uk-padding-small uk-padding-remove-vertical auto_import_bin'});
+    const button1 = $('<button>', {'class':'uk-button uk-button-secondary uppercase_disable text_ellipsis auto_import_bin'});
         button1.html('選択中のビンをセット');
         button1[0].addEventListener('click', function(e) {
             const treePath = SetectedProjectItemTreePath;
@@ -226,7 +226,7 @@ function addAutoImportRule(jqTbody) {
         td2.append(button1);
     const select2 = $('<select>', {'class':'tdactor_selectbox uk-width-auto uk-select auto_import_track_selector'});
         const s2_option = $('<option>', {value:"0"})
-        s2_option.html('トラック番号');
+        s2_option.html('Track');
         select2.append(s2_option);
         select2[0].addEventListener('change', function(e) {
             const selectbox = $(e.target);

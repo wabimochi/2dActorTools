@@ -482,13 +482,15 @@ summary{
   background-color: #7CCEF4 !important; 
 }
 .insert_mode{
+  align-items: center;
+}
+.insert_mode.expandable{
   overflow: hidden;
   display: flex;
-  align-items: center;
   width:90px;
   transition: width 0.1s ease-out;
 }
-.insert_mode.expanded{
+.insert_mode.expandable.expanded{
   width:170px;
   transition: width 0.1s ease-out;
 }
@@ -750,10 +752,21 @@ input.td_check[type="checkbox"]:checked{
   color: #232323;
 }
 
+.auto_import_bin{
+  width:160px;
+  padding:0 5px;
+}
+
+@media screen and (max-width: 610px){
+  .auto_import_bin{
+    width:26vw;
+    padding:0 5px;
+  }
+  .auto_import_matching_pattern{width:150px}
+}
 @media screen and (max-width: 480px){
   .hide_u480 {display:none !important}
 }
-
 .dragdrop-area-bg {
   background-color: #1e1e1e;
 }
@@ -768,4 +781,7 @@ input.td_check[type="checkbox"]:checked{
 }
 .td_progress[value]::-webkit-progress-value {
   background-color: #7CCEF4;
+}
+.uk-table-small td, .uk-table-small th{
+  padding:8px 4px;
 }
