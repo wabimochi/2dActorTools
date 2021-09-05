@@ -97,6 +97,7 @@ var fAnimationSourceIndex = -1;
 var fAnimationSourceCount = 0;
 var AnimationProperties = null;
 var bakeAllDuration = false;
+var bakeAudio_ID = null;
 
 var FrameAnimationKey = function(index, duration) {
     this.index = index;
@@ -1109,11 +1110,7 @@ $._PPP_={
 				if(bakeClips.length > 0){
 					$._PPP_.FrameAnimation_Audio(linkedSequenceIndex, animationTrackIndex, sourceIndex, bakeClips);
 				}else{
-					for(var i = 0; i < AnimationProperties.length; i++){
-						if(AnimationProperties[i] === null) continue;
-						updateUI(AnimationProperties[i]);
-						break;
-					}
+					updateUI(AnimationProperties);
 				}
 			}
 		}
@@ -1125,7 +1122,7 @@ $._PPP_={
 		sourceClips
 	 		trackItems sorted by time
 	*/
-	FrameAnimation_Audio : function(linkedSequenceIndex, animationTrackIndex, sourceIndex, sourceClips) {
+	FrameAnimation_Audio : function(linkedSequenceIndex, animationTrackIndex, sourceIndex, sourceClips, id) {
 		fLinkedSequenceIndex = linkedSequenceIndex;
 		fAnimationSequenceIndex = animationTrackIndex;
 		fAnimationSourceIndex = sourceIndex;
@@ -1136,7 +1133,7 @@ $._PPP_={
 			return;
 		}
 
-		if(sourceClips === undefined) {
+		if(sourceClips === undefined || sourceClips === '') {
 			fAnimationSourceClips = linkSequenceParents[fLinkedSequenceIndex].audioTracks[sourceIndex].clips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.numItems;
 			bakeAllDuration = true;
@@ -1156,6 +1153,13 @@ $._PPP_={
 			fAnimationSourceClips = sourceClips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.length;
 		}
+
+		if(id){
+			bakeTextMessage(id, BAKE_ANIMATION_AUDIO_MESSAGE1);
+			bakeMaxMessage(id, fAnimationSourceClipsLength);
+			bakeAudio_ID = id;
+		}
+
 		var samplerate = (1 / 15).toString();
 		fAnimationSourceCount = 0;
 		fAnimationKeypoints = [];
@@ -1172,11 +1176,13 @@ $._PPP_={
 		fAnimationStartTime[Number(clipIndex)] = startTime;
 		fAnimationSourceCount++;
 		if(fAnimationSourceCount === fAnimationSourceClipsLength){
-			bakeFrameAnimation_Audio(bakeAllDuration);
+			var id = bakeAudio_ID;
+			bakeAudio_ID = null;
+			bakeFrameAnimation_Audio(bakeAllDuration, fAnimationKeypoints, fAnimationStartTime, id);
 		}
 	},
 
-	FrameAnimation_Random : function(linkedSequenceIndex, animationTrackIndex) {
+	FrameAnimation_Random : function(linkedSequenceIndex, animationTrackIndex, id) {
 		fAnimationSequence = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
 		var activeSequence = app.project.activeSequence;
 		var sequenceList = getSequenceTrackItemsInSequence(activeSequence, linkSequence[linkedSequenceIndex].sequenceID);
@@ -1201,8 +1207,12 @@ $._PPP_={
 				initializeKey(AnimationProperties[i], 0);
 			}
 		}
+		if(id){
+			bakeTextMessage(id, BAKE_ANIMATION_RANDOM_MESSAGE);
+			bakeMaxMessage(id, end);
+		}
 
-		bakeFrameAnimation_Random(0, end, false, false);
+		bakeFrameAnimation_Random(0, end, false, false, id);
 	},
 
 	SetIncrementalBakeFlag : function(linkedSequenceIndex, animationTrackIndex, sourceIndex, enable){
@@ -1696,7 +1706,7 @@ function HasPassedMarkerChangeTime(time, nextMarker) {
 	return false;
 }
 
-function bakeFrameAnimation_Audio(allDuration){
+function bakeFrameAnimation_Audio(allDuration, animationKeypoints, animationStartTimeList, id){
 	var epsTime = fAnimationSequence.getSettings().videoFrameRate.seconds;
 	var markers = fAnimationSequence.markers;
 
@@ -1741,14 +1751,19 @@ function bakeFrameAnimation_Audio(allDuration){
 
 	var endTimeList = [];
 	for(var clipIndex = 0; clipIndex < fAnimationSourceClipsLength; clipIndex++) {
+		if(id){
+			if(clipIndex % 10 == 0){
+				bakeValueMessage(id, clipIndex);
+			}
+		}
 		var clipStart = fAnimationSourceClips[clipIndex].start.seconds;
 		var targetSequence = getClipAtTime(sequenceList, clipStart);
 		if(targetSequence === null) continue;
 		clipStart = getClipLocalTime(targetSequence, clipStart);
 		var clipEnd = getClipLocalTime(targetSequence, fAnimationSourceClips[clipIndex].end.seconds - epsTime * 2);
 		var clipInPoint = fAnimationSourceClips[clipIndex].inPoint.seconds;
-		var keypoints = fAnimationKeypoints[clipIndex].split(',');
-		var startTime = fAnimationStartTime[clipIndex].split(',');
+		var keypoints = animationKeypoints[clipIndex].split(',');
+		var startTime = animationStartTimeList[clipIndex].split(',');
 
 		if(!allDuration){
 			clearFrameAnimation(fAnimationSequence, AnimationProperties, clipStart, clipEnd + epsTime, false);
@@ -1876,10 +1891,28 @@ function bakeFrameAnimation_Audio(allDuration){
 	}
 
 	var prevIndex = -1;
+	var size = 0;
+	if(id){
+		for(var key in finalKey) {
+			size++;
+		}
+		size = Math.max(Math.floor(size / 100), 1);
+		bakeTextMessage(id, BAKE_ANIMATION_AUDIO_MESSAGE2);
+		bakeMaxMessage(id, size);
+		bakeValueMessage(id, 0);
+	}
+
+	var count = 0;
 	for(var key in finalKey) {
 		if(finalKey[key] !== prevIndex) {
 			switchActiveTrack(AnimationProperties, Number(key) * epsTime, finalKey[key], prevIndex, epsTime);
 			prevIndex = finalKey[key];
+		}
+		if(id){
+			count++;
+			if(count % 100 === 0){
+				bakeValueMessage(id, Math.floor(count / 100));
+			}
 		}
 	}
 
@@ -1889,15 +1922,13 @@ function bakeFrameAnimation_Audio(allDuration){
 		}
 	}
 
-	for(var i = 0; i < AnimationProperties.length; i++){
-		if(AnimationProperties[i] === null) continue;
-		updateUI(AnimationProperties[i]);
-		break;
-	}
+	updateUI(AnimationProperties);
 
 	if(allDuration){
 		$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 1);
-		alert('complete');
+	}
+	if(id){
+		bakeCompleteMessage(id);
 	}
 }
 
@@ -1961,14 +1992,10 @@ function bakeFrameAnimationSimple(clips, linkedSequenceIndex, animationTrackInde
 			prevIndex = finalKey[key];
 		}
 	}
-	for(var i = 0; i < animationProperties.length; i++){
-		if(animationProperties[i] === null) continue;
-		updateUI(animationProperties[i]);
-		break;
-	}
+	updateUI(animationProperties);
 }
 
-function bakeFrameAnimation_Random(start, end, clearKeyframe, once){
+function bakeFrameAnimation_Random(start, end, clearKeyframe, once, id){
 	var epsTime = fAnimationSequence.getSettings().videoFrameRate.seconds;
 	var markers = fAnimationSequence.markers;
 
@@ -2016,6 +2043,9 @@ function bakeFrameAnimation_Random(start, end, clearKeyframe, once){
 
 	targetTime = Math.max(epsTime * 2, Number(start) + period + (Math.random() * 2 - 1) * randomlyRange);
 	while(targetTime < end) {
+		if(id){
+			bakeValueMessage(id, targetTime - start);
+		}
 		while(true){
 			if(HasPassedMarkerChangeTime(targetTime, nextMarker)) {
 				ChangeNextTransition(0);
@@ -2066,12 +2096,11 @@ function bakeFrameAnimation_Random(start, end, clearKeyframe, once){
 
 	fixWrongKey(AnimationProperties, end, epsTime);
 
-	for(var i = 0; i < AnimationProperties.length; i++){
-		if(AnimationProperties[i] === null) continue;
-		updateUI(AnimationProperties[i]);
-		break;
+	updateUI(AnimationProperties);
+
+	if(id){
+		bakeCompleteMessage(id);
 	}
-	if(!once) alert('complete');
 }
 
 function getFirstSequenceFromTrackItems(clips) {
@@ -2260,7 +2289,15 @@ function getClipAtTime(trackItemList, time){
 	return null;
 }
 
-function updateUI(property){
+function updateUI(properties){
+	var property = null;
+	for(var i = 0; i < properties.length; i++){
+		if(properties[i] === null) continue;
+		property = properties[i];
+		break;
+	}
+	if(property === null) return;
+
 	if(property.isTimeVarying()){
 		var time = new Time();
 		time.seconds = -1;
@@ -2271,4 +2308,25 @@ function updateUI(property){
 		var value = property.getValue();
 		property.setValue(value, true);
 	}
+}
+
+function bakeTextMessage(id, text){
+	eventObj.type = "bakeTextNotification";
+	eventObj.data = id + ',' + text;
+	eventObj.dispatch();
+}
+function bakeMaxMessage(id, max){
+	eventObj.type = "bakeMaxNotification";
+	eventObj.data = id + ',' + max.toString();
+	eventObj.dispatch();
+}
+function bakeValueMessage(id, value){
+	eventObj.type = "bakeValueNotification";
+	eventObj.data = id + ',' + value.toString();
+	eventObj.dispatch();
+}
+function bakeCompleteMessage(id){
+	eventObj.type = "bakeCompleteNotification";
+	eventObj.data = id;
+	eventObj.dispatch();
 }

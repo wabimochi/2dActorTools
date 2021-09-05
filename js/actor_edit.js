@@ -15,6 +15,8 @@ let ActorStructurePath = [];
 let IsAnimationEditing = false;
 let AnimationIndexes = [];
 
+const bakeProgressBarElms = {};
+
 $(document).on('click', '.actor_sequence_link.unlink', function() {
     if($('#actor_switcher').hasClass('setting')) return;
     var index = $(this).attr('sequence');
@@ -513,6 +515,11 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_t
     partsList.append(thumbnav);
     partsSelector.append(partsList);
     actor.append(partsSelector);
+    const progressElm = $('<div>', {class:'td_bake_progress', hidden:''})
+    progressElm.append($('<progress>', {'class':'td_progress uk-progress', value: '5', max:'10'}));
+    progressElm.append($('<div>', {'class':'', text:''}));
+    actor.append(progressElm);
+
     return actor;
 }
 
@@ -1338,10 +1345,18 @@ function ActorEditInitialize() {
         const anim_type = ContextmenuGroupSelectJQElm.attr('anim-type');
         const source = Number(ContextmenuGroupSelectJQElm.find('.input_source_track').val()) - 1;
         let script = '';
+        
+        const progress = ContextmenuGroupSelectJQElm.find('.td_bake_progress');
+        progress.children('progress').val(0);
+        progress.children('div').html('');
+        progress.removeAttr('hidden');
+        progress.siblings().addClass('events_disable');
+        const id = 'p' + seq_index + group_index;
+        bakeProgressBarElms[id] = progress;
         if(anim_type == 0){
-            script = makeEvalScript('FrameAnimation_Random', seq_index, group_index);
+            script = makeEvalScript('FrameAnimation_Random', seq_index, group_index, id);
         } else if(anim_type == 1){
-            script = makeEvalScript('FrameAnimation_Audio', seq_index, group_index, source);
+            script = makeEvalScript('FrameAnimation_Audio', seq_index, group_index, source, '', id);
         }
         csInterface.evalScript(script);
     });
@@ -1438,6 +1453,41 @@ function ActorEditInitialize() {
         } else {
             setEnable(button);
         }
+    });
+
+    
+    csInterface.addEventListener('bakeTextNotification', function(e){
+        const data = e.data.split(',');
+        const id = data[0];
+        const text = data[1];
+        if(bakeProgressBarElms[id]){
+            bakeProgressBarElms[id].children('div').html(text);
+        }
+    });
+    csInterface.addEventListener('bakeMaxNotification', function(e){
+        const data = e.data.split(',');
+        const id = data[0];
+        const max = data[1];
+        if(bakeProgressBarElms[id]){
+            bakeProgressBarElms[id].children('progress').attr('max', max);
+        }
+    });
+    csInterface.addEventListener('bakeValueNotification', function(e){
+        const data = e.data.split(',');
+        const id = data[0];
+        const value = data[1];
+        if(bakeProgressBarElms[id]){
+            bakeProgressBarElms[id].children('progress').attr('value', value);
+        }
+    });
+    csInterface.addEventListener('bakeCompleteNotification', function(e){
+        const id = e.data;
+        if(bakeProgressBarElms[id]){
+            bakeProgressBarElms[id].attr('hidden', '');
+            bakeProgressBarElms[id].siblings().removeClass('events_disable');
+
+        }
+        delete bakeProgressBarElms[id];
     });
 
     // animationPreviewImgElm = $('#animation_preview_img');

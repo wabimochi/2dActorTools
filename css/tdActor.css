@@ -346,6 +346,7 @@ summary{
   border-left-color: transparent;
   border-right-color: transparent;
   border-top-color: transparent;
+  position: relative;
 }
 .actor_parts_top img{
   box-sizing: border-box;
@@ -784,4 +785,16 @@ input.td_check[type="checkbox"]:checked{
 }
 .uk-table-small td, .uk-table-small th{
   padding:8px 4px;
+}
+
+.td_bake_progress {
+  position: absolute;
+  top: 40px;
+  text-align: center;
+  margin: 0;
+  width: 90%;
+  margin-left: 5%;
+}
+.td_bake_progress>progress{
+  margin: 0;
 }
