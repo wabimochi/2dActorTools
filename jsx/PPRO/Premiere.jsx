@@ -406,7 +406,7 @@ $._PPP_={
 				var j = 0;
 				for(; j < clips.numItems; j++) {
 					if(currentTime >= clips[j].start.seconds && currentTime < clips[j].end.seconds) {
-						if(clips[j].projectItem.isSequence()){
+						if(clips[j].projectItem && clips[j].projectItem.isSequence()){
 							var animSeq = trackItemToSequence(clips[j]);
 							if(getAnimationSequenceLinkInfo(animSeq) !== null) {
 								var marker = getTransitionMarkerAtTime(animSeq.markers, currentTime);
@@ -546,7 +546,7 @@ $._PPP_={
 				if(deleteInsertClip) {
 					var serchIndex = track.clips.numItems - 1;
 					for(var j = serchIndex; j >= 0 ; j--){
-						if(track.clips[j].projectItem.nodeId === DummyClipNodeID) {
+						if(track.clips[j].projectItem && track.clips[j].projectItem.nodeId === DummyClipNodeID) {
 							track.clips[j].setSelected(true, false);
 							track.clips[j].remove(false, false);
 						}
@@ -784,7 +784,7 @@ $._PPP_={
 		if(seq) {
 			var selection = seq.getSelection();
 			if(selection.length) {
-				if(selection[0].projectItem.isSequence) {
+				if(selection[0].projectItem && selection[0].projectItem.isSequence) {
 					var targetSequence = selection[0];
 					for(var i = 0; i < app.project.sequences.numSequences; i++){
 						if(targetSequence.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
@@ -805,7 +805,7 @@ $._PPP_={
 				var selection = seq.getSelection();
 				seq = null;
 				if(selection.length) {
-					if(selection[0].projectItem.isSequence) {
+					if(selection[0].projectItem && selection[0].projectItem.isSequence) {
 						var targetSequence = selection[0];
 						for(var i = 0; i < app.project.sequences.numSequences; i++){
 							if(targetSequence.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
@@ -1307,11 +1307,13 @@ function fixTimeError(seconds, epsTime) {
 }
 
 function trackItemToSequence(clip) {
-    for(var i = 0; i < app.project.sequences.numSequences; i++){
-        if(clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
-            return app.project.sequences[i];
-        }
-    }
+	if(clip.projectItem){
+		for(var i = 0; i < app.project.sequences.numSequences; i++){
+			if(clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
+				return app.project.sequences[i];
+			}
+		}
+	}
     return null;
 }
 
@@ -2107,7 +2109,7 @@ function getFirstSequenceFromTrackItems(clips) {
 	// todo animation sequence check
 	var seq = null;
 	for(var i = 0; i < clips.numItems; i++) {
-		if(clips[i].projectItem.isSequence()) {
+		if(clips[i].projectItem && clips[i].projectItem.isSequence()) {
 			seq = trackItemToSequence(clips[i]);
 		}
 	}
@@ -2124,9 +2126,9 @@ function getTrackItemAtTime(trackItems, time){
 }
 
 function getTreePathFromActorClip(clip){
-	var treePath = clip.projectItem.treePath;
-	if(clip.projectItem.isSequence()) {
-		treePath = '';
+	var treePath = '';
+	if(clip.projectItem && !clip.projectItem.isSequence()){
+		treePath = clip.projectItem.treePath;
 	}
 	return treePath.slice(1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1)))).replace(/\\/g, '/');
 }
@@ -2265,7 +2267,7 @@ function getSequenceTrackItemsInSequence(parentSequence, targetSequenceID){
 	for(var i = 0; i < parentSequence.videoTracks.numTracks; i++){
 		var clips = parentSequence.videoTracks[i].clips;
 		for(var j = 0; j < clips.numItems; j++){
-			if(clips[j].projectItem.isSequence()){
+			if(clips[j].projectItem && clips[j].projectItem.isSequence()){
 				var seq = trackItemToSequence(clips[j]);
 				if(seq.sequenceID === targetSequenceID){
 					sequenceList.push(clips[j]);
@@ -2273,7 +2275,7 @@ function getSequenceTrackItemsInSequence(parentSequence, targetSequenceID){
 			}
 		}
 	}
-
+	
 	sequenceList.sort(function(a, b) {
 		return a.start.seconds - b.start.seconds;
 	});
