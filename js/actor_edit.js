@@ -1,3 +1,4 @@
+const Jimp = require('jimp');
 
 const ACT_ST_actor = 'actor';
 const ACT_ST_crop_path = 'crop_path';
@@ -651,7 +652,6 @@ function cropImageCallback(){
     }
 }
 
-const Jimp = require('jimp');
 let CropErrorPathList = [];
 function save_transparent_crop(src_path, dist_path, callback) {
     Jimp.read(src_path, (err, image) => {
@@ -685,9 +685,10 @@ $(document).on('click', '.actor_thumb_parent', function(e) {
                 target.siblings().addClass('anim_unselect');
                 target.addClass('anim_selected');
                 target.removeClass('anim_unselect');
-            $('.selected').not(this).removeClass('selected');
+                $('.selected').not(this).removeClass('selected');
                 target.addClass('selected');
                 LoadAnimationEdit(target);
+                AnimationPreview_SourceChange(false, true);
             } else {
                 $('.selected').not(this).removeClass('selected');
                 target.addClass('selected');
@@ -695,6 +696,104 @@ $(document).on('click', '.actor_thumb_parent', function(e) {
         }
     }
 });
+
+let previewMediaPathList = [];
+let previewDurationList = [];
+let previewTimeoutHandle = null;
+function AnimationPreview_SourceChange(play=false, view_reset=true){
+    previewTimeoutHandle = null;
+    previewIndex = 0;
+    momentum = 1;
+
+    const treePath = [];
+    previewDurationList = [];
+    $('#animation_editor_thumbnav').find('li').each((index, elm) => {
+        elm = $(elm);
+        treePath.push(elm.attr('tree_path'));
+        previewDurationList.push(Number(elm.children('input').val()) * 1/60 * 1000);
+    });
+    const index = $('#actor_switcher>.uk-active').attr('sequence');
+    const acotr_name = $('#actor_list_root>ul>[sequence="' + index + '"]>.actor_sequence_link_label').html();
+    csInterface.evalScript('$._PPP_.GetActorClipMediaPath("' + acotr_name + '","' + treePath + '")', function(mediaPathList) {
+        previewMediaPathList = mediaPathList.split(',');
+        Jimp.read(previewMediaPathList[0], (err, image) => {
+            if (!err) {
+                const rect = getCropSize(image, 5);
+                if(rect !== null){
+                    SetAnimationPreviewSource(previewMediaPathList, rect, view_reset);
+                    if(play){
+                        animationPreviewType = $('#select_animation_type').val(); 
+                        AnimationPreview_Play();
+                    }
+                }
+            }
+        });
+    });
+}
+
+let previewIndex = 0;
+let momentum = 1;
+let animationPreviewType = 0;
+const animationPreviewChartType1 = [2, 0, 2, 0, 2, 1, 2, 0, 2, 0]
+const animationPreviewDurationType1 = [0, 0, 0, 0, 200, 0, 200, 0, 0, 1000]
+let previewChartIndex = 0;
+function AnimationPreview_Play(){
+    let offset = 0;
+    if(animationPreviewType == 0){
+        // ランダム
+        previewIndex += momentum;
+        if(previewIndex >= previewMediaPathList.length) {
+            previewIndex = previewMediaPathList.length - 2;
+            momentum = -1;
+        }
+        if(previewIndex < 0) {
+            previewIndex = 0;
+            momentum = 1;
+            offset = 1500;
+        }
+    } else if(animationPreviewType == 1) {
+        // リップシンク（開閉）
+        if(animationPreviewChartType1[previewChartIndex] === 0){
+            previewIndex--;
+            if(previewIndex <= 0) {
+                previewIndex = 0;
+                offset = animationPreviewDurationType1[previewChartIndex];
+                previewChartIndex++;
+            }
+        } else if(animationPreviewChartType1[previewChartIndex] === 1){
+            if(previewIndex === 0){
+                momentum = 1;
+            } else if(previewIndex === previewMediaPathList.length - 1){
+                momentum = -1;
+            }
+            previewIndex += momentum;
+            if((momentum === -1 && previewIndex === 1) || 
+                (momentum === 1 && previewIndex === previewMediaPathList.length - 1)){
+                offset = animationPreviewDurationType1[previewChartIndex];
+                previewChartIndex++;
+            }
+        } else if(animationPreviewChartType1[previewChartIndex] === 2){
+            previewIndex++;
+            if(previewIndex >= previewMediaPathList.length - 1) {
+                previewIndex = previewMediaPathList.length - 1;
+                offset = animationPreviewDurationType1[previewChartIndex];
+                previewChartIndex++;
+            }
+        }
+        if(previewChartIndex >= animationPreviewChartType1.length){
+            previewChartIndex = 0;
+        }
+    }
+    previewTimeoutHandle = setTimeout(AnimationPreview_Play, previewDurationList[previewIndex] + offset);
+    AnimationPreviewDraw(previewIndex);
+}
+
+function AnimationPreview_Stop(){
+    if(previewTimeoutHandle !== null) {
+        clearTimeout(previewTimeoutHandle);
+        previewTimeoutHandle = null;
+    }
+}
 
 function SaveAnimationEdit(target_JQElm){
     const root = $('#animation_editor_thumbnav');
@@ -1030,6 +1129,8 @@ function OnAddAnimationSetting(evt){
 }
 
 function AnimationSettingEnd() {
+    AnimationPreview_Stop();
+
     const type = $('#select_animation_type').val();
     AnimationEditingGroupJQElm.attr('anim-type', type);
 
@@ -1383,17 +1484,19 @@ function ActorEditInitialize() {
         selectItem.find('img').attr('src', jqElm.find('img').attr('src'));
     });
 
-    // $('#animation_preview>div').on('click', function(e){
-    //     const enable = enableSwitch($(this));
-    //     if(enable) {
-    //         AnimationPreviewInitialize();
-    //     } else {
-    //         if(previewTimeoutHandle != null) {
-    //             clearTimeout(previewTimeoutHandle);
-    //             previewTimeoutHandle = null;
-    //         }
-    //     }
-    // });
+    $('#animation_play_button').on('click', function(e){
+        const enable = enableSwitch($(this));
+        if(enable) {
+            AnimationPreview_SourceChange(true, false);
+        } else {
+            AnimationPreview_Stop();
+        }
+    });
+
+    $('#animation_view_reset').on('click', function(e){
+        AnimationPreviewReset();
+    });
+
 
     $('#animation_editor_name').change(function() {
         $('.anim_selected').attr('name', $(this).val());

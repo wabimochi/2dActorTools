@@ -19,7 +19,6 @@
 	<script src="./js/property_deploy.js"></script>
 	<script src="./js/subtitle.js"></script>
 	<script src="./js/trigger_clip_override.js"></script>
-
 	<link id="uikitstyle" href="node_modules/uikit/dist/css/uikit.min.css" rel="stylesheet" type="text/css">
 	<link id="tdactorstyle" href="css/tdActor.css" rel="stylesheet" type="text/css">
 </head>
@@ -113,7 +112,7 @@
 				</div>
 
 				<ul class="uk-switcher my-class uk-margin">
-					<li>
+					<li class="uk-active">
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
 							<span class="uk-label tdactor_label_secondary uk-width-auto uk-margin-remove-top">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
 							<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right" uk-grid>
@@ -167,7 +166,7 @@
 							<button class="uk-button uk-button-secondary uk-width-expand uk-margin-bottom" onClick="autoNewLine_ExecuteButton()">実行</button>
 						</div>
 					</li>
-					<li class="uk-active">
+					<li>
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id="overwriteclip_trigger_root">
 							<div class="uk-flex uk-flex-left uk-margin-small-top uk-margin-remove-bottom">
 								<span class="uk-label tdactor_label uk-width-expand uk-margin-remove-top">アクティブシーケンスのターゲットオーディオトラックにあるクリップをトリガーの対象とします</span>
@@ -228,7 +227,7 @@
 				</div>
 
 				<div class="uk-flex">
-					<div id="actor_parts_box" class="uk-width-1-3 actor_parts_top" style="height:100vh; position: sticky; top:0; overflow:scroll; margin-right: 5px;" hidden>
+					<div id="actor_parts_box" class="uk-width-1-3 actor_parts_top" style="height:100vh; position: sticky; top:0; overflow:scroll; margin-right: 5px; min-width:64px;" hidden>
 					</div>
 					<div>
 						<button id="actor_setting_animation_end_button" class="uk-button uk-button-secondary highlight uk-animation-slide-right-medium uk-width-auto" onClick="AnimationSettingEnd()" style="margin-left:5px;" hidden>アニメーションの設定を終了</button>
@@ -244,7 +243,7 @@
 						<ul class="uk-switcher" id="actor_switcher"></ul>
 						<div id="animation_editor_root" class="uk-margin-small-left uk-margin-small-right" hidden>
 							<div>
-								<div class="uk-label tdactor_label">名前</div>
+								<div class="uk-label tdactor_inline_label">名前</div>
 								<input id="animation_editor_name" class="uk-light tdinput" type="text" style="width:300px;">
 							</div>
 							
@@ -272,22 +271,22 @@
 							</div>
 
 							<div class="animation_type0_elm">
-								<div class="uk-label tdactor_label">間隔(秒)</div>
+								<div class="uk-label tdactor_inline_label">間隔(秒)</div>
 								<input id="animation_editor_interval" class="input_positive_num_only uk-light tdinput" type="text">
 							</div>
 
 							<div class="animation_type0_elm">
-								<div class="uk-label tdactor_label">ランダムの範囲(秒)</div>
+								<div class="uk-label tdactor_inline_label">ランダムの範囲(秒)</div>
 								<input id="animation_editor_random_range" class="input_num_only uk-light tdinput" type="text">
 							</div>
 
+							<div class="uk-label tdactor_label">プレビュー</div>	
 							<div id="animation_preview" class="uk-flex uk-flex-column">
 								<div id="animation_play_button" class="td-icon-button" uk-icon="play"></div>
-								<img id="animation_preview_img" src="">
+								<div id="animation_view_reset" class="td-icon-button" uk-icon="expand"></div>								
+								<canvas id="animation_preview_canvas" class="thumb_background" width="100" height="100" style="width:100px;height:100px;">The canvas is not valid.</canvas>
 							</div>
-
 						</div>
-
 					</div>
 				</div>
 				<div id="actor_contextmenu" class="contextmenu">
@@ -330,7 +329,6 @@
 			</li>
 			<li>
 				<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right uk-margin-bottom">
-				
 					<details open>
 						<summary class="td_summary">共通</summary>
 						<div class="uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right ">
@@ -614,4 +612,5 @@
 		ActorEditInitialize();
 	}
 </script>
+<script src="./js/image_viewer.js"></script>
 </html>

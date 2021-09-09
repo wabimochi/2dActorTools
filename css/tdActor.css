@@ -7,6 +7,7 @@ html {
  min-height:100vh !important;
  background-color:#232323;
  background-size:cover;
+ user-select: none;
 }
 
 body {
@@ -36,6 +37,14 @@ body {
   padding: 4px 8px 4px 8px;
   white-space: normal;
 }
+.tdactor_inline_label {
+  background-color: rgba(124, 206, 244, 0.1);
+  color: #ccc;
+  margin-top:5px;
+  margin-bottom:5px;
+  padding: 2px 4px;
+  white-space: normal;
+}
 .tdactor_label_secondary{
   background-color: inherit;
   color: #aaa;
@@ -49,12 +58,12 @@ body {
   padding: 4px 8px 4px 8px;
   margin-top:10px;
   cursor: default;
-  user-select: none;
   border-radius: 2px;
   font-size: 0.875rem;
 }
 #actor_functions {
   background-color:#232323;
+  margin-bottom: 20px;
 }
 .tdinput{
   border: 1px solid #555 ;
@@ -88,7 +97,6 @@ body {
   cursor: default;
   font-size: 0.75em;
   background-color: #232323;
-  user-select: none;
   margin-top:10px;
 }
 .propertyDeploy>div {
@@ -149,13 +157,12 @@ hr {
   padding-right: 10px;
 }
 .actor_parts_list {
-  padding-left:10px;
+  padding-left:0px;
 }
 .actor_group{
   padding-left:10px;
 }
 .td-thumbnav{
-  user-select: none;
   overflow-x:scroll;
   overflow-y:hidden;
 }
@@ -238,7 +245,6 @@ hr {
 
 .actor_component{
   cursor: default;
-  user-select: none;
 }
 .actor_tooltip{
   width:auto;
@@ -607,7 +613,6 @@ input.td_check[type="checkbox"]:checked{
 }
 
 .merker_color_selector {
-  user-select: none;
   width: 24px;
   height: 24px;
   margin-left:5px;
@@ -643,13 +648,11 @@ input.td_check[type="checkbox"]:checked{
 .container {
   padding-top: 20px !important;
   padding-bottom: 10px;
-  user-select: none;
   cursor: default;
   top: 0px;
   bottom: 0px;
 }
 .dragitem {
-    user-select: none;
     cursor: move !important;
 }
 #actor_switcher{
@@ -666,7 +669,6 @@ input.td_check[type="checkbox"]:checked{
   height:auto;
   background-color:#333333;
   border:1px solid #7CCEF4;
-  user-select: none;
   z-index: 10;
 }
 .contextmenu ul{
@@ -704,9 +706,7 @@ input.td_check[type="checkbox"]:checked{
 .trash_icon>span{
   margin-top:3px;
 }
-
 .td-icon-button {
-  user-select: none;
   cursor: pointer;
   box-sizing: border-box;
   width: 36px;
@@ -797,4 +797,13 @@ input.td_check[type="checkbox"]:checked{
 }
 .td_bake_progress>progress{
   margin: 0;
+}
+
+#animation_preview{
+  display: -webkit-box;
+  align-items: center;
+  text-align:center;
+}
+#animation_preview>*{
+  margin: 5px;
 }

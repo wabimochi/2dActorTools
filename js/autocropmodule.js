@@ -20,6 +20,25 @@ function autocrop(margin) {
     return this;
 };
 
+function getCropSize(obj, margin){
+    const w = obj.bitmap.width;
+    const h = obj.bitmap.height;
+    const data = obj.bitmap.data;
+
+    let t = findTopSide(data, w, h);
+    if(t === h) return null;
+    t = t - margin;
+    let b = findBottomSide(data, w, h) + margin;
+    let l = findLeftSide(data, w, t, b) - margin;
+    let r = findRightSide(data, w, t, b) + margin;
+
+    l = Math.min(w - 1, Math.max(0, l));
+    r = Math.min(w - 1, Math.max(0, r));
+    t = Math.min(h - 1, Math.max(0, t));
+    b = Math.min(h - 1, Math.max(0, b));
+    return [l, t, r, b];
+}
+
 function findLeftSide(data, w, t, b) {
     for (let x = 0; x < w; x++) {
         for (let y = t; y <= b; y++) {
