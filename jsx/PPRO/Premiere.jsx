@@ -185,12 +185,12 @@ $._PPP_={
 					targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);							
 
 					var mgtComponent = targetVideoTrack.clips[i].getMGTComponent();
-					var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+					var sourceText = getSourceTextParam(mgtComponent);
 					if(sourceText && i < splitText.length){
 						var textObj = JSON.parse(sourceText.getValue());
 						textObj.fontTextRunLength = [splitText[i].length];
 						textObj.textEditValue = splitText[i];
-						sourceText.setValue(JSON.stringify(textObj), (i === targetAudioTrack.clips.numItems - 1)); 
+						sourceText.setValue(JSON.stringify(textObj), (i === targetAudioTrack.clips.numItems - 1));
 					}
 				}
 			}
@@ -258,7 +258,7 @@ $._PPP_={
 					var propertyObject = {componentName: component.displayName, propertyNames : [], propertyValues: []};
 					for(var j = 0; j < component.properties.numItems; j++){
 						var properties = component.properties[j];
-						if(properties.displayName !== DISPLAY_NAME_SRC_TEXT) {
+						if(properties.displayName !== DISPLAY_NAME_SRC_TEXT_V1 && properties.displayName !== DISPLAY_NAME_SRC_TEXT_V2) {
 							propertyNames.properties.push({name:properties.displayName});
 							propertyObject.propertyNames.push(properties.displayName);
 							if(properties.displayName.indexOf(LABEL_COLOR) !== -1) {
@@ -320,7 +320,7 @@ $._PPP_={
 					for(var j = 0; j < deployObj.components.length; j++) {
 						var deployComponetName = deployObj.components[j].componentName;
 						var deployProperties = deployObj.components[j].properties;
-						if(deployComponetName !== DISPLAY_NAME_SRC_TEXT) {
+						if(deployComponetName !== DISPLAY_NAME_SRC_TEXT_V1 && deployComponetName !== DISPLAY_NAME_SRC_TEXT_V2) {
 							for(var k = 0; k < components.length; k++) {
 								if(components[k].displayName === deployComponetName) {
 									var properties = selectClips[i].components[k].properties;
@@ -342,7 +342,7 @@ $._PPP_={
 							}
 						} else {
 							var mgtComponent =  selectClips[i].getMGTComponent();
-							var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+							var sourceText = getSourceTextParam(mgtComponent);
 							var textObj = JSON.parse(sourceText.getValue());
 							for(var k = 0; k < deployProperties.length; k++) {
 								textObj[deployProperties[k]] = deployObj.components[j].values[k];
@@ -688,7 +688,7 @@ $._PPP_={
 				for(var i = 0; i < length; i++) {
 					var mgtComponent = selected_clips[i].getMGTComponent();
 					if(mgtComponent) {
-						var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+						var sourceText = getSourceTextParam(mgtComponent);
 						if(sourceText){
 							var textObj = JSON.parse(sourceText.getValue());
 							textList.push(textObj.textEditValue);
@@ -704,7 +704,7 @@ $._PPP_={
 						for(var i = 0; i < length; i++){
 							var mgtComponent = clips[i].getMGTComponent();
 							if(mgtComponent) {
-								var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+								var sourceText = getSourceTextParam(mgtComponent);
 								if(sourceText){
 									var textObj = JSON.parse(sourceText.getValue());
 									textList.push(textObj.textEditValue);
@@ -728,7 +728,8 @@ $._PPP_={
 			var markers = seq.markers;
 			var epsTime = seq.getSettings().videoFrameRate.seconds;
 			for(var i = 0; i < length; i++){
-				var sourceText = OperationTargetList[i].getMGTComponent().properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+				var mgtComponent = OperationTargetList[i].getMGTComponent();
+				var sourceText = getSourceTextParam(mgtComponent);
 				if(sourceText) {
 					var textObj = JSON.parse(sourceText.getValue());
 					textObj.fontTextRunLength = [_textList[i].length];
@@ -754,7 +755,7 @@ $._PPP_={
 			if(selected_clips.length > 0) {
 				var mgtComponent = selected_clips[0].getMGTComponent();
 				if(mgtComponent) {
-					var sourceText = mgtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT);
+					var sourceText = getSourceTextParam(mgtComponent);
 					if(sourceText){
 						var textObj = JSON.parse(sourceText.getValue());
 						text = textObj.textEditValue;
@@ -2331,4 +2332,10 @@ function bakeCompleteMessage(id){
 	eventObj.type = "bakeCompleteNotification";
 	eventObj.data = id;
 	eventObj.dispatch();
+}
+
+function getSourceTextParam(mogrtComponent){
+	var sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V1);
+	if(!sourceText) sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V2);
+	return sourceText;
 }
