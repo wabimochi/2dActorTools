@@ -36,6 +36,7 @@ body {
   background-color: #232323;
   font-size: 1rem;
   transition-delay: 400ms;
+  padding-left: 5px;
 }
 #function_switch {
   margin-top: 0px;
@@ -668,7 +669,7 @@ input.td_check[type="checkbox"]:checked{
     cursor: move !important;
 }
 #actor_switcher{
-  width:98vw;
+  width:97vw;
 }
 #actor_switcher.setting{
   width:80vw;
@@ -776,9 +777,14 @@ input.td_check[type="checkbox"]:checked{
     padding:0 5px;
   }
   .auto_import_matching_pattern{width:150px}
+  #actor_switcher{width:96vw;}
 }
 @media screen and (max-width: 480px){
   .hide_u480 {display:none !important}
+  #actor_switcher{width:95vw;}
+}
+@media screen and (max-width: 300px){
+  #actor_switcher{width:93vw;}
 }
 .dragdrop-area-bg {
   background-color: #1e1e1e;
