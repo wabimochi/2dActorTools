@@ -114,31 +114,9 @@ var ClipForIncrementalBake = function(trackItem) {
 
 $._PPP_={
 	Setup: function(extPath){
-		if (app.project) {
-			var projectItems = app.project.rootItem.children;
-			var actBinExists = false;
-			for(var i = 0; i < projectItems.numItems; i++) {
-				if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN_NAME) {
-					ActorBinItem = projectItems[i];
-					actBinExists = true;
-					break;
-				}
-			}
-			
-			if(!actBinExists) {
-				app.project.rootItem.createBin(ACT_BIN_NAME);
-				for(var i = 0; i < projectItems.numItems; i++) {
-					if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN_NAME) {
-						ActorBinItem = projectItems[i];
-						break;
-					}
-				}
-			}
-			
-			var dummyClip = shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
-			if(dummyClip === null) app.project.importFiles([extPath + '/resource/dummy.png'], true, ActorBinItem, false);
-
-			DummyClipNodeID =  getDummyClip().nodeId;
+		searchActBin();
+		if(!ActorBinItem){
+			initializeActBin(extPath);
 		}
 		app.unbind('onActiveSequenceStructureChanged');
 		app.bind('onActiveSequenceStructureChanged', $._PPP_.SequenceStructureChanged);
@@ -542,6 +520,7 @@ $._PPP_={
 
 	GetSettingsMediaPath: function() {
 		var mediaPath = "";
+		searchActBin();
 		if(ActorBinItem) {
 			var file = shallowSearch(ActorBinItem, SETTINGS_FILENAME, ProjectItemType.FILE);
 			if(file) {
@@ -2420,4 +2399,23 @@ function getSourceTextParam(mogrtComponent){
 
 function changeExt(path, new_ext){
 	return path.substring(0, path.lastIndexOf(".")) + new_ext;
+}
+
+function searchActBin(){
+	if (app.project && !ActorBinItem) {
+		var projectItems = app.project.rootItem.children;
+		for(var i = 0; i < projectItems.numItems; i++) {
+			if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN_NAME) {
+				ActorBinItem = projectItems[i];
+				break;
+			}
+		}
+	}
+}
+
+function initializeActBin(extPath){
+	ActorBinItem = app.project.rootItem.createBin(ACT_BIN_NAME);
+	var dummyClip = shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
+	if(dummyClip === null) app.project.importFiles([extPath + '/resource/dummy.png'], true, ActorBinItem, false);
+	DummyClipNodeID =  getDummyClip().nodeId;
 }

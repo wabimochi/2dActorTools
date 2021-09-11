@@ -1604,3 +1604,7 @@ function DeleteSelectedParts() {
     }
     $('.selected').remove();
 }
+
+CustomInitialize['actor_edit_initialize'] = function () {
+    actorSelectBoxUpdate();
+}
