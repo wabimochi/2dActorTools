@@ -2,6 +2,7 @@ let loadSettingsTimeoutId = null;
 let retryLoadingCount = 0;
 
 function SaveSettings() {
+    settingSaveTimeoutHandle = null;
     if(ExtensionSettingsFilePath) {
         return SaveJson(ExtensionSettings, ExtensionSettingsFilePath);
     }
@@ -109,13 +110,18 @@ function SaveSettingCheckFromElement(jq_checkbox) {
     SettingUpdate(category, id, value);
 }
 
+let settingSaveTimeoutHandle = null;
 function SettingUpdate(category, id, value) {
+    if(settingSaveTimeoutHandle !== null) {
+        clearTimeout(settingSaveTimeoutHandle);
+        settingSaveTimeoutHandle = null;
+    }
     if(!ExtensionSettings[category]) {
         ExtensionSettings[category] = {};
     }
     if(ExtensionSettings[category][id] !== value){
         ExtensionSettings[category][id] = value;
-        SaveSettings();
+        settingSaveTimeoutHandle = setTimeout(SaveSettings, 3000);
     }
 }
 
