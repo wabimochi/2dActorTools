@@ -177,6 +177,8 @@ $._PPP_={
 				var targetVideoTrack = seq.videoTracks[VTrackIndex];
 				var targetAudioTrack = seq.audioTracks[ATrackIndex];
 				var splitText = text.split('/');
+				var epsTime = seq.getSettings().videoFrameRate.seconds;
+				mgtClip.setOverrideFrameRate(1/epsTime);
 
 				for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
 					var clip = targetAudioTrack.clips[i];
@@ -193,6 +195,7 @@ $._PPP_={
 						sourceText.setValue(JSON.stringify(textObj), (i === targetAudioTrack.clips.numItems - 1));
 					}
 				}
+				mgtClip.setOverrideFrameRate(0);
 			}
 			else {
 				MessageWarning("Track target is unset.");
