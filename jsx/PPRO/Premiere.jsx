@@ -1288,11 +1288,6 @@ $._PPP_={
 	SetIncrementalBakeFlag : function(linkedSequenceIndex, animationTrackIndex, sourceIndex, enable){
 		enable = Number(enable);
 
-		if(!incrementalBakeEnable[linkedSequenceIndex]){
-			incrementalBakeEnable[linkedSequenceIndex] = [];
-		}
-		incrementalBakeEnable[linkedSequenceIndex][animationTrackIndex] = enable;
-
 		if(enable){
 			if(!incrementalBake_clips[linkedSequenceIndex]){
 				incrementalBake_clips[linkedSequenceIndex] = [];
@@ -1311,6 +1306,10 @@ $._PPP_={
 			}
 			incrementalBake_clips[linkedSequenceIndex][animationTrackIndex] = clipList;
 		}
+		if(!incrementalBakeEnable[linkedSequenceIndex]){
+			incrementalBakeEnable[linkedSequenceIndex] = [];
+		}
+		incrementalBakeEnable[linkedSequenceIndex][animationTrackIndex] = enable;
 
 		eventObj.type = "incrementalBakeNotification";
 		eventObj.data = linkedSequenceIndex.toString() + ',' + animationTrackIndex.toString() + ',' + enable.toString();
@@ -1828,6 +1827,7 @@ function bakeFrameAnimation_Audio(allDuration, animationKeypoints, animationStar
 	if(allDuration){
 		currentTransition = getTransition(currentMarker);
 		finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
+		$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 0);
 	}
 
 	var endTimeList = [];
