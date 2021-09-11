@@ -128,6 +128,21 @@ $(document).on('click', '.get_select_project_clip', function() {
     });
 });
 
+$(document).on('click', '.get_select_project_bin', function() {
+    const target = $(this);
+    const treePath = SetectedProjectItemTreePath;
+    csInterface.evalScript('$._PPP_.ExistBinTreePath("' + treePath + '")', function(result) {
+        if(result) {
+            target.html(treePath);
+            target.attr('uk-tooltip', treePath);
+            setSettingOK(target);
+            const category = target.attr('category');
+            const id = target.attr('id');
+            SettingUpdate(category, id, treePath);
+        }
+    });
+});
+
 function getClipEndFlag(root_jq_elm) {
     let clipEndFlag = 0;
     if(root_jq_elm.find('.insert_inpoint').hasClass('enable')) clipEndFlag += 1;

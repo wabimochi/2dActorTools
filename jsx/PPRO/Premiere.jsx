@@ -180,7 +180,7 @@ $._PPP_={
 
 				for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
 					var clip = targetAudioTrack.clips[i];
-					outPoint.seconds = clip.outPoint.seconds;
+					outPoint.seconds = clip.outPoint.seconds - clip.inPoint.seconds;
 					mgtClip.setOutPoint(outPoint.ticks, 4)
 					targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);							
 
@@ -202,6 +202,72 @@ $._PPP_={
 			MessageWarning("No active sequence.");
 		} else {
 			MessageWarning(mgtName + " clip is not found.");
+		}
+	},
+
+	InsertSubtitle_PSD : function (importBinTreePath){
+		var seq = app.project.activeSequence;
+		
+		if(seq) {
+			var VTrackIndex = 0;
+			var ATrackIndex = 0;
+			for(; VTrackIndex < seq.videoTracks.numTracks; VTrackIndex++) {
+				if (seq.videoTracks[VTrackIndex].isTargeted()) break;
+			}
+			for(; ATrackIndex < seq.audioTracks.numTracks; ATrackIndex++) {
+				if (seq.audioTracks[ATrackIndex].isTargeted()) break;
+			}
+			if (VTrackIndex < seq.videoTracks.numTracks && ATrackIndex < seq.audioTracks.numTracks) {
+				var targetVideoTrack = seq.videoTracks[VTrackIndex];
+				var targetAudioTrack = seq.audioTracks[ATrackIndex];
+
+				var importBin = searchItemWithTreePath(importBinTreePath, ProjectItemType.BIN);
+				var projectItemList = [];
+				var mediaPathList = [];
+				for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
+					var path = changeExt(targetAudioTrack.clips[i].projectItem.getMediaPath(), '.psd');
+					projectItemList.push(shallowSearchWithMediaPath(importBin, path, ProjectItemType.CLIP));
+					mediaPathList.push(path);
+				}
+				var importPathDict = {};
+				for (var i = 0; i < projectItemList.length; i++) {
+					if(projectItemList[i] === null){
+						importPathDict[mediaPathList[i]] = 0;
+					}
+				}
+				var importPathList = []
+				for(var key in importPathDict) {
+					importPathList.push(key);
+				}
+				if(importPathList.length > 0){
+					app.project.importFiles(importPathList, true, importBin, false);
+				}
+				
+				for (var i = 0; i < projectItemList.length; i++) {
+					if(projectItemList[i] === null){
+						projectItemList[i] = shallowSearchWithMediaPath(importBin, mediaPathList[i], ProjectItemType.CLIP);
+					}
+				}
+				var outPoint = new Time();
+				var epsTime = seq.getSettings().videoFrameRate.seconds;
+
+				for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
+					var clip = targetAudioTrack.clips[i];
+					var projectItem = projectItemList[i];
+					if(projectItem === null) continue;
+					projectItem.setOverrideFrameRate(1/epsTime);
+					outPoint.seconds = clip.outPoint.seconds - clip.inPoint.seconds;
+					projectItem.setOutPoint(outPoint.ticks, 4)
+					targetVideoTrack.overwriteClip(projectItem, clip.start.seconds);
+					projectItem.setOverrideFrameRate(0);
+				}
+			}
+			else {
+				MessageWarning("Track target is unset.");
+			}
+		}
+		else if(!seq) {
+			MessageWarning("No active sequence.");
 		}
 	},
 
@@ -1276,6 +1342,15 @@ function shallowSearch(root, name, projectItemType) {
 	return null;
 }
 
+function shallowSearchWithMediaPath(root, mediaPath, projectItemType) {
+	for(var i = 0; i < root.children.numItems; i++) {
+		if(root.children[i].type === projectItemType && root.children[i].getMediaPath() === mediaPath) {
+			return root.children[i];
+		}
+	}
+	return null;
+}
+
 function searchItemWithTreePath (treePath, type) {
     var sepIndex = treePath.indexOf('/', 0);
     var oldIndex = 0;
@@ -2338,4 +2413,8 @@ function getSourceTextParam(mogrtComponent){
 	var sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V1);
 	if(!sourceText) sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V2);
 	return sourceText;
+}
+
+function changeExt(path, new_ext){
+	return path.substring(0, path.lastIndexOf(".")) + new_ext;
 }

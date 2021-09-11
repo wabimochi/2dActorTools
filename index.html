@@ -53,7 +53,7 @@
 	</div>
 
 	<div id="mainfunc">
-		<ul class="uk-flex-center" id="function_switch" uk-tab="active: 2;">
+		<ul class="uk-flex-center" id="function_switch" uk-tab="active: 0;">
 			<li id="function_subtitle"><a href="#">字幕</a></li>
 			<li id="function_property_deploy"><a href="#">リファインツール</a></li>
 			<li id="function_actor"><a href="#">立ち絵</a></li>
@@ -63,29 +63,40 @@
 
 		<ul class="uk-switcher" id='actor_functions'>
 			<li>
-				<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id='actor_controle_div'>
+				<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
 					<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right" onClick="importMGT()">mogrtのインポート</button>
 					<hr>
-					<span class="uk-label tdactor_label uk-width-auto">トラックに並べるMOGRTを選択</span>
-					<select class="tdactor_selectbox uk-width-expand uk-select" id="select_mogrt"></select>
-					<span class="uk-label tdactor_label uk-width-auto">プリセットタグ</span>
-					<input class="uk-input uk-light tdinput save_setting_value_on_change" type="text" category="insert_subtitle" id="preset_tag" value="＞" placeholder="preset tag...">
-					<span class="uk-label tdactor_label uk-width-auto uppercase_disable">Replace（正規表現）</span>
-					<div class='uk-flex-inline'>
-						<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace" value="" placeholder="マッチングパターン">
-						<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace_flag" value="" placeholder="フラグ">
-						<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace_after" value="" placeholder="Replace後">
-					</div>
 					<details open>
 						<summary class="td_summary">ソース：Audioと同じフォルダにあるtxtファイル</summary>
-						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id='actor_controle_div'>
+						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
+							<span class="uk-label tdactor_label uk-width-auto">トラックに並べるMOGRTを選択</span>
+							<select class="tdactor_selectbox uk-width-expand uk-select" id="select_mogrt"></select>
+							<span class="uk-label tdactor_label uk-width-auto">プリセットタグ</span>
+							<input class="uk-input uk-light tdinput save_setting_value_on_change" type="text" category="insert_subtitle" id="preset_tag" value="＞" placeholder="preset tag...">
+							<span class="uk-label tdactor_label uk-width-auto uppercase_disable">Replace（正規表現）</span>
+							<div class='uk-flex-inline'>
+								<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace" value="" placeholder="マッチングパターン">
+								<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace_flag" value="" placeholder="フラグ">
+								<input category='insert_subtitle' class="uk-input uk-light tdinput save_setting_value_on_change" type="text" id="subtitle_replace_after" value="" placeholder="Replace後">
+							</div>
 							<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-right" style='margin-top:8px;' onClick="insertSubtitleFromTextFile()">ターゲットトラックにMOGRTを並べる</button>
+							<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
+							</div>
 						</div>
 					</details>
-
-					<details style="margin-top:10px;padding-bottom:10px;">
+					<details>
+						<summary class="td_summary">ソース：PSD</summary>
+						<span class="uk-label tdactor_label_secondary uk-width-auto">対象のクリップを選択してコピー/ペーストボタンをクリック</span>
+						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' style='text-align: center;'>
+							<button category="insert_subtitle" id="psd_import_bin" class="uk-button uk-button-secondary uk-button-small uk-width-midium uppercase_disable text_ellipsis get_select_project_bin">
+								インポート先のビンを選択してクリック
+							</button>
+							<button class="uk-button uk-button-secondary uk-button-small" style='margin-top:8px;' onClick="insertSubtitleFromPSD()">ターゲットトラックにPSDを並べる</button>
+						</div>
+					</details>
+					<details>
 						<summary class="td_summary">ソース：テキストエリア</summary>
-						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right' id='actor_controle_div'>
+						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
 							<span class="uk-label tdactor_label uk-width-auto">トラックに並べるテキストを入力</span>
 							<textarea id="subtitles" rows="12" wrap="off" placeholder="input subtitles"></textarea>
 							<button class="uk-button uk-button-secondary uk-button-small uk-margin-small-left uk-margin-small-right" style='margin-top:8px;' onClick="insertSubtitleFromTextarea()">ターゲットトラックにMOGRTを並べる</button>

@@ -446,10 +446,6 @@ summary{
 .uk-select:not([multiple]):not([size]) option {
   color: #ccc;
 }
-#actor_controle_div {
-  margin-right: 15px;
-  background-color: #232323;
-}
 #mainfunc.disable {
   pointer-events: none;
   opacity: 0.3;

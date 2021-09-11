@@ -90,8 +90,37 @@ function insertSubtitleFromTextFile() {
     });	
 }
 
+function insertSubtitleFromPSD() {
+    if($('#psd_import_bin').hasClass('tdact_setting_ok')){
+        const importBinTree = $('#psd_import_bin').html();
+        const script = makeEvalScript('InsertSubtitle_PSD', importBinTree);
+        csInterface.evalScript(script);
+    } else {
+        setSettingError($('#psd_import_bin'));
+    }
+}
+
 function SubtitleInitialize() {
     csInterface.addEventListener('completeImportMogrt', function() {
         mogrtUpdate();
     });
+}
+
+CustomInitialize['insert_subtitle_initialize'] = function () {
+    const category = ExtensionSettings['insert_subtitle'];
+    if(category) {
+        const psd_import_bin = category['psd_import_bin'];
+        if(psd_import_bin) {
+            const target = $('#psd_import_bin');
+            target.html(psd_import_bin);
+            const script = makeEvalScript('ExistBinTreePath', psd_import_bin);
+            csInterface.evalScript(script, function(result){
+                if(result) {
+                    setSettingOK(target);
+                } else {
+                    setSettingError(target);
+                }
+            });
+        }
+    }
 }
