@@ -193,3 +193,11 @@ function makeEvalScript(functionName, ...params){
 };
 
 const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function getExtensionVersion(){
+    const xmlStr = window.cep.fs.readFile(csInterface.getSystemPath(SystemPath.EXTENSION) + '/CSXS/manifest.xml').data;
+    const pattern = 'ExtensionBundleVersion="'
+    const start = xmlStr.indexOf('ExtensionBundleVersion="') + pattern.length;
+    const end = xmlStr.indexOf('"', start);
+    return xmlStr.substring(start, end);
+}

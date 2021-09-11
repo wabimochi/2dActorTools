@@ -24,6 +24,7 @@
 </head>
 
 <body onContextmenu="return false;" onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate();LoadSettings()" spellcheck="false">
+	<div id="extension_version"></div>
 	<div class='uk-flex-center'>
 		<a href="javascript:history.go(0)" uk-icon="icon: refresh" class='uk-margin-remove'></a>
 		<a href="#" id='setting_file_not_exist_icon' class='uk-align-right uk-animation-slide-right-small' uk-toggle="target: #settigs_file_modal" uk-icon="icon: warning" style="color:yellow; display: none; margin:0 10px 0 0;" uk-tooltip="title: 設定ファイルがありません。ここをクリックして保存先を指定してください。; pos: bottom-right"></a>
@@ -621,6 +622,8 @@
 
 		SubtitleInitialize();
 		ActorEditInitialize();
+
+		$('#extension_version').html('v' + getExtensionVersion());
 	}
 </script>
 <script src="./js/image_viewer.js"></script>

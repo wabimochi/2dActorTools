@@ -21,6 +21,22 @@ body {
   background-size:cover;
   cursor: default;
 }
+#extension_version{
+  position:fixed;
+  right:0;
+  bottom:0;
+  z-index: 10;
+  color: #555;
+  font-size: 0.75rem;
+  transition:0.3s;
+  transition-delay: 0ms;
+}
+#extension_version:hover{
+  color: #fff;
+  background-color: #232323;
+  font-size: 1rem;
+  transition-delay: 400ms;
+}
 #function_switch {
   margin-top: 0px;
   margin-left: -10px;
