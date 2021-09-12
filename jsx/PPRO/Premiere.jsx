@@ -670,7 +670,13 @@ $._PPP_={
 		var seqName	= prompt('Name of sequence?', actorName, 'Sequence Naming Prompt');
 		if(seqName !== 'null') {
 			var clip = getActorClipWithTreePath(actorName, baseClipTreePath);
-			app.project.createNewSequenceFromClips(seqName, [clip], app.project.getInsertionBin());
+			var seq = app.project.createNewSequenceFromClips(seqName, [clip], app.project.getInsertionBin());
+			if(app.project.activeSequence){
+				var epsTime = app.project.activeSequence.getSettings().videoFrameRate.seconds;
+				var sequenceSettings = seq.getSettings();
+				sequenceSettings.videoFrameRate = epsTime;
+				seq.setSettings(sequenceSettings);
+			}
 		}
 	},
 
@@ -954,6 +960,11 @@ $._PPP_={
 			initializeClip.setOutPoint(duration, 4);
 			seq = app.project.createNewSequenceFromClips(actorName + '_' + groupName, [initializeClip], parent);
 			seq.close();
+			var epsTime = linkSequence[linkedSequenceIndex].getSettings().videoFrameRate.seconds;
+			var sequenceSettings = seq.getSettings();
+			sequenceSettings.videoFrameRate = epsTime;
+			seq.setSettings(sequenceSettings);
+
 			var newMarker = seq.markers.createMarker(0);
 			newMarker.name = 'DO NOT CHANGE THIS MARKER!';
 			newMarker.comments = linkSequence[linkedSequenceIndex].sequenceID  + '\n' + animationTrackIndex.toString();
