@@ -561,6 +561,16 @@ $._PPP_={
 		return LINKERROR_NO_ACTIVE_SEQUENCE;
 	},
 
+	DelinkSequence: function(index) {
+		delete linkSequence[index];
+		delete linkSequenceParents[index];
+		delete linkAnimationSequence[index];
+		delete linkAnimationProperties[index];
+		delete incrementalBakeEnable[index];
+		delete incrementalBakeSource[index];
+		delete incrementalBake_clips[index];
+	},
+
 	InsertActorClip: function(actorName, sequenceIndex, trackIndex, clipTreePath, startTime, endFlag) {
 		var activeSequence = app.project.activeSequence;
 		var seq = linkSequence[sequenceIndex];

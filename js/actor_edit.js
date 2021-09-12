@@ -99,14 +99,7 @@ $(document).on('click', '.actor_sequence_link.linked', function(e){
             if(!confirm('シーケンスとのリンクを解除します')){
                 return false;
             } else {
-                var index = $(this).attr('sequence');
-                var actor_root = $('.actor_component[sequence="' + index + '"]');
-                actor_root.empty();
-                $('.actor_sequence_link').removeClass('enable');
-                $(this).removeClass('linked');
-                $(this).addClass('unlink');
-                $(this).find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
-                $('#actor_switcher').find('li').removeClass('uk-active');
+                actorDelink($(this));
             }
         }
     } else {
@@ -184,6 +177,19 @@ $(document).on('mouseleave ', '.actor_thumb_parent', function() {
     const actor_label = $(this).parents('.actor_parts_top').find('.select_actor_label');
     actor_label.html('');
 });
+
+function actorDelink(target){
+    const index = target.attr('sequence');
+    const actor_root = $('.actor_component[sequence="' + index + '"]');
+    actor_root.empty();
+    $('.actor_sequence_link').removeClass('enable');
+    target.removeClass('linked');
+    target.addClass('unlink');
+    target.find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
+    $('#actor_switcher').find('li').removeClass('uk-active');
+    const script = makeEvalScript('DelinkSequence', index);
+    csInterface.evalScript(script);
+}
 
 function makeMarkerComment(anim_indexes, frame){
     frame = frame.split(',').map(x => (Number(x) / 60).toFixed(3));
@@ -1212,14 +1218,14 @@ function ActorEditInitialize() {
         if($(this).hasClass('unlink') && !isSetting){
             $('#actor_setting_make_thumbnail').removeClass('events_disable');
             $('#actor_setting_delete_thumbnail').removeClass('events_disable');
-            $('#actor_setting_unlink').addClass('events_disable');
+            $('#actor_setting_delink').addClass('events_disable');
         } else {
             $('#actor_setting_make_thumbnail').addClass('events_disable');
             $('#actor_setting_delete_thumbnail').addClass('events_disable');
             if(isSetting){
-                $('#actor_setting_unlink').addClass('events_disable');
+                $('#actor_setting_delink').addClass('events_disable');
             } else {
-                $('#actor_setting_unlink').removeClass('events_disable');
+                $('#actor_setting_delink').removeClass('events_disable');
             }
         }
     });
@@ -1364,16 +1370,10 @@ function ActorEditInitialize() {
             });
         }
     });
-    $('#actor_setting_unlink').on('mouseup', function(e) {
+    $('#actor_setting_delink').on('mouseup', function(e) {
         if(e.which === 1) {
             const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
-            var actor_root = $('.actor_component[sequence="' + ActorIndexForSetting + '"]');
-            actor_root.empty();
-            $('.actor_sequence_link').removeClass('enable');
-            target.removeClass('linked');
-            target.addClass('unlink');
-            target.find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
-            $('#actor_switcher').find('li').removeClass('uk-active');
+            actorDelink(target);
         }
     });
     $('#actor_setting_remove_parts_button').on('mouseup', function(e) {
