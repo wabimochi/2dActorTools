@@ -1230,13 +1230,12 @@ $._PPP_={
 			bakeAudio_ID = id;
 		}
 
-		var samplerate = (1 / 15).toString();
 		fAnimationSourceCount = 0;
 		fAnimationKeypoints = [];
 		fAnimationStartTime = [];
 		for(var i = 0; i < fAnimationSourceClipsLength; i++) {
 			eventObj.type = "getAudioAnimKeyPoint";
-			eventObj.data = fAnimationSourceClips[i].projectItem.getMediaPath() + ',' + samplerate + ',' + i.toString();
+			eventObj.data = fAnimationSourceClips[i].projectItem.getMediaPath() + ',' + i.toString();
 			eventObj.dispatch();
 		}
 	},

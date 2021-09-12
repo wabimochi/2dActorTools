@@ -378,6 +378,16 @@
 								<div class="uk-width-small uk-text-center">→</div>
 								<input class="uk-width-small uk-text-center uk-input uk-light tdinput input_keycode save_setting_value_on_change" type="text" category="setting_actor" id="shortcut_right_arrow" value="" readonly>
 							</div>
+
+							<span class="uk-label tdactor_label uk-margin-remove-bottom uk-width-auto">リップシンクのオーディオ解析フレームレート</span>
+							<span class="uk-label tdactor_label_secondary uk-width-auto">大きいほどパクパクします。シーケンスのフレームレートより大きいと上手くベイクできないかもしれません。</span>
+							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
+								<select type="selectbox" class="tdactor_selectbox uk-width-auto uk-select save_setting_value_on_change" category="setting_actor" id="lipsync_framerate">
+									<option value="15">15fps</option>
+									<option value="30">30fps</option>
+									<option value="60">60fps</option>
+								</select>
+							</div>
 						</div>
 					</details>
 				</div>
@@ -558,7 +568,8 @@
 		});
 
 		csInterface.addEventListener('getAudioAnimKeyPoint', function(e) {
-			const [path, epsTime, id] = e.data.split(',');
+			const [path, id] = e.data.split(',');
+			const epsTime = 1 / Number($('#lipsync_framerate').val());
 			const threshold = 0.1;
 			const audioContext = new AudioContext();
 			const data = fs.readFileSync(path);
