@@ -124,8 +124,8 @@ $._PPP_={
 		app.bind('onSourceClipSelectedInProjectPanel', reportProjectItemSelectionChanged);
 		app.unbind('onActiveSequenceSelectionChanged');
 		app.bind('onActiveSequenceSelectionChanged', reportSequenceItemSelectionChanged);
-		app.unbind('onActiveSequenceChanged');
-		app.bind('onActiveSequenceChanged', incrementalBake);
+		// app.unbind('onActiveSequenceChanged');
+		// app.bind('onActiveSequenceChanged', incrementalBake);
 	},
 
 	SequenceStructureChanged : function () {
@@ -1142,25 +1142,25 @@ $._PPP_={
 						if(playerPosition.seconds <= sourceClips[i].start.seconds){
 							bakeClips.push(sourceClips[i]);
 							clipFound = true;
-						}
-					}else{
-						if(sourceClips[i].start.seconds < newEndTime){
-							simpleBakeClips.push(sourceClips[i]);
-						} else {
 							break;
 						}
+					}else{
+						// if(sourceClips[i].start.seconds < newEndTime && simpleBakeClips.length < 5){
+						// 	simpleBakeClips.push(sourceClips[i]);
+						// } else {
+						// 	break;
+						// }
 					}
 				}
-
 				clearFrameAnimation(fAnimationSequence, AnimationProperties, newStartTime, newEndTime, true);
-				if(simpleBakeClips.length > 0){
-					bakeFrameAnimationSimple(simpleBakeClips, linkedSequenceIndex, animationTrackIndex, newEndTime);
-				}
 				if(bakeClips.length > 0){
 					$._PPP_.FrameAnimation_Audio(linkedSequenceIndex, animationTrackIndex, sourceIndex, bakeClips);
 				}else{
 					updateUI(AnimationProperties);
 				}
+				// if(simpleBakeClips.length > 0){
+				// 	bakeFrameAnimationSimple(simpleBakeClips, linkedSequenceIndex, animationTrackIndex, newEndTime);
+				// }
 			}
 		}
 	},
@@ -1984,9 +1984,9 @@ function bakeFrameAnimation_Audio(allDuration, animationKeypoints, animationStar
 
 	updateUI(AnimationProperties);
 
-	if(allDuration){
-		$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 1);
-	}
+	// if(allDuration){
+	// 	$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 1);
+	// }
 	if(id){
 		bakeCompleteMessage(id);
 	}

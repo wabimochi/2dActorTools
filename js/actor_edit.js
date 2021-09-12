@@ -431,18 +431,18 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_t
     }
 
     const animLabel = $('<div>', {'class':'animation_label', style:'align-items: center;', 'uk-grid':''});
-    const incrementalBakeDiv = $('<div>', {'class':'td-icon-button hidden_at_setting', name:'incremental_bake', 'uk-icon':'icon:bolt; ratio:0.8', style:'height:21px; margin:0 0 0 5px; padding:0 5px 0 5px;'});
-    incrementalBakeDiv.on('click', function(e){
-        const target = $(this);
-        const status = enableSwitch(target);
-        const seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
-        const group_index = target.closest('.actor_parts_top').attr('group_index');
-        const source = Number(target.siblings('.input_source_track').val()) - 1;
-        const enable = status ? 1 : 0;
-        const script = makeEvalScript('SetIncrementalBakeFlag', seq_index, group_index, source, enable);
-        csInterface.evalScript(script);
-    });
-    animLabel.append(incrementalBakeDiv);
+    // const incrementalBakeDiv = $('<div>', {'class':'td-icon-button hidden_at_setting', name:'incremental_bake', 'uk-icon':'icon:bolt; ratio:0.8', style:'height:21px; margin:0 0 0 5px; padding:0 5px 0 5px;'});
+    // incrementalBakeDiv.on('click', function(e){
+    //     const target = $(this);
+    //     const status = enableSwitch(target);
+    //     const seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
+    //     const group_index = target.closest('.actor_parts_top').attr('group_index');
+    //     const source = Number(target.siblings('.input_source_track').val()) - 1;
+    //     const enable = status ? 1 : 0;
+    //     const script = makeEvalScript('SetIncrementalBakeFlag', seq_index, group_index, source, enable);
+    //     csInterface.evalScript(script);
+    // });
+    // animLabel.append(incrementalBakeDiv);
     animLabel.append($('<div>', {'class':'actor_group_tracktxt hidden_at_setting', text:'Anim:A'}));
     animLabel.append($('<input>', {'class':'input_integer_only uk-light tdinput input_auto_resize input_source_track', type: 'text', value:anim_source}));
 
