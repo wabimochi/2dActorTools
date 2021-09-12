@@ -12,7 +12,7 @@ function LoadSettings()	{
     if(loadSettingsTimeoutId != null) {
         clearTimeout(loadSettingsTimeoutId);
     }
-    loadSettingsTimeoutId = setTimeout(_LoadSettings, 1000);
+    loadSettingsTimeoutId = setTimeout(_LoadSettings, 500);
 }
 
 function _LoadSettings() {

@@ -563,11 +563,16 @@ summary{
   padding-right: 0;
   background-color:#333;
   border: 1px solid #555;
+  outline-style:solid;
+  outline-width:0px;
   transition: background-color 0.2s ease-out, border 0.2s ease-out, color 0.2s ease-out, padding-left 0.2s ease-out, padding-right 0.2s ease-out;
 }
 .input_source_track:focus{
   padding-left: 4px;
   padding-right: 0;
+  outline-color:rgb(77, 144, 254);
+  outline-style:solid;
+  outline-width:1px;
 }
 .input_source_track.filled{
   color:#555;
@@ -577,12 +582,10 @@ summary{
 .input_source_track.filled:hover{
   background-color:#333;
   color:rgba(255, 255, 255, 0.7);
-  outline-offset:-2px;
-  outline-style:auto;
-  outline-width:5px;
+  outline-style:solid;
+  outline-width:1px;
   outline-color:rgb(77, 144, 254);
 }
-
 .icon_s {
   min-width: 32px !important;
   max-width: 32px !important;
