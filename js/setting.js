@@ -25,22 +25,14 @@ function _LoadSettings() {
                     alert(CEP_ERROR_TO_MESSAGE[json.err]);
                 }
             } else {
-                $('#setting_file_loading_icon').css('display','none');
                 $('#setting_file_not_exist_icon').css('display','none');
                 ExtensionSettingsFilePath = result;
                 ExtensionSettings = JSON.parse(json.data);
+                ApplySettings();
             }
         } else {
-            if (retryLoadingCount < 9) {
-                retryLoadingCount += 1;
-                $('#setting_file_loading_text').html('Retry loading(' + retryLoadingCount.toString() + ')');
-            } else {
-                $('#setting_file_loading_text').html('Retry loading(9+)');
-            }
-            loadSettingsTimeoutId = setTimeout(_LoadSettings, 2000);
             $('#setting_file_not_exist_icon').css('display','inherit');
         }
-        ApplySettings();
     });
 }
 

@@ -28,10 +28,6 @@
 	<div class='uk-flex-center'>
 		<a href="javascript:history.go(0)" uk-icon="icon: refresh" class='uk-margin-remove'></a>
 		<a href="#" id='setting_file_not_exist_icon' class='uk-align-right uk-animation-slide-right-small' uk-toggle="target: #settigs_file_modal" uk-icon="icon: warning" style="color:yellow; display: none; margin:0 10px 0 0;" uk-tooltip="title: 設定ファイルがありません。ここをクリックして保存先を指定してください。; pos: bottom-right"></a>
-		<div id='setting_file_loading_icon' class='uk-align-right uk-text-muted uk-animation-slide-right-small' style="display:flex; vertical-align: middle; padding-right: 10px; margin:0 10px 0 0;">
-			<div style="margin-top: 1px;" uk-spinner='ratio: 0.6'></div>
-			<div id='setting_file_loading_text' style="padding: 0 0 0 5px;">Waiting for loading settings...</div>
-		</div>
 	</div>
 
 	<div id="settigs_file_modal" uk-modal>
@@ -473,6 +469,7 @@
 
 	function loadSetup() {
 		var extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
+		sleep(100);
 		csInterface.evalScript('$._PPP_.Setup("' + extPath + '")');
 
 		csInterface.addEventListener('numTracksNotification', function(e) {
