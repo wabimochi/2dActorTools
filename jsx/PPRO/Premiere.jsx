@@ -98,6 +98,7 @@ var fAnimationSourceCount = 0;
 var AnimationProperties = null;
 var bakeAllDuration = false;
 var bakeAudio_ID = null;
+var projectSelectionItem = null;
 
 var FrameAnimationKey = function(index, duration) {
     this.index = index;
@@ -680,7 +681,11 @@ $._PPP_={
 		var seqName	= prompt('Name of sequence?', actorName, 'Sequence Naming Prompt');
 		if(seqName !== 'null') {
 			var clip = getActorClipWithTreePath(actorName, baseClipTreePath);
-			var seq = app.project.createNewSequenceFromClips(seqName, [clip], app.project.getInsertionBin());
+			var parent = null;
+			if(projectSelectionItem !== null){
+				parent = searchItemWithTreePath(projectSelectionItem, ProjectItemType.BIN);
+			}
+			var seq = app.project.createNewSequenceFromClips(seqName, [clip], parent);
 			if(app.project.activeSequence){
 				var epsTime = app.project.activeSequence.getSettings().videoFrameRate.seconds;
 				var sequenceSettings = seq.getSettings();
@@ -1476,8 +1481,9 @@ function reportProjectItemSelectionChanged(e) {
     var projectItems = e;
     if (projectItems){
         if (projectItems.length) {
+			projectSelectionItem = projectItems[0].treePath.slice(projectItems[0].treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
             eventObj.type = "projectItemsSelect";
-            eventObj.data = projectItems[0].treePath.slice(projectItems[0].treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
+            eventObj.data = projectSelectionItem;
             eventObj.dispatch();
         }
     }
