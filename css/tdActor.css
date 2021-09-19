@@ -652,7 +652,7 @@ input.td_check[type="checkbox"]:checked{
   background-color: #7CCEF4;
 }
 .anim_unselect {
-  opacity: 0.3;
+  opacity: 0.3 !important;
   cursor: pointer !important;
 }
 .sortable-drag {
