@@ -1118,8 +1118,8 @@ function ActorSettingEnd(){
         target.removeClass('enable');
     } else {
         actor_sequence_link_icon.attr('uk-icon', 'link');
-        var actorName = target.children('.actor_sequence_link_label').html();
-        SetupActorComponent(ActorIndexForSetting, actorName);
+        actorDelink(target);
+        target.click();
     }
     $('.actor_sequence_link').removeAttr('hidden');
     $('[trash]').removeAttr('hidden');
