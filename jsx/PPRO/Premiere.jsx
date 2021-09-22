@@ -2316,8 +2316,12 @@ function overwriteVideoClip(projectItem, sequence, track, startTime, endFlag, en
 	projectItem.setOverrideFrameRate(1/epsTime);
 	var _startTime = new Time();
 	_startTime.seconds = fixTimeError(startTime, epsTime);
-	projectItem.setInPoint(_startTime.ticks, 4);
-	projectItem.setOutPoint(_endTime.ticks, 4);
+	projectItem.setInPoint(_startTime.ticks, 1);
+	projectItem.setOutPoint(_endTime.ticks, 1);
+	var audioTime = new Time();
+	audioTime.seconds = 0;
+	projectItem.setInPoint(audioTime.ticks, 2);
+	projectItem.setOutPoint(audioTime.ticks, 2);
 	track.overwriteClip(projectItem, startTime);
 	projectItem.setOverrideFrameRate(0);
 }
