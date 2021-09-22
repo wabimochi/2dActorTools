@@ -178,7 +178,7 @@ $(document).on('mouseleave ', '.actor_thumb_parent', function() {
     actor_label.html('');
 });
 
-function actorDelink(target){
+function actorDelink(target, skip_linkseq=false){
     const index = target.attr('sequence');
     const actor_root = $('.actor_component[sequence="' + index + '"]');
     actor_root.empty();
@@ -187,7 +187,7 @@ function actorDelink(target){
     target.addClass('unlink');
     target.find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
     $('#actor_switcher').find('li').removeClass('uk-active');
-    const script = makeEvalScript('DelinkSequence', index);
+    const script = makeEvalScript('DelinkSequence', index, skip_linkseq);
     csInterface.evalScript(script);
 }
 

@@ -539,6 +539,9 @@ $._PPP_={
 	},
 
 	SetLinkSequence: function(index) {
+		if(linkSequence[index]){
+			return SEQUENCE_LINK_SUCCESS;
+		}
 		var seq = app.project.activeSequence;
 		if(seq) {
 			var sel = seq.getSelection();
@@ -562,9 +565,11 @@ $._PPP_={
 		return LINKERROR_NO_ACTIVE_SEQUENCE;
 	},
 
-	DelinkSequence: function(index) {
-		delete linkSequence[index];
-		delete linkSequenceParents[index];
+	DelinkSequence: function(index, skip_linkseq) {
+		if(!skip_linkseq){
+			delete linkSequence[index];
+			delete linkSequenceParents[index];
+		}
 		delete linkAnimationSequence[index];
 		delete linkAnimationProperties[index];
 		delete incrementalBakeEnable[index];
