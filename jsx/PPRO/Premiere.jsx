@@ -1886,7 +1886,9 @@ function bakeFrameAnimation_Audio(allDuration, animationKeypoints, animationStar
 			if(i < startTime.length - 1) {
 				limitTime = Math.min(clipStart + Number(startTime[i + 1]) - clipInPoint, limitTime);
 			}
-			if(targetTime >= limitTime) break;
+			if(targetTime >= limitTime){
+				continue;
+			} 
 
 			if(keypoints[i] == 1) {
 				level = Math.max(level, 1);
