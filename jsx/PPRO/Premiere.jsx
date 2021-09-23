@@ -119,6 +119,8 @@ $._PPP_={
 		if(!ActorBinItem){
 			initializeActBin(extPath);
 		}
+		DummyClipNodeID =  getDummyClip().nodeId;
+
 		app.unbind('onActiveSequenceStructureChanged');
 		app.bind('onActiveSequenceStructureChanged', $._PPP_.SequenceStructureChanged);
 		app.unbind('onSourceClipSelectedInProjectPanel');
@@ -2448,5 +2450,4 @@ function initializeActBin(extPath){
 	ActorBinItem = app.project.rootItem.createBin(ACT_BIN_NAME);
 	var dummyClip = shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
 	if(dummyClip === null) app.project.importFiles([extPath + '/resource/dummy.png'], true, ActorBinItem, false);
-	DummyClipNodeID =  getDummyClip().nodeId;
 }
