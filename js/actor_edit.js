@@ -1536,14 +1536,13 @@ function ActorEditInitialize() {
         } else {
             $(this).removeClass('filled');
         }
-        const seqIndex = $('.actor_sequence_link.enable').attr('sequence');
-        const groupName = $(this).parent().siblings('.select_actor_group').html();
-        for(let i = 0; i < ActorStructure[seqIndex].actor.length; i++){
-            if(ActorStructure[seqIndex].actor[i].group == groupName){
-                ActorStructure[seqIndex].actor[i].source = this.value;
-            }
+        const seqIndex = $(this).closest('.actor_component').attr('sequence');
+        const groupIndex = $(this).closest('.actor_parts_top').attr('group_index');
+        const idx = ActorStructure[seqIndex].actor.length - groupIndex - 1;
+        if(ActorStructure[seqIndex].actor[idx].source != this.value){
+            ActorStructure[seqIndex].actor[idx].source = this.value;
+            SaveJson(ActorStructure[seqIndex], ActorStructurePath[seqIndex]);
         }
-        SaveJson(ActorStructure[seqIndex], ActorStructurePath[seqIndex]);
     });
 
     csInterface.addEventListener('incrementalBakeNotification', function(e) {
