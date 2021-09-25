@@ -163,9 +163,9 @@ $._PPP_={
 
 				for (var i = 0; i < targetAudioTrack.clips.numItems; i++) {
 					var clip = targetAudioTrack.clips[i];
-					outPoint.seconds = clip.outPoint.seconds - clip.inPoint.seconds;
-					mgtClip.setOutPoint(outPoint.ticks, 4)
-					targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);							
+					outPoint.seconds = fixTimeError(clip.outPoint.seconds - clip.inPoint.seconds, epsTime) + epsTime / 100;
+					mgtClip.setOutPoint(outPoint, 4);
+					targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);
 
 					var mgtComponent = targetVideoTrack.clips[i].getMGTComponent();
 					var sourceText = getSourceTextParam(mgtComponent);
@@ -240,7 +240,7 @@ $._PPP_={
 					var projectItem = projectItemList[i];
 					if(projectItem === null) continue;
 					projectItem.setOverrideFrameRate(1/epsTime);
-					outPoint.seconds = clip.outPoint.seconds - clip.inPoint.seconds;
+					outPoint.seconds = fixTimeError(clip.outPoint.seconds - clip.inPoint.seconds, epsTime) + epsTime / 100;
 					projectItem.setOutPoint(outPoint.ticks, 4)
 					targetVideoTrack.overwriteClip(projectItem, clip.start.seconds);
 					projectItem.setOverrideFrameRate(0);
@@ -1406,11 +1406,12 @@ function trackItemToSequence(clip) {
     return null;
 }
 
-function getNextClipTime(clips, endFlag, startSeconds, endSeconds) {
+function getNextClipTime(clips, endFlag, startSeconds, endSeconds, epsTime) {
+	var halfTime = epsTime / 2;
     var i = clips.numItems - 1;
     if(endFlag & ACT_CLIPEND_END) {
         for(; i >= 0 ; i--){
-            if(startSeconds < clips[i].end.seconds ) {
+            if(startSeconds < clips[i].end.seconds - halfTime) {
                 endSeconds = Math.min(endSeconds, clips[i].end.seconds);
             } else {
                 i = Math.min(i + 1, clips.numItems - 1);
@@ -1420,7 +1421,7 @@ function getNextClipTime(clips, endFlag, startSeconds, endSeconds) {
     }
     if(endFlag & ACT_CLIPEND_START) {
         for(; i >= 0 ; i--){
-            if(startSeconds < clips[i].start.seconds) {
+            if(startSeconds < clips[i].start.seconds - halfTime) {
                 endSeconds = Math.min(endSeconds, clips[i].start.seconds);
             } else {
                 break;
@@ -2315,18 +2316,19 @@ function overwriteVideoClip(projectItem, sequence, track, startTime, endFlag, en
 		endTime = sequence.getOutPointAsTime().seconds;
 	}
 
-	endTime = getNextClipTime(clips, endFlag, startTime, endTime);
+	endTime = getNextClipTime(clips, endFlag, startTime, endTime, epsTime);
 	if(endFlag & ACT_CLIPEND_MARKER) {
 		endTime = getNextMarkerTime(endMarkerSequence.markers, startTime, endTime);
 	}
+	
+	projectItem.setOverrideFrameRate(1/epsTime);
 
 	var _endTime = new Time();
-	_endTime.seconds = fixTimeError(endTime, epsTime);
-	projectItem.setOverrideFrameRate(1/epsTime);
+	_endTime.seconds = fixTimeError(endTime, epsTime) - epsTime / 100;
 	var _startTime = new Time();
-	_startTime.seconds = fixTimeError(startTime, epsTime);
-	projectItem.setInPoint(_startTime.ticks, 4);
-	projectItem.setOutPoint(_endTime.ticks, 4);
+	_startTime.seconds = fixTimeError(startTime, epsTime) - epsTime / 100;
+	projectItem.setInPoint(_startTime, 4);
+	projectItem.setOutPoint(_endTime, 4);
 	track.overwriteClip(projectItem, startTime);
 	projectItem.setOverrideFrameRate(0);
 }
