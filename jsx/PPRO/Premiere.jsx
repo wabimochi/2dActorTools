@@ -176,7 +176,6 @@ $._PPP_={
 						sourceText.setValue(JSON.stringify(textObj), (i === targetAudioTrack.clips.numItems - 1));
 					}
 				}
-				mgtClip.setOverrideFrameRate(0);
 			}
 			else {
 				MessageWarning("Track target is unset.");
