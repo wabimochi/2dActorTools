@@ -828,3 +828,28 @@ input.td_check[type="checkbox"]:checked{
 #animation_preview>*{
   margin: 5px;
 }
+
+input[type=checkbox] {
+  margin-right: 2px;
+  border-color: #aaa;
+}
+input[type=checkbox]:focus {
+  border-color: #aaa;
+}
+input[type=checkbox]:hover {
+  border-color: #fff;
+}
+input[type=checkbox]:checked {
+  background-color: #0000;
+  border-color: #0000;
+}
+input[type=checkbox]:checked:focus {
+  background-color: #0000;
+  border-color: #0000;
+}
+input[type=checkbox]:checked:hover {
+  border-color: #aaa;
+}
+.input_label{
+  cursor:pointer;
+}

@@ -2,10 +2,22 @@ const Jimp = require('jimp');
 
 const ACT_ST_actor = 'actor';
 const ACT_ST_crop_path = 'crop_path';
+const ACT_ST_crop_dir_path = 'crop_dir';
+const ACT_ST_src_dir_path = 'src_dir';
 const ACT_ST_clipset = 'clipset';
 const ACT_ST_version = 'version';
+const ACT_ST_lightweight = 'lw';
+const ACT_ST_actor_bbox = 'actor_bbox';
 const CLIP_TYPE_None = 'none';
 const CLIP_TYPE_Animation = 'Anim';
+
+const ACT_ELM_NUM = 4;
+const ACT_NAME = 0;
+const ACT_BIN_NAME = 1;
+const ACT_MEDIA_PATH = 2;
+const ACT_TREE_PATH = 3;
+
+const DummyClipTreePath = 'delete';
 
 let ActorIndexForSetting = -1;
 let ContextmenuPartsSelectJQElm = null;
@@ -20,26 +32,27 @@ const bakeProgressBarElms = {};
 
 $(document).on('click', '.actor_sequence_link.unlink', function() {
     if($('#actor_switcher').hasClass('setting')) return;
-    var index = $(this).attr('sequence');
-    var actorName = $(this).children('.actor_sequence_link_label').html();
-    var actor_sequence_link = $(this);
-    var actor_sequence_link_icon = $(this).find('.actor_sequence_link_icon');
+    const index = $(this).attr('sequence');
+    const actorName = $(this).children('.actor_sequence_link_label').html();
+    const actor_sequence_link = $(this);
+    const actor_sequence_link_icon = $(this).find('.actor_sequence_link_icon');
     $('.actor_sequence_link').removeClass('enable');
     $('#actor_switcher').find('li').removeClass('uk-active');
-    var target_actor_component = $('#actor_switcher').find("[sequence='" + index + "']");
-    var actor_root = $('.actor_component[sequence="' + index + '"]');
+    const target_actor_component = $('#actor_switcher').find("[sequence='" + index + "']");
+    const actor_root = $('.actor_component[sequence="' + index + '"]');
     
-    csInterface.evalScript('$._PPP_.GetActorStructureMediaPath("' + actorName + '")', function(actorStructPath) {
+    const script = makeEvalScript('GetActorStructureMediaPath', actorName);
+    csInterface.evalScript(script, function(actorStructPath) {
         if(actorStructPath === '') {
             alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
 
             ActorIndexForSetting = index;
             StartActorSetting();
         } else {
-            ActorStructure[index] = LoadActorStructure(actorStructPath);
-            if(ActorStructure[index] === null) return;
-            ActorStructurePath[index] = actorStructPath;
-            csInterface.evalScript('$._PPP_.SetLinkSequence("' + index + '")', function(result) {
+            if(!LoadActorStructure(actorStructPath, index, actorName)) return;
+
+            const script2 = makeEvalScript('SetLinkSequence', index);
+            csInterface.evalScript(script2, function(result) {
                 if(result === '0') {
                     actor_sequence_link.addClass('enable');
                     actor_sequence_link.removeClass('unlink');
@@ -83,7 +96,15 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                                     break;
                                 }
                             }
-                            csInterface.evalScript('$._PPP_.CreateActorSequence("' + actorName + '","' + treePath + '")');
+                            let width = 0;
+                            let height = 0;
+                            if(ActorStructure[index][ACT_ST_lightweight]){
+                                const actor_bbox = ActorStructure[index][ACT_ST_actor_bbox];
+                                width = actor_bbox[2];
+                                height = actor_bbox[3];
+                            }
+                            const script3 = makeEvalScript('CreateActorSequence', actorName, treePath, width, height);
+                            csInterface.evalScript(script3);
                         }
                     }
                 }
@@ -241,18 +262,21 @@ function actorSettingStart(actorName, index, force_initialize) {
     const actorObj = ActorStructure[index];
     csInterface.evalScript('$._PPP_.GetActorStructure("'+ actorName + '")', function(struct) {
         if(struct) {
-            const elmNum = 4;
+            const cropDirPath = actorObj[ACT_ST_crop_dir_path];
             const structList = struct.split(',');
-            const length = structList.length / elmNum;
+            const length = structList.length / ACT_ELM_NUM;
             let prevGroupName = ""
             let prevGroup = null;
             for(let i = 0; i < length; i++) {
-                let currentGroupName = structList[i * elmNum + 1];
+                let currentGroupName = structList[i * ACT_ELM_NUM + ACT_BIN_NAME];
                 if(currentGroupName !== prevGroupName){
                     prevGroup = AddPartsBoxGroup(currentGroupName);
                     prevGroupName = currentGroupName;
                 }
-                AddActorClip(prevGroup, structList[i * elmNum], structList[i * elmNum + 3], actorObj.crop_path[structList[i * elmNum + 3]]);
+                AddActorClip(prevGroup,
+                     structList[i * ACT_ELM_NUM + ACT_NAME], 
+                     structList[i * ACT_ELM_NUM + ACT_TREE_PATH], 
+                     cropDirPath + actorObj.crop_path[structList[i * ACT_ELM_NUM + ACT_TREE_PATH]].path);
             }
         } else {
 
@@ -337,11 +361,28 @@ function getActorClipSet(shortcutKey) {
 }
 
 function insertActorClip(actor_name, seq_index, group_index, tree_path, flag) {
-    csInterface.evalScript('$._PPP_.InsertActorClip("' + actor_name + '",' + seq_index + ','+ group_index + ',"' + tree_path + '",-1,' + flag + ')');	
+    let bbox = [0, 0, 0, 0];
+    let actor_l = 0;
+    let actor_t = 0;
+    if(ActorStructure[seq_index][ACT_ST_lightweight]){
+        if(tree_path !== DummyClipTreePath){
+            bbox = ActorStructure[seq_index][ACT_ST_crop_path][tree_path].bbox;
+        }
+        actor_l =  ActorStructure[seq_index][ACT_ST_actor_bbox][0];
+        actor_t =  ActorStructure[seq_index][ACT_ST_actor_bbox][1];
+    }
+    const script = makeEvalScript('InsertActorClip', actor_name, seq_index, group_index, tree_path, bbox[0], bbox[1], bbox[2], bbox[3], actor_l, actor_t, -1, flag);
+    csInterface.evalScript(script);
 }
 
 function insertAnimationMarker(seq_index, group_index, comment, flag, type, sourceIndex) {
-    const script = makeEvalScript('InsertFrameAnimationMarker', seq_index, group_index, comment, flag, type, sourceIndex);
+    let actor_l = 0;
+    let actor_t = 0;
+    if(ActorStructure[seq_index][ACT_ST_lightweight]){
+        actor_l =  ActorStructure[seq_index][ACT_ST_actor_bbox][0];
+        actor_t =  ActorStructure[seq_index][ACT_ST_actor_bbox][1];
+    }
+    const script = makeEvalScript('InsertFrameAnimationMarker', seq_index, group_index, comment, flag, type, sourceIndex, actor_l, actor_t);
     csInterface.evalScript(script);
 }
 
@@ -419,7 +460,7 @@ function MakeThumbnav(){
     return thumbnav;
 }
 
-function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_type, anim_source, isSetting) {
+function MakeGroupElement(group_name, group_index, clips, crop_dir, crop_path_list, anim_type, anim_source, isSetting) {
     const actor = $('<div>', {'class':'actor_parts_top', group_index: group_index, 'anim-type': anim_type});
 
     const label = $('<div>', {style:'align-items: center; margin-left:0px;', 'uk-grid':''});
@@ -504,7 +545,7 @@ function MakeGroupElement(group_name, group_index, clips, crop_path_list, anim_t
         const li = $('<li>', {'class':'actor_thumb_parent', name:clips[j].clip, tree_path:clips[j].tree_path, group_index: group_index,
          'data-type': type, anim_clips:anim_clips, frame:frame, anim_interval:interval, anim_range:range});
         const img = $('<img>', {'class':'actor_thumb thumb_background fix_size_img'});
-        const crop = crop_path_list[clips[j].tree_path];
+        const crop = crop_dir + crop_path_list[clips[j].tree_path].path;
         if (crop && fs.existsSync(crop)) {
             img.attr('src', crop);
             li.append(img);
@@ -567,9 +608,10 @@ async function SetupActorComponent(index, actorName, isSetting=false){
             const actor = MakeGroupElement(
                 actorObj.actor[i].group, 
                 group_index, 
-                actorObj.actor[i].clips, 
+                actorObj.actor[i].clips,
+                actorObj[ACT_ST_crop_dir_path],
                 actorObj.crop_path,
-                actorObj.actor[i].anim_type, 
+                actorObj.actor[i].anim_type,
                 actorObj.actor[i].source,
                 isSetting);
             actor_root.append(actor);
@@ -600,7 +642,24 @@ async function SetupActorComponent(index, actorName, isSetting=false){
 
                 if(treePathList.length > 0) {
                     treePathList = Array.from(new Set(treePathList));
-                    const script = makeEvalScript('SetupAnimationMarker', actorName, actorObj.actor[i].group, index, group_index, treePathList.join(','));
+                    let l = 0;
+                    let t = 0;
+                    let r = -1;
+                    let b = -1;
+                    if(actorObj[ACT_ST_lightweight]){
+                        l = actorObj[ACT_ST_actor_bbox][0] + actorObj[ACT_ST_actor_bbox][2];
+                        t = actorObj[ACT_ST_actor_bbox][1] + actorObj[ACT_ST_actor_bbox][3];
+                        const crop_path = actorObj[ACT_ST_crop_path];
+                        for(key in crop_path){
+                            const bbox = crop_path[key].bbox;
+                            if(l > bbox[0]) l = bbox[0];
+                            if(t > bbox[1]) t = bbox[1];
+                            if(r < bbox[0] + bbox[2]) r = bbox[0] + bbox[2];
+                            if(b < bbox[1] + bbox[3]) b = bbox[1] + bbox[3];
+                        }
+                    }
+                    const script = makeEvalScript('SetupAnimationMarker', actorName, actorObj.actor[i].group, index, group_index, treePathList.join(','),
+                        [l, t, r - l, b - t].join(','));
                     let mutex = false;
                     csInterface.evalScript(script, function(actorStructPath) {
                         if(!AnimationIndexes[index]) {
@@ -619,7 +678,7 @@ async function SetupActorComponent(index, actorName, isSetting=false){
     }
 }
 
-function LoadActorStructure(path) {
+function LoadActorStructure(path, index, actorName) {
     const json = window.cep.fs.readFile(path);
     if(json.err){
         let script = '';
@@ -629,27 +688,63 @@ function LoadActorStructure(path) {
             script = makeEvalScript('MessageError', 'code ' + json.err.toString() + ' :' + CEP_ERROR_TO_MESSAGE[json.err]);
         }
         csInterface.evalScript(script);
-        return null;
+        return false;
     }
-    return ActorStructureVersionConvert(JSON.parse(json.data));
+    ActorStructure[index] = ActorStructureVersionConvert(JSON.parse(json.data), actorName);
+    ActorStructurePath[index] = path;
+    return true;
 }
 
 let cropImageCounter = 0;
 let cropImageSize = 0;
 let startActorSettingTimeoutId = null;
 let startActorSettingCallback = false;
+let updateMediaPathTimeoutId = null;
+let updateMediaPathCallback = false;
 function cropImageCallback(){
     cropImageCounter += 1;
-    BusyNotificationProgress.val(cropImageCounter);
+    $('#busy_progress').val(cropImageCounter);
     if(cropImageCounter === cropImageSize){
-        $('#mainfunc').removeClass('disable');
-        $('#busy_notification').removeClass('uk-open');
-        $('#busy_notification').attr('style', '');
-        if(startActorSettingTimeoutId != null) {
+        const crop_path = ActorStructure[ActorIndexForSetting][ACT_ST_crop_path];
+        let actor_l = 0;
+        let actor_t = 0;
+        let actor_r = 0;
+        let actor_b = 0;
+        for(key in crop_path){
+            const bbox = crop_path[key].bbox;
+            actor_l = bbox[0];
+            actor_t = bbox[1];
+            actor_r = bbox[0] + bbox[2];
+            actor_b = bbox[1] + bbox[3];
+            break;
+        }
+        for(key in crop_path){
+            const bbox = crop_path[key].bbox;
+            if(actor_l > bbox[0]) actor_l = bbox[0];
+            if(actor_t > bbox[1]) actor_t = bbox[1];
+            if(actor_r < bbox[0] + bbox[2]) actor_r = bbox[0] + bbox[2];
+            if(actor_b < bbox[1] + bbox[3]) actor_b = bbox[1] + bbox[3];
+        }
+        ActorStructure[ActorIndexForSetting][ACT_ST_actor_bbox] = [actor_l, actor_t, actor_r - actor_l, actor_b - actor_t];
+        SaveJson(ActorStructure[ActorIndexForSetting], ActorStructurePath[ActorIndexForSetting]);
+        
+        BusyNotificationClose();
+
+        if(startActorSettingTimeoutId != null && startActorSettingCallback) {
             clearTimeout(startActorSettingTimeoutId);
+            startActorSettingTimeoutId = null;
+        }
+        if(updateMediaPathTimeoutId != null && updateMediaPathCallback) {
+            clearTimeout(updateMediaPathTimeoutId);
+            updateMediaPathTimeoutId = null;
         }
         if(startActorSettingCallback){
+            startActorSettingCallback = false;
             startActorSettingTimeoutId = setTimeout(_startActorSetting, 300);
+        }
+        if(updateMediaPathCallback){
+            updateMediaPathCallback = false;
+            updateMediaPathTimeoutId = setTimeout(UpdateMediaPath, 300);
         }
         if(CropErrorPathList.length > 0){
             const path = CropErrorPathList.join('\n');
@@ -659,15 +754,17 @@ function cropImageCallback(){
 }
 
 let CropErrorPathList = [];
-function save_transparent_crop(src_path, dist_path, callback) {
-    Jimp.read(src_path, (err, image) => {
+function save_transparent_crop(crop_info, callback) {
+    Jimp.read(crop_info.src, (err, image) => {
         if (!err) {
             image.autocrop = autocrop;
             const result = image.autocrop(5);
             if(result === null){
                 CropErrorPathList.push(src_path);
             } else {
-                image.write(dist_path);
+                const crop_list = ActorStructure[ActorIndexForSetting][ACT_ST_crop_path][crop_info.tree_path];
+                crop_list.bbox = result;
+                image.write(crop_info.dst);
             }
             if(callback) callback();
         }
@@ -852,16 +949,11 @@ function LoadAnimationEdit(target_JQElm){
     $('#animation_editor_random_range').val(range);
 }
 
-let ActorStructureFilePath = '';
 let StartSettingActorName = '';
 let BusyNotificationProgress = null;
 function _startActorSetting() {
     startActorSettingTimeoutId = null;
-    const path = ActorStructureFilePath;
     const actorName = StartSettingActorName;
-    ActorStructure[ActorIndexForSetting] = LoadActorStructure(path);
-    if(ActorStructure[ActorIndexForSetting] === null) return;
-    ActorStructurePath[ActorIndexForSetting] = path;
 
     const actor_sequence_link = $('.actor_sequence_link');
     const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
@@ -893,78 +985,143 @@ function StartActorSetting() {
     const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
     const actorName = target.children('.actor_sequence_link_label').html();
     StartSettingActorName = actorName;
-    csInterface.evalScript('$._PPP_.GetActorStructureMediaPath("' + actorName + '")', function(actorStructPath) {
+    const script = makeEvalScript('GetActorStructureAndMediaPath', actorName);
+    csInterface.evalScript(script, function(result) {
+        result = result.split('\n');
+        const actorStructPath = result[0];
+        const struct = result[1];
         if(actorStructPath === '') {
-            csInterface.evalScript('$._PPP_.GetActorStructure("'+ actorName + '")', function(struct) {
-                if(struct) {
-                    let new_actor_structure = {};
-                    const elmNum = 4;
-                    const structList = struct.split(',');
-                    const length = structList.length / elmNum;
-                    let prevGroupName = ""
-                    let actor = [];
-                    let group_obj = {};
-                    let saveCropPathList = {};
-                    const crop_list = [];
-                    
-                    save_structure_file_path = window.cep.fs.showSaveDialogEx('構成ファイルの保存先', '', ['txt'], actorName + '.txt').data;
-                    if(!save_structure_file_path) return;
-                    ActorStructureFilePath = save_structure_file_path;
+            if(struct) {
+                let new_actor_structure = {};
+                const structList = struct.split(',');
+                const length = structList.length / ACT_ELM_NUM;
+                let prevGroupName = ""
+                let actor = [];
+                let group_obj = {};
+                let saveCropPathList = {};
+                const crop_list = [];
+                
+                save_structure_file_path = window.cep.fs.showSaveDialogEx('構成ファイルの保存先', '', ['txt'], actorName + '.txt').data;
+                if(!save_structure_file_path) return;
+                ActorStructurePath[ActorIndexForSetting] = save_structure_file_path;
 
-                    let crop_dir = window.cep.fs.showOpenDialogEx(false, true, 'サムネイルの保存先', null).data;
-                    if(crop_dir == '') return;
-                    crop_dir += '/';
+                let crop_dir = window.cep.fs.showOpenDialogEx(false, true, 'サムネイルの保存先', null).data;
+                if(crop_dir == '') return;
+                crop_dir += '/';
 
-                    for(let i = 0; i < length; i++) {
-                        let currentGroupName = structList[i * elmNum + 1];
-                        if(currentGroupName !== prevGroupName){
-                            if(Object.keys(group_obj).length > 0) {
-                                actor.push(group_obj);
-                            }
-                            group_obj = { 
-                                group : currentGroupName,
-                                clips : []
-                            };
-                            prevGroupName = currentGroupName;
+                let source_dir = '';
+                for(let i = 0; i < length; i++) {
+                    let currentGroupName = structList[i * ACT_ELM_NUM + ACT_BIN_NAME];
+                    if(currentGroupName !== prevGroupName){
+                        if(Object.keys(group_obj).length > 0) {
+                            actor.push(group_obj);
                         }
-                        const clip_obj = {
-                            clip: structList[i * elmNum],
-                            tree_path: structList[i * elmNum + 3]
+                        group_obj = { 
+                            group : currentGroupName,
+                            clips : []
                         };
-                        group_obj.clips.push(clip_obj);
-                        let src_path = structList[i * elmNum + 2];
-                        let lastIndex = src_path.lastIndexOf(".");
-                        let crop_path = crop_dir + structList[i * elmNum] + GetUUID() + src_path.substr(lastIndex);
-                        crop_list.push({src:src_path, dst:crop_path});
-                        saveCropPathList[structList[i * elmNum + 3]] = crop_path;
+                        prevGroupName = currentGroupName;
                     }
-                    if(Object.keys(group_obj).length > 0) {
-                        actor.push(group_obj);
+                    const clip_obj = {
+                        clip: structList[i * ACT_ELM_NUM + ACT_NAME],
+                        tree_path: structList[i * ACT_ELM_NUM + ACT_TREE_PATH]
+                    };
+                    group_obj.clips.push(clip_obj);
+                    let src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                    let lastIndex = src_path.lastIndexOf(".");
+                    let crop_path = structList[i * ACT_ELM_NUM + ACT_NAME] + GetUUID() + src_path.substr(lastIndex);
+                    const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
+                    crop_list.push({tree_path:key, src:src_path, dst:crop_dir + crop_path});
+                    saveCropPathList[key] = {path:crop_path};
+                    if(source_dir !== ''){
+                        const _source_dir = path_js.dirname(src_path) + '/';
+                        if(_source_dir.length < source_dir.length){
+                            source_dir = _source_dir;
+                        }
+                    }else{
+                        source_dir = path_js.dirname(src_path) + '/';
                     }
-
-                    new_actor_structure[ACT_ST_actor] = actor;
-                    new_actor_structure[ACT_ST_crop_path] = saveCropPathList;
-                    new_actor_structure[ACT_ST_version] = 1;
-
-                    // クロップイメージの作成
-                    startActorSettingCallback = true;
-                    MakeThumbnail(crop_list);
-
-                    SaveJson(new_actor_structure, save_structure_file_path);
-                    csInterface.evalScript('$._PPP_.ImportActorStructureFile("' + save_structure_file_path.replace(/\\/g, '/') + '","'+ actorName + '")', function(result) {
-                        if(!result) {
-                            alert('構成ファイルのインポートに失敗しました');
-                            return;
-                        }
-                        if(crop_list.length === 0){
-                            _startActorSetting();
-                        }
-                    });
                 }
-            });   
+
+                new_actor_structure[ACT_ST_src_dir_path] = source_dir;
+                for(let i = 0; i < length; i++) {
+                    const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
+                    const src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                    saveCropPathList[key].src = src_path.replace(source_dir, '');
+                }
+
+                if(Object.keys(group_obj).length > 0) {
+                    actor.push(group_obj);
+                }
+
+                new_actor_structure[ACT_ST_lightweight] = 1;
+                new_actor_structure[ACT_ST_actor] = actor;
+                new_actor_structure[ACT_ST_crop_dir_path] = crop_dir;
+                new_actor_structure[ACT_ST_crop_path] = saveCropPathList;
+                new_actor_structure[ACT_ST_version] = 2;
+
+                // クロップイメージの作成
+                startActorSettingCallback = true;
+                MakeThumbnail(crop_list);
+
+                ActorStructure[ActorIndexForSetting] = new_actor_structure;
+                csInterface.evalScript('$._PPP_.ImportActorStructureFile("' + save_structure_file_path.replace(/\\/g, '/') + '","'+ actorName + '")', function(result) {
+                    if(!result) {
+                        alert('構成ファイルのインポートに失敗しました');
+                        return;
+                    }
+                    if(crop_list.length === 0){
+                        SaveJson(ActorStructure[ActorIndexForSetting], ActorStructurePath[ActorIndexForSetting]);
+                        _startActorSetting();
+                    }
+                });
+            } 
         } else {
-            ActorStructureFilePath = actorStructPath;
-            _startActorSetting();
+            if(LoadActorStructure(actorStructPath, ActorIndexForSetting, actorName)){
+                const structList = struct.split(',');
+                const length = structList.length / ACT_ELM_NUM;
+                let source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
+                const crop_dir = ActorStructure[ActorIndexForSetting][ACT_ST_crop_dir_path];
+
+                const cropPathList = ActorStructure[ActorIndexForSetting][ACT_ST_crop_path];
+                const append_crop_list = [];
+
+                for(let i = 0; i < length; i++) {
+                    const src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                    const _source_dir = path_js.dirname(src_path) + '/';
+                    if(!source_dir || _source_dir.length < source_dir.length){
+                        source_dir = _source_dir;
+                    }
+                }
+                old_source_dir = '';
+                if(source_dir !== ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path]){
+                    old_source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
+                    ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path] = source_dir;
+                }
+
+                for(let i = 0; i < length; i++) {
+                    const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
+                    
+                    if(cropPathList[key]){
+                        if(!cropPathList[key].src){
+                            const src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                            cropPathList[key].src = src_path.replace(source_dir, '');
+                        } else if(old_source_dir !== '') {
+                            const src_path = old_source_dir + cropPathList[key].src;
+                            cropPathList[key].src = src_path.replace(source_dir, '');
+                        }
+                    } else {
+                        const src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                        const lastIndex = src_path.lastIndexOf(".");
+                        const crop_path = structList[i * ACT_ELM_NUM + ACT_NAME] + GetUUID() + src_path.substr(lastIndex);
+                        cropPathList[key] = {path:crop_path, src:src_path.replace(source_dir, '')}
+                        append_crop_list.push({tree_path:key, src:src_path, dst:crop_dir + crop_path});
+                    }
+                }
+
+                startActorSettingCallback = true;
+                MakeThumbnail(append_crop_list);
+            }
         }
     });
 }
@@ -973,15 +1130,19 @@ function MakeThumbnail(crop_list){
     cropImageCounter = 0;
     cropImageSize = crop_list.length;
     if(cropImageSize > 0) {
-        $('#mainfunc').addClass('disable');
-        $('#busy_notification').addClass('uk-open');
-        $('#busy_notification').attr('style', 'display: block;');
-        BusyNotificationProgress = $('#busy_notification_progress');
-        BusyNotificationProgress.val(0);
-        BusyNotificationProgress.attr('max', cropImageSize);
+        BusyNotificationOpen('サムネイル用画像の処理中', cropImageSize);
         CropErrorPathList = [];
         for(let i = 0; i < cropImageSize; i++) {
-            requestIdleCallback(() => save_transparent_crop(crop_list[i].src, crop_list[i].dst, cropImageCallback));
+            requestIdleCallback(() => save_transparent_crop(crop_list[i], cropImageCallback));
+        }
+    } else{
+        if(startActorSettingCallback){
+            startActorSettingCallback = false;
+            _startActorSetting();
+        }
+        if(updateMediaPathCallback){
+            updateMediaPathCallback = false;
+            UpdateMediaPath();
         }
     }
 }
@@ -1031,6 +1192,15 @@ function ActorPartsToSetting(actor_parts_top_jqelm){
 
 function SetupActorSettingUI() {
     const actor_component_root = $(".actor_component[sequence='" + ActorIndexForSetting + "']");
+
+    const lightweight_elm = $('<label>', {'class':'input_label', 'text':'サムネイルを使用して描画コストを減らす'});
+    const lightweight_check = $('<input>', {'class':'uk-checkbox lightweight_check', 'type':'checkbox'});
+    lightweight_elm.prepend(lightweight_check);
+    actor_component_root.prepend(lightweight_elm);
+    if(ActorStructure[ActorIndexForSetting][ACT_ST_lightweight]){
+        lightweight_check.prop('checked', true);
+    }
+
     let containers = actor_component_root[0].querySelectorAll('.actor_group');
     for (let i = 0; i < containers.length; i++) {
         SortableCreateActor(containers[i], true, OnAddAnimationSetting);
@@ -1041,6 +1211,7 @@ function SetupActorSettingUI() {
     });
     $('.actor_clipset').addClass('dragitem');
 }
+
 function SaveActorSetting() {
     const current_actor_structure = ActorStructure[ActorIndexForSetting];
     const actor_root = $('.actor_component[sequence="' + ActorIndexForSetting + '"]');
@@ -1073,8 +1244,8 @@ function SaveActorSetting() {
                     });
                 } else {
                     group_obj.clips.push({
-                    clip: clipElm.attr('name'),
-                    tree_path: clipElm.attr('tree_path')
+                        clip: clipElm.attr('name'),
+                        tree_path: clipElm.attr('tree_path')
                     });
                 }
             }
@@ -1091,12 +1262,95 @@ function SaveActorSetting() {
         new_actor_structure[ACT_ST_clipset] = new_clip_set;
     }
     new_actor_structure[ACT_ST_crop_path] = current_actor_structure[ACT_ST_crop_path];
+    new_actor_structure[ACT_ST_crop_dir_path] = current_actor_structure[ACT_ST_crop_dir_path];
+    new_actor_structure[ACT_ST_src_dir_path] = current_actor_structure[ACT_ST_src_dir_path];
     new_actor_structure[ACT_ST_version] = current_actor_structure[ACT_ST_version];
+    if(actor_root.find('.lightweight_check').prop('checked')){
+        new_actor_structure[ACT_ST_lightweight] = 1;
+    } else {
+        new_actor_structure[ACT_ST_lightweight] = 0;
+    }
+    new_actor_structure[ACT_ST_actor_bbox] = current_actor_structure[ACT_ST_actor_bbox];
 
-    SaveJson(new_actor_structure, ActorStructurePath[ActorIndexForSetting]);
     ActorStructure[ActorIndexForSetting] = new_actor_structure;
+    SaveJson(ActorStructure[ActorIndexForSetting], ActorStructurePath[ActorIndexForSetting]);
     UpdateGroupIndex();
     ActorSettingEnd();
+
+    updateMediaPathCallback = true;
+    UpdateMediaPathActorIndex = ActorIndexForSetting;
+    ThumbnailGenerator(ActorIndexForSetting, true);
+}
+
+function ThumbnailGenerator(actor_index, bbox=false){
+    const actorName = GetActorName(actor_index);
+    let script = makeEvalScript('GetActorStructureMediaPath', actorName);
+    csInterface.evalScript(script, function(actorStructPath) {
+        if(actorStructPath !== '') {
+            if(!LoadActorStructure(actorStructPath, actor_index, actorName)) return;
+       
+            script = makeEvalScript('GetActorStructure', actorName);
+            csInterface.evalScript(script, function(struct){
+                if(!struct) return;
+
+                const srcList = [];    
+                const structList = struct.split(',');
+                const length = structList.length / ACT_ELM_NUM;
+                for(let i = 0; i < length; i++) {
+                    srcList[structList[i * ACT_ELM_NUM + ACT_TREE_PATH]] = [structList[i * ACT_ELM_NUM + ACT_NAME], structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH]];
+                }
+                
+                let crop_dir = null;
+                const crop_list = [];
+                const actorStructure = ActorStructure[actor_index];
+                const cropPathList = actorStructure[ACT_ST_crop_path];
+                const cropDirPath = actorStructure[ACT_ST_crop_dir_path];
+                if(!bbox){
+                    for(key in cropPathList){
+                        const cropPath = cropDirPath + cropPathList[key].path;
+                        if(fs.existsSync(cropPath)){
+                            delete srcList[key];
+                            if(crop_dir === null){
+                                crop_dir = cropDirPath;
+                            }
+                        }
+                    }
+
+                    if(crop_dir == null){    
+                        crop_dir = window.cep.fs.showOpenDialogEx(false, true, 'サムネイルの保存先', null).data;
+                        if(crop_dir == '') return;
+                        crop_dir += '/';
+                        actorStructure[ACT_ST_crop_dir_path] = crop_dir;
+                    }
+
+                    for(key in srcList){
+                        let src_path = srcList[key][1];
+                        let lastIndex = src_path.lastIndexOf(".");
+                        let crop_path = srcList[key][0] + GetUUID() + src_path.substr(lastIndex);
+                        crop_list.push({tree_path:key, src:src_path, dst:crop_dir + crop_path});
+                        cropPathList[key].path = crop_path;
+                    }
+                } else {
+                    for(key in srcList){
+                        if(cropPathList[key] && !cropPathList[key].bbox){
+                            const src_path = srcList[key][1];
+                            const cropPath = cropDirPath + cropPathList[key].path;
+                            if(!fs.existsSync(cropPath)){
+                                const lastIndex = src_path.lastIndexOf(".");
+                                const crop_path = srcList[key][0] + GetUUID() + src_path.substr(lastIndex);
+                                cropPathList[key].path = crop_path;
+                            }
+                            crop_list.push({tree_path:key, src:src_path, dst:cropDirPath + cropPathList[key].path});
+                        }
+                    }
+                }
+                MakeThumbnail(crop_list);
+            });
+        } else {
+            alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
+            StartActorSetting();
+        };
+    });
 }
 
 function ActorSettingEnd(){
@@ -1169,9 +1423,58 @@ function AnimationSettingEnd() {
     IsAnimationEditing = false;
 }
 
-function ActorStructureVersionConvert(actor_structure) {
+let UpdateMediaPathActorIndex = 0;
+function UpdateMediaPath(){
+    const index = UpdateMediaPathActorIndex;
+    const actorName = GetActorName(index);
+    const script = makeEvalScript('GetActorStructureAndMediaPath', actorName);
+    csInterface.evalScript(script, function(result) {
+        result = result.split('\n');
+        const actorStructPath = result[0];
+        const struct = result[1];
+
+        if(!LoadActorStructure(actorStructPath, index, actorName)) return;
+
+        // Media pathの変更
+        const structList = struct.split(',');
+        const length = structList.length / ACT_ELM_NUM;
+        const lightweight = ActorStructure[index][ACT_ST_lightweight];
+        const source_dir = ActorStructure[index][ACT_ST_src_dir_path];
+        const crop_dir = ActorStructure[index][ACT_ST_crop_dir_path];
+        const crop_list = ActorStructure[index][ACT_ST_crop_path];
+        const change_key_list = [];
+        const change_src_list = [];
+        for(let i = 0; i < length; i++) {
+            const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
+            const current_src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+            let correct_src_path = '';
+            if(lightweight){
+                correct_src_path = crop_dir + crop_list[key].path;
+            } else {
+                correct_src_path = source_dir + crop_list[key].src;
+            }
+            if(crop_list[key] && correct_src_path !== current_src_path){
+                change_key_list.push(key);
+                change_src_list.push(correct_src_path);
+            }
+        }
+
+        if(change_key_list.length > 0){
+            BusyNotificationOpen('メディアパスを変更しています', change_key_list.length);
+            const script2 = makeEvalScript('ChangeMediaPathForLightweight', actorName, change_key_list.join('\\n'), change_src_list.join('\\n'));
+            csInterface.evalScript(script2, function() {
+                BusyNotificationClose();
+            });
+        }
+    });
+}
+
+function ActorStructureVersionConvert(actor_structure, actorName) {
     if(!actor_structure.version) {
         actor_structure = ActorStructureVersionConvert1(actor_structure);
+    }
+    if(actor_structure.version === 1) {
+        actor_structure = ActorStructureVersionConvert2(actor_structure);
     }
     return actor_structure;
 }
@@ -1192,6 +1495,27 @@ function ActorStructureVersionConvert1(version0_structure) {
     version1[ACT_ST_version] = 1;
     return version1;
 }
+function ActorStructureVersionConvert2(version1_structure) {
+    let version2 = {...version1_structure};
+    const crop_list = version2[ACT_ST_crop_path];
+    const new_crop_list = {};
+    
+    let crop_dir = null;
+    for(key in crop_list){
+        if(crop_dir === null){
+            crop_dir = path_js.dirname(crop_list[key]) + '/';
+        }
+        const new_crop = {path:path_js.basename(crop_list[key])};
+        new_crop_list[key] = new_crop;
+    }
+    version2[ACT_ST_lightweight] = 0;
+    version2[ACT_ST_crop_dir_path] = crop_dir;
+    version2[ACT_ST_crop_path] = new_crop_list;
+    version2[ACT_ST_src_dir_path] = '';
+
+    version2[ACT_ST_version] = 2;
+    return version2;
+}
 
 function UpdateGroupIndex() {
     const groupList = $('#actor_switcher .actor_parts_top');
@@ -1202,6 +1526,31 @@ function UpdateGroupIndex() {
             clips.eq(j).attr('group_index', groupList.length - 1 - i);
         }
     }
+}
+
+function GetActorName(index){
+    const target = $(".actor_sequence_link[sequence='" + index + "']");
+    return target.children('.actor_sequence_link_label').html();
+}
+
+function BusyNotificationOpen(text, max=null){
+    const BusyNotificationProgress = $('#busy_progress');
+    BusyNotificationProgress.val(0);
+    if(max !== null){
+        BusyNotificationProgress.attr('max', max);
+    }
+    $('#mainfunc').addClass('disable');
+    const notification = $('#busy_notification');
+    notification.addClass('uk-open');
+    notification.attr('style', 'display: block;');
+    const text_elm = $('#busy_text');
+    text_elm.html(text);
+}
+function BusyNotificationClose(){
+    $('#mainfunc').removeClass('disable');
+    const notification = $('#busy_notification');
+    notification.removeClass('uk-open');
+    notification.attr('style', '');
 }
 
 function ActorEditInitialize() {
@@ -1219,12 +1568,16 @@ function ActorEditInitialize() {
             $('#actor_setting_make_thumbnail').removeClass('events_disable');
             $('#actor_setting_delete_thumbnail').removeClass('events_disable');
             $('#actor_setting_delink').addClass('events_disable');
+            $('#actor_setting_convert_lightweight').addClass('events_disable');
         } else {
             $('#actor_setting_make_thumbnail').addClass('events_disable');
             $('#actor_setting_delete_thumbnail').addClass('events_disable');
+            
             if(isSetting){
+                $('#actor_setting_convert_lightweight').addClass('events_disable');
                 $('#actor_setting_delink').addClass('events_disable');
             } else {
+                $('#actor_setting_convert_lightweight').removeClass('events_disable');
                 $('#actor_setting_delink').removeClass('events_disable');
             }
         }
@@ -1279,63 +1632,7 @@ function ActorEditInitialize() {
 
     $('#actor_setting_make_thumbnail').on('mouseup', function(e) {
         if(e.which === 1) {
-            const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
-            const actorName = target.children('.actor_sequence_link_label').html();
-
-            let script = makeEvalScript('GetActorStructureMediaPath', actorName);
-            csInterface.evalScript(script, function(actorStructPath) {
-                if(actorStructPath !== '') {
-                    ActorStructure[ActorIndexForSetting] = LoadActorStructure(actorStructPath);
-                    if(!ActorStructure[ActorIndexForSetting]) return;
-
-                    script = makeEvalScript('GetActorStructure', actorName);
-                    csInterface.evalScript(script, function(struct){
-                        if(!struct) return;
-
-                        const srcList = [];    
-                        const structList = struct.split(',');
-                        const elmNum = 4;
-                        const length = structList.length / elmNum;
-                        for(let i = 0; i < length; i++) {
-                            srcList[structList[i * elmNum + 3]] = [structList[i * elmNum], structList[i * elmNum + 2]];
-                        }
-                        
-                        let crop_dir = null;
-                        const actorStructure = ActorStructure[ActorIndexForSetting];
-                        const cropPathList = actorStructure[ACT_ST_crop_path];
-                        for(key in cropPathList){
-                            if(fs.existsSync(cropPathList[key])){
-                                delete srcList[key];
-                                if(crop_dir === null){
-                                    crop_dir = path_js.dirname(cropPathList[key]) + '/';
-                                }
-                            }
-                        }
-                    
-                        if(crop_dir === null){    
-                            crop_dir = window.cep.fs.showOpenDialogEx(false, true, 'サムネイルの保存先', null).data;
-                            if(crop_dir == '') return;
-                            crop_dir += '/';
-                        }
-
-                        const crop_list = [];
-                        for(key in srcList){
-                            let src_path = srcList[key][1];
-                            let lastIndex = src_path.lastIndexOf(".");
-                            let crop_path = crop_dir + srcList[key][0] + GetUUID() + src_path.substr(lastIndex);
-                            crop_list.push({src:src_path, dst:crop_path});
-                            cropPathList[key] = crop_path;
-                        }
-
-                        startActorSettingCallback = false;
-                        MakeThumbnail(crop_list);
-                        SaveJson(ActorStructure[ActorIndexForSetting], actorStructPath);
-                    });
-                } else {
-                    alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
-                    StartActorSetting();
-                };
-            });
+            ThumbnailGenerator(ActorIndexForSetting);
         }
     });
     $('#actor_setting_delete_thumbnail').on('mouseup', function(e) {
@@ -1345,17 +1642,17 @@ function ActorEditInitialize() {
             let script = makeEvalScript('GetActorStructureMediaPath', actorName);
             csInterface.evalScript(script, function(actorStructPath) {
                 if(actorStructPath !== '') {
-                    ActorStructure[ActorIndexForSetting] = LoadActorStructure(actorStructPath);
-                    if(!ActorStructure[ActorIndexForSetting]) return;
-                    ActorStructurePath[ActorIndexForSetting] = actorStructPath;
+                    if(!LoadActorStructure(actorStructPath, ActorIndexForSetting, actorName)) return;
                     if(confirm('この変更は取り消せません。削除しますか？')){
                         const actorStructure = ActorStructure[ActorIndexForSetting];
                         if(actorStructure){
                             const saveCropPathList = actorStructure[ACT_ST_crop_path];
                             let count = 0;
+                            const cropDirPath = actorStructure[ACT_ST_crop_dir_path];
                             for(key in saveCropPathList){
-                                if(fs.existsSync(saveCropPathList[key])){
-                                    window.cep.fs.deleteFile(saveCropPathList[key]);
+                                const cropPath = cropDirPath + saveCropPathList[key].path;
+                                if(fs.existsSync(cropPath)){
+                                    window.cep.fs.deleteFile(cropPath);
                                     count++;
                                 }
                             }
@@ -1376,6 +1673,46 @@ function ActorEditInitialize() {
             actorDelink(target);
         }
     });
+    $('#actor_setting_convert_lightweight').on('mouseup', function(e) {
+        if(e.which === 1) {
+            const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
+            const actorName = target.children('.actor_sequence_link_label').html();
+            const lightweight = ActorStructure[ActorIndexForSetting][ACT_ST_lightweight];
+            const actor_bbox = ActorStructure[ActorIndexForSetting][ACT_ST_actor_bbox];
+            const crop_list = ActorStructure[ActorIndexForSetting][ACT_ST_crop_path];
+            const tree_path_list = [];
+            const bbox_list = [];
+            BusyNotificationOpen('シーケンスの変換中');
+            if(lightweight){
+                for(key in crop_list){
+                    tree_path_list.push(key);
+                    bbox_list.push(crop_list[key].bbox.join(','));
+                }
+                const script = makeEvalScript('ConvertLightweightSequence', actorName, ActorIndexForSetting, tree_path_list.join('\\n'), bbox_list.join('\\n'), actor_bbox[0], actor_bbox[1], 1);
+                csInterface.evalScript(script, BusyNotificationClose);
+            }else{
+                const image = new Image();
+                image.onload = function(){
+                    const width = image.width;
+                    const height = image.height;
+                    const bbox = [0, 0, width, height].join(',');
+                    for(key in crop_list){
+                        tree_path_list.push(key);
+                        bbox_list.push(bbox);
+                    }
+                    const script = makeEvalScript('ConvertLightweightSequence', actorName, ActorIndexForSetting, tree_path_list.join('\\n'), bbox_list.join('\\n'), actor_bbox[0], actor_bbox[1], 0);
+                    csInterface.evalScript(script, BusyNotificationClose);
+                };
+
+                let src_path = '';
+                for(key in crop_list){
+                    src_path = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path] + crop_list[key].src;
+                    break;
+                }
+                image.src = src_path;
+            }
+        }
+    });    
     $('#actor_setting_remove_parts_button').on('mouseup', function(e) {
         if(e.which === 1) {
             DeleteSelectedParts();
@@ -1383,7 +1720,7 @@ function ActorEditInitialize() {
     });
     $('#actor_setting_add_group_button').on('mouseup', function(e) {
         if(e.which === 1 && ContextmenuGroupSelectJQElm) {
-            const group = MakeGroupElement('New group', 0, [], null, CLIP_TYPE_None, '', true);
+            const group = MakeGroupElement('New group', 0, [], '', null, CLIP_TYPE_None, '', true);
             SortableCreateActor(group.find('.actor_group')[0], true, OnAddAnimationSetting);
             ActorPartsToSetting(group);
             ContextmenuGroupSelectJQElm.before(group);
@@ -1557,7 +1894,6 @@ function ActorEditInitialize() {
         }
     });
 
-    
     csInterface.addEventListener('bakeTextNotification', function(e){
         const data = e.data.split(',');
         const id = data[0];
@@ -1591,9 +1927,18 @@ function ActorEditInitialize() {
         }
         delete bakeProgressBarElms[id];
     });
-
-    // animationPreviewImgElm = $('#animation_preview_img');
-    // animationPreviewThumbRootElm = $('#animation_editor_thumbnav');
+    csInterface.addEventListener('progressValueNotification', function(e){
+        const data = e.data.split(',');
+        const id = data[0];
+        const value = data[1];
+        $(id).attr('value', value);
+    });
+    csInterface.addEventListener('progressMaxNotification', function(e){
+        const data = e.data.split(',');
+        const id = data[0];
+        const value = data[1];
+        $(id).attr('max', value);
+    });
 }
 
 function DeleteSelectedParts() {

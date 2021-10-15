@@ -44,8 +44,8 @@
 	<div id="busy_notification" uk-modal='esc-close:false; bg-close:false' class="uk-modal">
 		<div class="uk-modal-dialog uk-modal-body">
 			<button class="uk-modal-close-default" type="button" uk-close></button>
-			<div style="text-align:center">サムネイル用画像の処理中</div>
-			<progress id="busy_notification_progress" class="td_progress uk-progress" value="0" max="10"></progress>
+			<div id="busy_text" style="text-align:center"></div>
+			<progress id="busy_progress" class="td_progress uk-progress" value="0" max="10"></progress>
 		</div>
 	</div>
 
@@ -303,6 +303,7 @@
 						<li id="actor_setting_delink">リンク解除</li>
 						<li id="actor_setting_make_thumbnail">不足しているサムネイルの生成</li>
 						<li id="actor_setting_delete_thumbnail">サムネイルの削除</li>
+						<li id="actor_setting_convert_lightweight" uk-tooltip="リンク中のシーケンスを現在の軽量化モードに合わせて変換します">シーケンスの変換</li>
 					</ul>
 				</div>
 				<div id="parts_contextmenu" class="contextmenu">

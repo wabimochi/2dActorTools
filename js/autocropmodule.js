@@ -1,23 +1,16 @@
 "use strict";
 function autocrop(margin) {
-    const w = this.bitmap.width;
-    const h = this.bitmap.height;
-    const data = this.bitmap.data;
+    const rect = getCropSize(this, margin);
+    if(rect === null) return null;
+    const l = rect[0];
+    const t = rect[1];
+    const r = rect[2];
+    const b = rect[3];
+    const w = r - l + 1;
+    const h = b - t + 1;
 
-    let t = findTopSide(data, w, h);
-    if(t === h) return null;
-    t = t - margin;
-    let b = findBottomSide(data, w, h) + margin;
-    let l = findLeftSide(data, w, t, b) - margin;
-    let r = findRightSide(data, w, t, b) + margin;
-
-    l = Math.min(w - 1, Math.max(0, l));
-    r = Math.min(w - 1, Math.max(0, r));
-    t = Math.min(h - 1, Math.max(0, t));
-    b = Math.min(h - 1, Math.max(0, b));
-
-    this.crop(l, t, w - (w - r + l), h - (h - b + t));
-    return this;
+    this.crop(l, t, w, h);
+    return [l, t, w, h];
 };
 
 function getCropSize(obj, margin){
@@ -27,15 +20,15 @@ function getCropSize(obj, margin){
 
     let t = findTopSide(data, w, h);
     if(t === h) return null;
-    t = t - margin;
-    let b = findBottomSide(data, w, h) + margin;
-    let l = findLeftSide(data, w, t, b) - margin;
-    let r = findRightSide(data, w, t, b) + margin;
+    let b = findBottomSide(data, w, h);
+    let l = findLeftSide(data, w, t, b);
+    let r = findRightSide(data, w, t, b);
 
-    l = Math.min(w - 1, Math.max(0, l));
-    r = Math.min(w - 1, Math.max(0, r));
-    t = Math.min(h - 1, Math.max(0, t));
-    b = Math.min(h - 1, Math.max(0, b));
+    l = Math.min(w - 1, Math.max(0, l - margin));
+    r = Math.min(w - 1, Math.max(0, r + margin));
+    t = Math.min(h - 1, Math.max(0, t - margin));
+    b = Math.min(h - 1, Math.max(0, b + margin));
+
     return [l, t, r, b];
 }
 
