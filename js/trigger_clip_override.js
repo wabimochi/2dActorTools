@@ -104,7 +104,7 @@ function triggerOverriteClip_ExecuteButton() {
 }
 
 CustomInitialize['trigger_clip_custum_initialize'] = function () {
-    const category = ExtensionSettings['trigger_clip_override'];
+    const category = GetUIParams('trigger_clip_override');
     if(category) {
         const trackIndex = category['trigger_clip_override_target_track'];
         if(trackIndex) { 

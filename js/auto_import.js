@@ -305,7 +305,7 @@ function SaveAutoImportSettings() {
 
 // AutoImportInitialize
 CustomInitialize['auto_import_custum_initialize'] = function () {
-    const category = ExtensionSettings['auto_import'];
+    const category = GetUIParams('auto_import');
     if(category) {
         const settingRoot = category['auto_import_settings_id'];
         for(index in settingRoot) {

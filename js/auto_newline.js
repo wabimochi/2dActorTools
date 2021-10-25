@@ -211,7 +211,7 @@ function tokenInsertNewLine(tokens, maxCharactorNum, asciiIsHalf) {
 
 // AutoNewLineInitialize
 CustomInitialize['auto_newline_custum_initialize'] = function () {
-    const category = ExtensionSettings['autonewline'];
+    const category = GetUIParams('autonewline');
     const normal_marker_parent = $('#auto_newline_normal_marker_color');
     const warning_marker_parent = $('#auto_newline_warning_marker_color');
     if(category) {

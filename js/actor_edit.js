@@ -33,7 +33,9 @@ const bakeProgressBarElms = {};
 $(document).on('click', '.actor_sequence_link.unlink', function() {
     if($('#actor_switcher').hasClass('setting')) return;
     const index = $(this).attr('sequence');
-    const actorName = $(this).children('.actor_sequence_link_label').html();
+    const actorNameElm = $(this).children('.actor_sequence_link_label');
+    const actorName = actorNameElm.html();
+    const imported = actorNameElm.attr('imported');
     const actor_sequence_link = $(this);
     const actor_sequence_link_icon = $(this).find('.actor_sequence_link_icon');
     $('.actor_sequence_link').removeClass('enable');
@@ -43,16 +45,8 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
     
     const script = makeEvalScript('GetActorStructureMediaPath', actorName);
     csInterface.evalScript(script, function(actorStructPath) {
-        if(actorStructPath === '') {
-            alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
-
-            ActorIndexForSetting = index;
-            StartActorSetting();
-        } else {
-            if(!LoadActorStructure(actorStructPath, index, actorName)) return;
-
-            const script2 = makeEvalScript('SetLinkSequence', index);
-            csInterface.evalScript(script2, function(result) {
+        const _setLink = function(){
+            csInterface.evalScript(makeEvalScript('SetLinkSequence', index), function(result) {
                 if(result === '0') {
                     actor_sequence_link.addClass('enable');
                     actor_sequence_link.removeClass('unlink');
@@ -109,6 +103,20 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                     }
                 }
             });
+        }
+
+        if(actorStructPath === '') {
+            if(!imported){
+                ImportActor(actorName, index, _setLink);
+            }else{
+                alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
+                ActorIndexForSetting = index;
+                StartActorSetting();
+            }
+        } else {
+            if(!LoadActorStructure(actorStructPath, index, actorName)) return;
+            SetActorSettingPath(actorName, actorStructPath);
+            _setLink();
         }
     });
 });
@@ -228,7 +236,21 @@ function actorSelectBoxUpdate() {
     actor_switcher.empty();
 
     csInterface.evalScript('$._PPP_.GetActorBinName()', function(names) {
-        const nameList = names.split(',');
+        const actorHistory = GetActorsHistory();
+        names = names.split(',');
+
+        for(let i = 0; i < names.length; i++){
+            while(true){
+                const index = actorHistory.indexOf(names[i]);
+                if(index > -1){
+                    delete actorHistory[index];
+                }else{
+                    break;
+                }
+            }
+        }
+        const nameList = names.concat(actorHistory).filter(Boolean);
+
         for(let i = 0; i < nameList.length; i++) {
             const act_switch = $('<li>', {'class':'', sequence:i});
             const actor_component = $('<div>', {'class':'actor_component', sequence:i});
@@ -248,8 +270,8 @@ function actorSelectBoxUpdate() {
             actor_switcher.append(act_switch);
 
             const li = $('<li>', {'class': 'actor_sequence_link uk-animation-fade uk-width-auto unlink', sequence : i});
-            const div_icon = $('<div>', {'class':'actor_sequence_link_icon', 'uk-icon':'ban'});
-            const div_label = $('<div>', {'class':'actor_sequence_link_label'});
+            const div_icon = $('<div>', {'class':'actor_sequence_link_icon', 'uk-icon':i < names.length ? 'ban' : ''});
+            const div_label = $('<div>', {'class':'actor_sequence_link_label', 'imported':i < names.length ? '1' : ''});
                 div_label.html(nameList[i]);
             li.append(div_icon);
             li.append(div_label);
@@ -258,7 +280,7 @@ function actorSelectBoxUpdate() {
     });
 }
 
-function actorSettingStart(actorName, index, force_initialize) {
+function actorSettingStart(actorName, index) {
     const actorObj = ActorStructure[index];
     csInterface.evalScript('$._PPP_.GetActorStructure("'+ actorName + '")', function(struct) {
         if(struct) {
@@ -278,8 +300,6 @@ function actorSettingStart(actorName, index, force_initialize) {
                      structList[i * ACT_ELM_NUM + ACT_TREE_PATH], 
                      cropDirPath + actorObj.crop_path[structList[i * ACT_ELM_NUM + ACT_TREE_PATH]].path);
             }
-        } else {
-
         }
     });
 }
@@ -982,8 +1002,7 @@ function _startActorSetting() {
 }
 
 function StartActorSetting() {
-    const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
-    const actorName = target.children('.actor_sequence_link_label').html();
+    const actorName = GetActorName(ActorIndexForSetting);
     StartSettingActorName = actorName;
     const script = makeEvalScript('GetActorStructureAndMediaPath', actorName);
     csInterface.evalScript(script, function(result) {
@@ -1003,6 +1022,7 @@ function StartActorSetting() {
                 
                 save_structure_file_path = window.cep.fs.showSaveDialogEx('構成ファイルの保存先', '', ['txt'], actorName + '.txt').data;
                 if(!save_structure_file_path) return;
+                save_structure_file_path = save_structure_file_path.replace(/\\/g, '/');
                 ActorStructurePath[ActorIndexForSetting] = save_structure_file_path;
 
                 let crop_dir = window.cep.fs.showOpenDialogEx(false, true, 'サムネイルの保存先', null).data;
@@ -1065,6 +1085,8 @@ function StartActorSetting() {
                 MakeThumbnail(crop_list);
 
                 ActorStructure[ActorIndexForSetting] = new_actor_structure;
+                SetActorSettingPath(actorName, ActorStructurePath[ActorIndexForSetting]);
+
                 csInterface.evalScript('$._PPP_.ImportActorStructureFile("' + save_structure_file_path.replace(/\\/g, '/') + '","'+ actorName + '")', function(result) {
                     if(!result) {
                         alert('構成ファイルのインポートに失敗しました');
@@ -1077,6 +1099,7 @@ function StartActorSetting() {
                 });
             } 
         } else {
+            SetActorSettingPath(actorName, actorStructPath);
             if(LoadActorStructure(actorStructPath, ActorIndexForSetting, actorName)){
                 const structList = struct.split(',');
                 const length = structList.length / ACT_ELM_NUM;
@@ -1490,7 +1513,7 @@ function ActorStructureVersionConvert1(version0_structure) {
             delete clips[j].src_path;
         }
     }
-    delete version1.actor[version1.actor.length - 1];
+    version1.actor.pop();
     version1[ACT_ST_crop_path] = crop_path;
     version1[ACT_ST_version] = 1;
     return version1;
@@ -1533,6 +1556,11 @@ function GetActorName(index){
     return target.children('.actor_sequence_link_label').html();
 }
 
+function IsActorImported(index){
+    const target = $(".actor_sequence_link[sequence='" + index + "']");
+    return target.children('.actor_sequence_link_label').attr('imported');
+}
+
 function BusyNotificationOpen(text, max=null){
     const BusyNotificationProgress = $('#busy_progress');
     BusyNotificationProgress.val(0);
@@ -1553,6 +1581,36 @@ function BusyNotificationClose(){
     notification.attr('style', '');
 }
 
+function ImportActor(actorName, index, callback){
+    const actorStructPath = GetActorSettingPath(actorName);
+    if(!LoadActorStructure(actorStructPath, index, actorName)) return;
+
+    BusyNotificationOpen('キャラクターのクリップをインポートしています');
+    const isLightweight = ActorStructure[index][ACT_ST_lightweight];
+    const crop_path = ActorStructure[index][ACT_ST_crop_path];
+    const src_dir = ActorStructure[index][ACT_ST_src_dir_path];
+    const crop_dir = ActorStructure[index][ACT_ST_crop_dir_path];
+    const importPathList = [];
+    const treePathLiist = [];
+    for(key in crop_path){
+        treePathLiist.push(key);
+        if(isLightweight){
+            importPathList.push(crop_dir + crop_path[key].path);
+        }else{
+            importPathList.push(src_dir + crop_path[key].src);
+        }
+    }
+    const script = makeEvalScript('ImportActor', actorName, actorStructPath, treePathLiist.join('\\n'), importPathList.join('\\n'));
+    csInterface.evalScript(script, function (result){
+        BusyNotificationClose();
+        const target = $(".actor_sequence_link[sequence='" + index + "']");
+        target.children('.actor_sequence_link_label').attr('imported', '1');
+        if(callback){
+            callback();
+        }
+    });
+}
+
 function ActorEditInitialize() {
     let contextmenus = $('.contextmenu');
     $(document).on('contextmenu', '.actor_sequence_link', function (e) {
@@ -1562,10 +1620,15 @@ function ActorEditInitialize() {
         actor_contextmenu.css('top', e.pageY-window.scrollY + 'px');
         actor_contextmenu.addClass('contextmenu_show');
         ActorIndexForSetting = Number($(this).attr('sequence'));
+        const imported = IsActorImported(ActorIndexForSetting);
 
         const isSetting = $('#actor_switcher').hasClass('setting');
         if($(this).hasClass('unlink') && !isSetting){
-            $('#actor_setting_make_thumbnail').removeClass('events_disable');
+            if(imported){
+                $('#actor_setting_make_thumbnail').removeClass('events_disable');
+            } else {
+                $('#actor_setting_make_thumbnail').addClass('events_disable');
+            }
             $('#actor_setting_delete_thumbnail').removeClass('events_disable');
             $('#actor_setting_delink').addClass('events_disable');
             $('#actor_setting_convert_lightweight').addClass('events_disable');
@@ -1582,18 +1645,12 @@ function ActorEditInitialize() {
             }
         }
     });
-    const anim_clip = $('#actor_setting_add_animation_clip');
     $(document).on('contextmenu', '.actor_thumb_parent, .actor_clipset', function (e) {
         contextmenus.removeClass('contextmenu_show');
         let parts_contextmenu = $('#parts_contextmenu');
         parts_contextmenu.css('left', e.pageX-window.scrollX + 'px');
         parts_contextmenu.css('top', e.pageY-window.scrollY + 'px');
         if($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0) {
-            if($(this).hasClass('actor_clipset')) {
-                anim_clip.attr('hidden', '');
-            } else {
-                anim_clip.removeAttr('hidden');
-            }
             parts_contextmenu.addClass('contextmenu_show');
             ContextmenuPartsSelectJQElm = $(this);
         }
@@ -1629,6 +1686,16 @@ function ActorEditInitialize() {
             }
         }
     });
+    $('#actor_setting_start_button').on('mouseup', function(e) {
+        if(e.which === 1) {
+            if(IsActorImported(ActorIndexForSetting)){
+                StartActorSetting();
+            } else {
+                const actorName = GetActorName(ActorIndexForSetting);
+                ImportActor(actorName, ActorIndexForSetting, StartActorSetting);
+            }
+        }
+    });
 
     $('#actor_setting_make_thumbnail').on('mouseup', function(e) {
         if(e.which === 1) {
@@ -1638,10 +1705,15 @@ function ActorEditInitialize() {
     $('#actor_setting_delete_thumbnail').on('mouseup', function(e) {
         if(e.which === 1) {
             const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
-            const actorName = target.children('.actor_sequence_link_label').html();
+            const actorNameElm = target.children('.actor_sequence_link_label');
+            const actorName = actorNameElm.html();
+            const imported = actorNameElm.attr('imported');
             let script = makeEvalScript('GetActorStructureMediaPath', actorName);
             csInterface.evalScript(script, function(actorStructPath) {
-                if(actorStructPath !== '') {
+                if(actorStructPath !== '' || !imported) {
+                    if(!imported){
+                        actorStructPath = GetActorSettingPath(actorName);
+                    }
                     if(!LoadActorStructure(actorStructPath, ActorIndexForSetting, actorName)) return;
                     if(confirm('この変更は取り消せません。削除しますか？')){
                         const actorStructure = ActorStructure[ActorIndexForSetting];
@@ -1729,10 +1801,6 @@ function ActorEditInitialize() {
     $('#actor_setting_remove_group_button').on('mouseup', function(e) {
         if(e.which === 1 && ContextmenuGroupSelectJQElm) {
             ContextmenuGroupSelectJQElm.remove();
-        }
-    });
-    $('#actor_setting_add_animation_clip').on('mouseup', function(e) {
-        if(e.which === 1) {
         }
     });
     $('#actor_setting_add_animation_clip_on_group').on('mouseup', function(e) {
@@ -1950,5 +2018,5 @@ function DeleteSelectedParts() {
 }
 
 CustomInitialize['actor_edit_initialize'] = function () {
-    actorSelectBoxUpdate();
+    // actorSelectBoxUpdate();
 }

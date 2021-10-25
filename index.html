@@ -23,7 +23,7 @@
 	<link id="tdactorstyle" href="css/tdActor.css" rel="stylesheet" type="text/css">
 </head>
 
-<body onContextmenu="return false;" onLoad="onLoaded();loadSetup();mogrtUpdate();actorSelectBoxUpdate();LoadSettings()" spellcheck="false">
+<body onContextmenu="return false;" onLoad="onLoaded();loadSetup();mogrtUpdate();LoadSettings()" spellcheck="false">
 	<div id="extension_version"></div>
 	<div class='uk-flex-center'>
 		<a href="javascript:history.go(0)" uk-icon="icon: refresh" class='uk-margin-remove'></a>
@@ -299,7 +299,7 @@
 				</div>
 				<div id="actor_contextmenu" class="contextmenu">
 					<ul>
-						<li id="actor_setting_start_button" onClick="StartActorSetting()">設定</li>
+						<li id="actor_setting_start_button">設定</li>
 						<li id="actor_setting_delink">リンク解除</li>
 						<li id="actor_setting_make_thumbnail">不足しているサムネイルの生成</li>
 						<li id="actor_setting_delete_thumbnail">サムネイルの削除</li>
@@ -309,7 +309,6 @@
 				<div id="parts_contextmenu" class="contextmenu">
 					<ul>
 						<li id="actor_setting_remove_parts_button">削除</li>
-						<li id="actor_setting_add_animation_clip_button" hidden>アニメーションクリップの追加</li>
 					</ul>
 				</div>
 				<div id="group_contextmenu" class="contextmenu">

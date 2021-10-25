@@ -107,7 +107,7 @@ function SubtitleInitialize() {
 }
 
 CustomInitialize['insert_subtitle_initialize'] = function () {
-    const category = ExtensionSettings['insert_subtitle'];
+    const category = GetUIParams('insert_subtitle');
     if(category) {
         const psd_import_bin = category['psd_import_bin'];
         if(psd_import_bin) {

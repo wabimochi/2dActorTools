@@ -23,8 +23,6 @@ const csInterface = new CSInterface();
 
 let audioTrackSelectBox = [];
 let videoTrackSelectBox = [];
-let ExtensionSettings = {};
-let ExtensionSettingsFilePath = null;
 let SetectedProjectItemTreePath = '';
 
 function GetUUID() {
