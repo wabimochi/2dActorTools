@@ -23,7 +23,7 @@
 	<link id="tdactorstyle" href="css/tdActor.css" rel="stylesheet" type="text/css">
 </head>
 
-<body onContextmenu="return false;" onLoad="onLoaded();loadSetup();mogrtUpdate();LoadSettings()" spellcheck="false">
+<body onContextmenu="return false;" onLoad="onLoaded();loadSetup();LoadSettings()" spellcheck="false">
 	<div id="extension_version"></div>
 	<div class='uk-flex-center'>
 		<a href="javascript:history.go(0)" uk-icon="icon: refresh" class='uk-margin-remove'></a>
@@ -628,7 +628,6 @@
 			$(e).append(SVG_MARKER_ICON);
 		});
 
-		SubtitleInitialize();
 		ActorEditInitialize();
 
 		$('#extension_version').html('v' + getExtensionVersion());

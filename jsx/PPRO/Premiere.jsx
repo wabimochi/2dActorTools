@@ -487,15 +487,11 @@ $._PPP_={
 	ImportMOGRTFile: function(pathList) {
 		var dummyClip = getDummyClip()
 		var seq = app.project.createNewSequenceFromClips('importmogrt', [dummyClip], ActorBinItem);
-		var path = pathList.split(',');			
+		var path = pathList.split('\n');
 		for(var i = 0; i < path.length; i++) {
 			seq.importMGT(path[i], 0, 0, 0);
 		}
 		app.project.deleteSequence(seq);
-
-		eventObj.type = 'completeImportMogrt';
-		eventObj.data = '';
-		eventObj.dispatch();
 	},
 
 	GetActorStructureMediaPath: function(actorName) {

@@ -10,15 +10,30 @@ $('#subtitle_replace_flag').on('change', function() {
 function mogrtUpdate() {
     let select_mogrt = document.getElementById('select_mogrt');
     csInterface.evalScript('$._PPP_.GetMGTClipName()', function(names) {
-        var nameList = names.split(',');
+        const mogrtHistory = GetMogrtHistory();
+        names = names.split(',');
+        for(let i = 0; i < names.length; i++){
+            while(true){
+                const index = mogrtHistory.indexOf(names[i]);
+                if(index > -1){
+                    delete mogrtHistory[index];
+                }else{
+                    break;
+                }
+            }
+        }
+        const nameList = names.concat(mogrtHistory).filter(Boolean);
+
         for(let i = 0; i < nameList.length; i++){
             if(i < select_mogrt.childNodes.length){
                 select_mogrt.childNodes[i].innerHTML = nameList[i];
-                select_mogrt.childNodes[i].value =  nameList[i];
+                select_mogrt.childNodes[i].value = nameList[i];
+                select_mogrt.childNodes[i].setAttribute('imported', i < names.length ? '1' : '');
             } else {
                 let option = document.createElement('option');
                 option.setAttribute('value', nameList[i]);
                 option.innerHTML = nameList[i];
+                option.setAttribute('imported', i < names.length ? '1' : '');
                 select_mogrt.appendChild(option);
             }
         }
@@ -31,7 +46,12 @@ function mogrtUpdate() {
 function importMGT() {
     const mogrtPathList = window.cep.fs.showOpenDialog(true, false, 'モーショングラフィックステンプレート', '', ['.mogrt']).data;
     if(mogrtPathList != '') {
-        csInterface.evalScript('$._PPP_.ImportMOGRTFile("' + mogrtPathList + '")');
+        for(let i = 0; i < mogrtPathList.length; i++){
+            let name = path_js.basename(mogrtPathList[i]);
+            name = name.substr(0, name.lastIndexOf('.')) || name;
+            SetMogrtPath(name, mogrtPathList[i]);
+        }
+        csInterface.evalScript(makeEvalScript('ImportMOGRTFile', mogrtPathList.join('\\n')), mogrtUpdate);
     }
 }
 
@@ -48,8 +68,17 @@ function insertSubtitleFromTextarea() {
         }
     }
     const replaceAfter = $('#subtitle_replace_after').val();
-    csInterface.evalScript('$._PPP_.InsertSubtitle("' + mogrt.value + '","'
-    + text.value.slice(text.value.indexOf(presetTag) + 1).replace(/\//g, '').replace(newLineReg, '/').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter) + '")');
+    const script = makeEvalScript('InsertSubtitle', mogrt.value, 
+        text.value.slice(text.value.indexOf(presetTag) + 1).replace(/\//g, '').replace(newLineReg, '/').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
+    if(isMogrtImported(mogrt.value)){
+        csInterface.evalScript(script);
+    } else {
+        const importPath = GetMogrtPath(mogrt.value);
+        csInterface.evalScript(makeEvalScript('ImportMOGRTFile', importPath), function(){
+            mogrtUpdate();
+            csInterface.evalScript(script);
+        });
+    }
 }
 
 function insertSubtitleFromTextFile() {
@@ -85,8 +114,17 @@ function insertSubtitleFromTextFile() {
                 textList.push(mediaPathList[i].slice(lastDirSepIndex, mediaPathList[i].lastIndexOf('.')).replace(/\//g, ''));
             }
         }
-        var mogrt = document.getElementById("select_mogrt");
-        csInterface.evalScript('$._PPP_.InsertSubtitle("' + mogrt.value + '","' + textList.join('/') + '")');
+        const mogrt = document.getElementById("select_mogrt");
+        const script = makeEvalScript('InsertSubtitle', mogrt.value, textList.join('/'));
+        if(isMogrtImported(mogrt.value)){
+            csInterface.evalScript(script);
+        } else {
+            const importPath = GetMogrtPath(mogrt.value);
+            csInterface.evalScript(makeEvalScript('ImportMOGRTFile', importPath), function(){
+                mogrtUpdate();
+                csInterface.evalScript(script);
+            });
+        }
     });	
 }
 
@@ -100,10 +138,8 @@ function insertSubtitleFromPSD() {
     }
 }
 
-function SubtitleInitialize() {
-    csInterface.addEventListener('completeImportMogrt', function() {
-        mogrtUpdate();
-    });
+function isMogrtImported(value){
+    return $(`#select_mogrt [value=${value}]`).attr('imported');
 }
 
 CustomInitialize['insert_subtitle_initialize'] = function () {

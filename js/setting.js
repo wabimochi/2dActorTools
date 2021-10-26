@@ -1,13 +1,25 @@
 const E_SETTING_version = 'version';
 const E_SETTING_ui_params = 'uiparams';
 const E_SETTING_actors = 'actors';
+const E_SETTING_mogrts = 'mogrts';
 
 let ExtensionSettings = {};
 let ExtensionSettingsFilePath = null;
 let loadSettingsTimeoutId = null;
 let retryLoadingCount = 0;
 
-function SaveSettings() {
+function SaveSettingsTimeout() {
+    if(settingSaveTimeoutHandle !== null) {
+        clearTimeout(settingSaveTimeoutHandle);
+        settingSaveTimeoutHandle = null;
+    }
+    settingSaveTimeoutHandle = null;
+    if(ExtensionSettingsFilePath) {
+        settingSaveTimeoutHandle = setTimeout(SaveSettings, 3000);
+    }
+}
+
+function SaveSettings(){
     settingSaveTimeoutHandle = null;
     if(ExtensionSettingsFilePath) {
         return SaveJson(ExtensionSettings, ExtensionSettingsFilePath);
@@ -40,6 +52,7 @@ function _LoadSettings() {
             $('#setting_file_not_exist_icon').css('display','inherit');
         }
         actorSelectBoxUpdate();
+        mogrtUpdate();
     });
 }
 
@@ -58,6 +71,7 @@ function _ExtensionSettingsVersionConvert1(settings){
     }
     new_settings[E_SETTING_version] = 1;
     new_settings[E_SETTING_actors] = {};
+    new_settings[E_SETTING_mogrts] = {};
     return new_settings;
 }
 
@@ -130,18 +144,13 @@ function SaveSettingCheckFromElement(jq_checkbox) {
 
 let settingSaveTimeoutHandle = null;
 function SettingUpdate(category, id, value) {
-    if(settingSaveTimeoutHandle !== null) {
-        clearTimeout(settingSaveTimeoutHandle);
-        settingSaveTimeoutHandle = null;
-    }
-    const ui_params = ExtensionSettings[E_SETTING_ui_params];
-    
+    const ui_params = ExtensionSettings[E_SETTING_ui_params];    
     if(!ui_params[category]) {
         ui_params[category] = {};
     }
     if(ui_params[category][id] !== value){
         ui_params[category][id] = value;
-        settingSaveTimeoutHandle = setTimeout(SaveSettings, 3000);
+        SaveSettingsTimeout();
     }
 }
 
@@ -157,6 +166,14 @@ function GetActorsHistory(){
     }
     return names;
 }
+function GetMogrtHistory(){
+    const names = [];
+    const mogrts = ExtensionSettings[E_SETTING_mogrts];
+    for(name in mogrts){
+        names.push(name);
+    }
+    return names;
+}
 
 function GetActorSettingPath(actorName){
     let path = '';
@@ -166,10 +183,25 @@ function GetActorSettingPath(actorName){
     return path;
 }
 
+function GetMogrtPath(name){
+    let path = '';
+    if(ExtensionSettings[E_SETTING_mogrts][name]){
+        path = ExtensionSettings[E_SETTING_mogrts][name];
+    }
+    return path;
+}
+
 function SetActorSettingPath(actorName, settingFilePath){
     if(!ExtensionSettings[E_SETTING_actors][actorName] || ExtensionSettings[E_SETTING_actors][actorName] !== settingFilePath){
         ExtensionSettings[E_SETTING_actors][actorName] = settingFilePath;
-        SaveSettings();
+        SaveSettingsTimeout();
+    }
+}
+
+function SetMogrtPath(name, path){
+    if(!ExtensionSettings[E_SETTING_mogrts][name] || ExtensionSettings[E_SETTING_mogrts][name] !== path){
+        ExtensionSettings[E_SETTING_mogrts][name] = path;
+        SaveSettingsTimeout();
     }
 }
 
