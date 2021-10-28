@@ -57,49 +57,69 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
 
                     SetupActorComponent(index, actorName);
                 } else {
-                    var errormsg = 'Error : ';
+                    let errormsg = '';
+                    let elm = null;
                     switch(result){
                         case '1':
                             errormsg += 'アクティブシーケンスがありません';
                             break;
                         case '2':
-                            errormsg += 'クリップが選択されていません';
                             break;
                         case '3':
-                            errormsg += '複数のシーケンスを選択してます';
+                            errormsg += '複数のシーケンスを選択しています';
+                            elm = $('<div>', {class:'error_info_text', text:'Altキーを押しながら選択すると、リンクされたシーケンスでも一つずつ選択できます。'});
                             break;
                         case '4':
                             errormsg += 'シーケンス以外のクリップを選択しています';
+                            const extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
+                            elm = $('<div>', {style:''});
+                            elm.append($('<div>', {class:'error_info_text', text:'キャラクターのシーケンスがピンク色になっていませんか？'}));
+                            elm.append($('<img>', {src:extPath + '/resource/info1-1.png'}));
+                            elm.append($('<div>', {class:'error_info_text', text:'シーケンスは通常緑色になります。左上のアイコンをオンにしてから再度メインのシーケンスに乗せてみてください。'}));
+                            elm.append($('<img>', {src:extPath + '/resource/info1-2.png'}));
                             break;
                         default:
                             errormsg += 'Unknown';
                             break;
                     }
                     if(result !== '2') {
-                        alert(errormsg);
+                        ErrorNotificationOpen(errormsg, elm);
                     } else {
-                        if(!confirm(errormsg + '\nシーケンスを作成しますか？')){
-                            return false;
-                        } else {
-                            let treePath = '';
-                            for(let i = 0; i < ActorStructure[index].actor.length; i++) {
-                                let clips = ActorStructure[index].actor[i].clips;
-                                for(let j = 0; j < clips.length; j++){
-                                    treePath = clips[j].tree_path;
-                                    i = ActorStructure[index].actor.length;
-                                    break;
-                                }
-                            }
-                            let width = 0;
-                            let height = 0;
-                            if(ActorStructure[index][ACT_ST_lightweight]){
-                                const actor_bbox = ActorStructure[index][ACT_ST_actor_bbox];
-                                width = actor_bbox[2];
-                                height = actor_bbox[3];
-                            }
-                            const script3 = makeEvalScript('CreateActorSequence', actorName, treePath, width, height);
-                            csInterface.evalScript(script3);
+                        function _swapButton(parent) {
+                            const button = parent.children();
+                            button.next().after(button);
+                            button.css('margin-right','10px');
                         }
+                        const conf = UIkit.modal.confirm('クリップが選択されていません。シーケンスを作成しますか？', {labels: {cancel: 'キャンセル', ok: 'OK'}});
+                        _swapButton($(conf.dialog.$el).find('.uk-modal-footer'));
+                        conf.then(function() {
+                            const prompt = UIkit.modal.prompt('作成するシーケンス名', actorName, {labels: {cancel: 'キャンセル', ok: 'OK'}});
+                            _swapButton($(prompt.dialog.$el).find('.uk-modal-footer'));
+                            $(prompt.dialog.$el).find('input').addClass('uk-light tdinput');
+                            prompt.then(function (seqName) {
+                                if(seqName==null) return;
+
+                                let treePath = '';
+                                for(let i = 0; i < ActorStructure[index].actor.length; i++) {
+                                    let clips = ActorStructure[index].actor[i].clips;
+                                    for(let j = 0; j < clips.length; j++){
+                                        treePath = clips[j].tree_path;
+                                        i = ActorStructure[index].actor.length;
+                                        break;
+                                    }
+                                }
+                                let width = 0;
+                                let height = 0;
+                                if(ActorStructure[index][ACT_ST_lightweight]){
+                                    const actor_bbox = ActorStructure[index][ACT_ST_actor_bbox];
+                                    width = actor_bbox[2];
+                                    height = actor_bbox[3];
+                                }
+
+                                const script3 = makeEvalScript('CreateActorSequence', actorName, seqName, treePath, width, height);
+                                csInterface.evalScript(script3);
+                            });
+                        }, function () {});
                     }
                 }
             });
@@ -1561,16 +1581,15 @@ function IsActorImported(index){
     return target.children('.actor_sequence_link_label').attr('imported');
 }
 
-function BusyNotificationOpen(text, max=null){
+function BusyNotificationOpen(text, progress_max=null){
     const BusyNotificationProgress = $('#busy_progress');
     BusyNotificationProgress.val(0);
-    if(max !== null){
-        BusyNotificationProgress.attr('max', max);
+    if(progress_max !== null){
+        BusyNotificationProgress.attr('max', progress_max);
     }
     $('#mainfunc').addClass('disable');
     const notification = $('#busy_notification');
-    notification.addClass('uk-open');
-    notification.attr('style', 'display: block;');
+    UIkit.modal(notification).show();
     const text_elm = $('#busy_text');
     text_elm.html(text);
 }
@@ -1579,6 +1598,24 @@ function BusyNotificationClose(){
     const notification = $('#busy_notification');
     notification.removeClass('uk-open');
     notification.attr('style', '');
+}
+
+function ErrorNotificationOpen(text, help_content=null){
+    const text_elm = $('#error_text');
+    text_elm.html(text);
+    const help_elm = $('#error_notification_help');
+    const label = $('#error_help_label');
+    help_elm.empty();
+    if(help_content !== null){
+        label.removeAttr('hidden');
+        help_elm.append(help_content);
+    } else {
+        label.attr('hidden', '');
+    }
+    UIkit.modal($('#error_notification')).show();
+}
+function ErrorNotificationClose(){
+    UIkit.modal($('#error_notification')).hide();
 }
 
 function ImportActor(actorName, index, callback){

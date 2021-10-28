@@ -689,24 +689,21 @@ $._PPP_={
 		}
 	},
 
-	CreateActorSequence: function(actorName, baseClipTreePath, width, height) {
-		var seqName	= prompt('Name of sequence?', actorName, 'Sequence Naming Prompt');
-		if(seqName !== 'null') {
-			var clip = getActorClipWithTreePath(actorName, baseClipTreePath);
-			var parent = null;
-			if(projectSelectionItem !== null){
-				parent = searchItemWithTreePath(projectSelectionItem, ProjectItemType.BIN);
-			}
-			var seq = app.project.createNewSequenceFromClips(seqName, [clip], parent);
-			seq.close();
-			width = Number(width);
-			height = Number(height);
-			if(width > 0 && height > 0){
-				var settings = seq.getSettings();
-				settings.videoFrameWidth = width;
-				settings.videoFrameHeight = height;
-				seq.setSettings(settings);
-			}
+	CreateActorSequence: function(actorName, seqName, baseClipTreePath, width, height) {
+		var clip = getActorClipWithTreePath(actorName, baseClipTreePath);
+		var parent = null;
+		if(projectSelectionItem !== null){
+			parent = searchItemWithTreePath(projectSelectionItem, ProjectItemType.BIN);
+		}
+		var seq = app.project.createNewSequenceFromClips(seqName, [clip], parent);
+		seq.close();
+		width = Number(width);
+		height = Number(height);
+		if(width > 0 && height > 0){
+			var settings = seq.getSettings();
+			settings.videoFrameWidth = width;
+			settings.videoFrameHeight = height;
+			seq.setSettings(settings);
 		}
 	},
 
