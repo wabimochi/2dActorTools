@@ -315,11 +315,13 @@ function actorSettingStart(actorName, index) {
                     prevGroup = AddPartsBoxGroup(currentGroupName);
                     prevGroupName = currentGroupName;
                 }
+                if(actorObj.crop_path[structList[i * ACT_ELM_NUM + ACT_TREE_PATH]]){
                 AddActorClip(prevGroup,
                      structList[i * ACT_ELM_NUM + ACT_NAME], 
                      structList[i * ACT_ELM_NUM + ACT_TREE_PATH], 
                      cropDirPath + actorObj.crop_path[structList[i * ACT_ELM_NUM + ACT_TREE_PATH]].path);
             }
+        }
         }
     });
 }
@@ -574,6 +576,7 @@ function MakeGroupElement(group_name, group_index, clips, crop_dir, crop_path_li
 
     const ul = $('<ul>', {'class':'uk-flex actor_group'});
     for(let j = 0; j < clips.length; j++){
+        if(!crop_path_list[clips[j].tree_path]) continue;
         let type = clips[j].type ? clips[j].type : CLIP_TYPE_None;
         let anim_clips = clips[j].anim_clips ? clips[j].anim_clips : '';
         let frame = 0;
@@ -787,8 +790,32 @@ function cropImageCallback(){
             updateMediaPathTimeoutId = setTimeout(UpdateMediaPath, 300);
         }
         if(CropErrorPathList.length > 0){
-            const path = CropErrorPathList.join('\n');
-            alert( 'サムネイルの作成に失敗したファイルがあります: \n' + path.replace(/\\/g, '/'));
+            const treePathList = [];
+            const div = $('<div>', {text:'サムネイルの作成に失敗したファイルがあります。'});
+            const details = $('<details>',{style:'padding: 10px 20px;user-select:text'});
+            details.append($('<summary>', {class:'td_summary', text:'ファイル一覧', style:'text-align:left'}));
+            for(let i = 0; i < CropErrorPathList.length; i++){
+                details.append($('<div>', {text:CropErrorPathList[i].src.replace(/\\/g, '/'), style:'text-align:left'}));
+                treePathList.push(CropErrorPathList[i].tree_path);
+            }
+            div.append(details);
+
+            const info = $('<div>',{class:'error_info_text', text:'全て透明な画像などがサムネイル作成に失敗します。'});
+            info.append($('<div>', {class:'tdactor_label',text:'必要な差分の場合'}));
+            info.append($('<div>', {text:'元の画像を出力し直してください。上手くいかない場合は出力するアプリを変えてお試しください。'}));
+            info.append($('<div>', {class:'tdactor_label',text:'不要な差分の場合'}));
+            info.append($('<div>', {text:'プロジェクトから取り除いてください。その他に問題はありません。'}));
+            const button_div = $('<div>', {style:'text-align:center; margin-top:10px'});
+            const button = $('<button>',{class:'uk-button uk-button-secondary uk-width-auto', text:'プロジェクトから取り除く(元画像は削除されません)'});
+            const actorName = GetActorName(ActorIndexForSetting);
+            button.click(function(){
+                const script = makeEvalScript('RemoveActorProjectItem', actorName, treePathList.join('\\n'));
+                csInterface.evalScript(script);
+                ErrorNotificationClose();
+            });
+            button_div.append(button);
+            info.append(button_div);
+            ErrorNotificationOpen(div, info);
         }
     }
 }
@@ -800,7 +827,8 @@ function save_transparent_crop(crop_info, callback) {
             image.autocrop = autocrop;
             const result = image.autocrop(5);
             if(result === null){
-                CropErrorPathList.push(src_path);
+                CropErrorPathList.push(crop_info);
+                delete ActorStructure[ActorIndexForSetting][ACT_ST_crop_path][crop_info.tree_path]
             } else {
                 const crop_list = ActorStructure[ActorIndexForSetting][ACT_ST_crop_path][crop_info.tree_path];
                 crop_list.bbox = result;

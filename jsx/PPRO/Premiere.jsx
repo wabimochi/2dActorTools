@@ -1605,6 +1605,18 @@ $._PPP_={
 		}
 	},
 
+	RemoveActorProjectItem : function(actorName, treePaths){
+		treePaths = treePaths.split('\n');
+		var garbageBin = app.project.rootItem.createBin('forDelete');
+		for(var i = 0; i < treePaths.length; i++){
+			var projectItem = getActorClipWithTreePath(actorName, treePaths[i]);
+			if(projectItem){
+				projectItem.moveBin(garbageBin);
+			}
+		}
+		garbageBin.deleteBin();
+	},
+
 	MessageInfo : function(message) {
 		app.setSDKEventMessage('2dActorTools:' + message, 'info');
 	},
