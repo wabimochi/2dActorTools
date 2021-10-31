@@ -227,7 +227,7 @@ $(document).on('mouseleave ', '.actor_thumb_parent', function() {
     actor_label.html('');
 });
 
-function actorDelink(target, skip_linkseq=false){
+function actorDelink(target, skip_linkseq=''){
     const index = target.attr('sequence');
     const actor_root = $('.actor_component[sequence="' + index + '"]');
     actor_root.empty();
@@ -1415,7 +1415,7 @@ function ActorSettingEnd(){
         target.removeClass('enable');
     } else {
         actor_sequence_link_icon.attr('uk-icon', 'link');
-        actorDelink(target);
+        actorDelink(target, true);
         target.click();
     }
     $('.actor_sequence_link').removeAttr('hidden');
