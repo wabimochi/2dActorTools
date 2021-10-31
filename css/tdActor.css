@@ -531,6 +531,9 @@ summary{
   color:var(--premiere-bg) !important;
   background-color: var(--main-color1) !important; 
 }
+.uk-button-secondary:focus{
+  background-color: #555;
+}
 .insert_mode{
   align-items: center;
 }
@@ -884,6 +887,5 @@ input[type=checkbox]:checked:hover {
   cursor:pointer;
 }
 .error_info_text{
-  text-align:left;
   padding-top:20px;
 }

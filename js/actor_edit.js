@@ -90,12 +90,13 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                             button.next().after(button);
                             button.css('margin-right','10px');
                         }
-                        const conf = UIkit.modal.confirm('クリップが選択されていません。シーケンスを作成しますか？', {labels: {cancel: 'キャンセル', ok: 'OK'}});
+                        const conf = UIkit.modal.confirm('クリップが選択されていません。シーケンスを作成しますか？', {labels: {cancel: 'キャンセル', ok: 'OK'}, bgClose:true});
                         _swapButton($(conf.dialog.$el).find('.uk-modal-footer'));
                         conf.then(function() {
                             const prompt = UIkit.modal.prompt('作成するシーケンス名', actorName, {labels: {cancel: 'キャンセル', ok: 'OK'}});
                             _swapButton($(prompt.dialog.$el).find('.uk-modal-footer'));
                             $(prompt.dialog.$el).find('input').addClass('uk-light tdinput');
+                            $(prompt.dialog.$el).find('input').css('text-align', 'center');
                             prompt.then(function (seqName) {
                                 if(seqName==null) return;
 
@@ -316,12 +317,12 @@ function actorSettingStart(actorName, index) {
                     prevGroupName = currentGroupName;
                 }
                 if(actorObj.crop_path[structList[i * ACT_ELM_NUM + ACT_TREE_PATH]]){
-                AddActorClip(prevGroup,
-                     structList[i * ACT_ELM_NUM + ACT_NAME], 
-                     structList[i * ACT_ELM_NUM + ACT_TREE_PATH], 
-                     cropDirPath + actorObj.crop_path[structList[i * ACT_ELM_NUM + ACT_TREE_PATH]].path);
+                    AddActorClip(prevGroup,
+                        structList[i * ACT_ELM_NUM + ACT_NAME], 
+                        structList[i * ACT_ELM_NUM + ACT_TREE_PATH], 
+                        cropDirPath + actorObj.crop_path[structList[i * ACT_ELM_NUM + ACT_TREE_PATH]].path);
+                }
             }
-        }
         }
     });
 }
@@ -1122,7 +1123,7 @@ function StartActorSetting() {
                     actor.push(group_obj);
                 }
 
-                new_actor_structure[ACT_ST_lightweight] = 1;
+                new_actor_structure[ACT_ST_lightweight] = 0;
                 new_actor_structure[ACT_ST_actor] = actor;
                 new_actor_structure[ACT_ST_crop_dir_path] = crop_dir;
                 new_actor_structure[ACT_ST_crop_path] = saveCropPathList;
