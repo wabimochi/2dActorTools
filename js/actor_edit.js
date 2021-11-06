@@ -30,6 +30,11 @@ let AnimationIndexes = [];
 
 const bakeProgressBarElms = {};
 
+const addFuncList = [];
+let actorClipDragula = null;
+let clipsetDragula = null;
+let groupDragula = null;
+
 $(document).on('click', '.actor_sequence_link.unlink', function() {
     if($('#actor_switcher').hasClass('setting')) return;
     const index = $(this).attr('sequence');
@@ -275,18 +280,22 @@ function actorSelectBoxUpdate() {
         for(let i = 0; i < nameList.length; i++) {
             const act_switch = $('<li>', {'class':'', sequence:i});
             const actor_component = $('<div>', {'class':'actor_component', sequence:i});
-            new Sortable.create(actor_component[0], {
-                group: 'group',
-                multiDrag: false,
-                draggable: '.dragitem',
-                filter: '.filtered',
-                selectedClass: 'selected',
-                dragClass: 'sortable-drag',
-                ghostClass: 'sortable-ghost',
-                animation: 150,
-                fallbackOnBody: true,
-                swapThreshold: 0.65,
-                dragoverBubble: false});
+            if(OSIsWin){
+                new Sortable.create(actor_component[0], {
+                    group: 'group',
+                    multiDrag: false,
+                    draggable: '.dragitem',
+                    filter: '.filtered',
+                    selectedClass: 'selected',
+                    dragClass: 'sortable-drag',
+                    ghostClass: 'sortable-ghost',
+                    animation: 150,
+                    fallbackOnBody: true,
+                    swapThreshold: 0.65,
+                    dragoverBubble: false});
+            } else {
+                groupDragula.containers.push(actor_component[0]);
+            }
             act_switch.append(actor_component);
             actor_switcher.append(act_switch);
 
@@ -444,28 +453,32 @@ function AddPartsBoxGroup(name) {
     summary.html(name);
     const details = $('<details>', {class:'container uk-animation-slide-left-medium', group:name});
     details.append(summary);
-    const div = $('<div>', {style:'text-align: right'});
+    const div = $('<div>', {style:'text-align: right', class:'actor_parts_container'});
     details.append(div);
     $('#actor_parts_box').append(details);
-    new Sortable.create(div[0], {
-        group: { 
-            name: 'actor',
-            pull: 'clone',
-            put: false,
-        },
-        multiDrag: true,
-        multiDragKey: 'CTRL',
-        draggable: '.dragitem',
-        filter: '.filtered',
-        selectedClass: 'selected',
-        dragClass: 'sortable-drag',
-        ghostClass: 'sortable-ghost',
-        sort: false,
-        animation: 150,
-        fallbackOnBody: true,
-        swapThreshold: 0.65,
-        dragoverBubble: false,
-    });
+    if(OSIsWin){
+        new Sortable.create(div[0], {
+            group: { 
+                name: 'actor',
+                pull: 'clone',
+                put: false,
+            },
+            multiDrag: true,
+            multiDragKey: 'CTRL',
+            draggable: '.dragitem',
+            filter: '.filtered',
+            selectedClass: 'selected',
+            dragClass: 'sortable-drag',
+            ghostClass: 'sortable-ghost',
+            sort: false,
+            animation: 150,
+            fallbackOnBody: true,
+            swapThreshold: 0.65,
+            dragoverBubble: false,
+        });
+    } else {
+        actorClipDragula.containers.push(div[0]);
+    }
     return div;
 }
 
@@ -474,9 +487,9 @@ function AddActorClip(rootNode, name, tree_path, crop_path) {
         crop_path = '';
     }
     const li = $('<li>', {'class':'actor_thumb_parent dragitem', name:name, tree_path:tree_path, group_index: 0, 'uk-flex':'', 'uk-flex-column':'', 'data-type':CLIP_TYPE_None, 
-     'uk-tooltip': 'pos:top-right; duration:0; title:<img class="actor_tooltip thumb_background" src="' + crop_path + '"><div>' + name +'</div>'});
+     'uk-tooltip': 'pos:top-right; duration:0; title:<img class="actor_thumb actor_tooltip thumb_background" src="' + crop_path + '"><div>' + name +'</div>'});
 
-    const img = $('<img>', {'class':'thumb_background fix_size_img'});
+    const img = $('<img>', {'class':'actor_thumb thumb_background fix_size_img'});
     if (crop_path) {
         img.attr('src', crop_path);
         li.append(img);
@@ -631,21 +644,24 @@ async function SetupActorComponent(index, actorName, isSetting=false){
         }
         thumbnav.append(ul);
         actor_root.append(thumbnav);
-
-        new Sortable.create(ul[0], {
-            group: 'clipset',
-            multiDrag: true,
-            multiDragKey: 'CTRL',
-            draggable: '.dragitem',
-            filter: '.filtered',
-            selectedClass: 'selected',
-            dragClass: 'sortable-drag',
-            ghostClass: 'sortable-ghost',
-            animation: 150,
-            fallbackOnBody: true,
-            swapThreshold: 0.65,
-            dragoverBubble: false
-        });
+        if(OSIsWin){
+            new Sortable.create(ul[0], {
+                group: 'clipset',
+                multiDrag: true,
+                multiDragKey: 'CTRL',
+                draggable: '.dragitem',
+                filter: '.filtered',
+                selectedClass: 'selected',
+                dragClass: 'sortable-drag',
+                ghostClass: 'sortable-ghost',
+                animation: 150,
+                fallbackOnBody: true,
+                swapThreshold: 0.65,
+                dragoverBubble: false
+            });
+        } else {
+            clipsetDragula.containers.push(ul[0]);
+        }
 
         for(let i = 0; i < actorObj.actor.length; i++) {
             const group_index = actorObj.actor.length - 1 - i;
@@ -1220,30 +1236,35 @@ function MakeThumbnail(crop_list){
 }
 
 function SortableCreateActor(groupElm, pullAction=true, onAddFunc=null){
-    new Sortable.create(groupElm, {
-        group: {
-            name: 'actor',
-            pull: pullAction,
-        },
-        multiDrag: true,
-        multiDragKey: 'CTRL',
-        draggable: '.dragitem',
-        filter: '.filtered',
-        selectedClass: 'selected',
-        dragClass: 'sortable-drag',
-        ghostClass: 'sortable-ghost',
-        animation: 150,
-        fallbackOnBody: true,
-        swapThreshold: 0.65,
-        dragoverBubble: false,
-        onAdd: function (evt) {
-            var jqElm = $(evt.item);
-            jqElm.removeAttr('uk-tooltip');
-            jqElm.siblings('[uk-tooltip]').removeAttr('uk-tooltip');
+    if(OSIsWin){
+        new Sortable.create(groupElm, {
+            group: {
+                name: 'actor',
+                pull: pullAction,
+            },
+            multiDrag: true,
+            multiDragKey: 'CTRL',
+            draggable: '.dragitem',
+            filter: '.filtered',
+            selectedClass: 'selected',
+            dragClass: 'sortable-drag',
+            ghostClass: 'sortable-ghost',
+            animation: 150,
+            fallbackOnBody: true,
+            swapThreshold: 0.65,
+            dragoverBubble: false,
+            onAdd: function (evt) {
+                var jqElm = $(evt.item);
+                jqElm.removeAttr('uk-tooltip');
+                jqElm.siblings('[uk-tooltip]').removeAttr('uk-tooltip');
 
-            if(onAddFunc) onAddFunc(evt);
-        }
-    });
+                if(onAddFunc) onAddFunc(evt);
+            }
+        });
+    } else {
+        actorClipDragula.containers.push(groupElm);
+        addFuncList.push({el:groupElm, func:onAddFunc});
+    }
 }
 
 function ActorPartsToSetting(actor_parts_top_jqelm){
@@ -1678,6 +1699,34 @@ function ImportActor(actorName, index, callback){
 }
 
 function ActorEditInitialize() {
+    if(!OSIsWin){
+        actorClipDragula = dragula({
+            copy: function (el, source) {
+                return source.classList.contains('actor_parts_container');
+            },
+            accepts: function (el, target) {
+                return !target.classList.contains('actor_parts_container');
+            }
+        }).on('drop', function (el, target, source) {
+            var jqElm = $(el);
+            jqElm.removeAttr('uk-tooltip');
+            jqElm.siblings('[uk-tooltip]').removeAttr('uk-tooltip');
+            for(let i = 0; i < addFuncList.length; i++){
+                if(addFuncList[i].el === target){
+                    const evt = {item:el};
+                    addFuncList[i].func(evt);
+                    break;
+                }
+            }
+        });
+        clipsetDragula = dragula();
+        groupDragula = dragula({
+			moves: function(el, container, target) {
+				return !target.classList.contains('actor_thumb');
+			}
+		});
+    }
+
     let contextmenus = $('.contextmenu');
     $(document).on('contextmenu', '.actor_sequence_link', function (e) {
         contextmenus.removeClass('contextmenu_show');
@@ -1948,7 +1997,7 @@ function ActorEditInitialize() {
     });
     SortableCreateActor($('#animation_editor_thumbnail>ul')[0], 'clone', function(evt) {
         const jqElm = $(evt.item);
-        jqElm.siblings().remove()
+        jqElm.siblings().remove();
         jqElm.find('input').remove();
         const selectItem = AnimationEditingGroupJQElm.find('.anim_selected');
         selectItem.attr('tree_path', jqElm.attr('tree_path'));

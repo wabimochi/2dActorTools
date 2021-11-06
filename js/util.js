@@ -1,8 +1,11 @@
+const csInterface = new CSInterface();
 const newLineReg = /\r\n|\n|\r/g;
 const asciiReg = /[a-zA-Z0-9!-/:-@¥[-`{-~ ]/g;
 const fs = require('fs');
 const path_js = require('path');
+const dragula = require('dragula');
 const ApplySettingEvent = new CustomEvent('apply_setting');
+const OSIsWin = csInterface.getOSInformation().indexOf('Win') >= 0 ? true : false;
 let CustomInitialize = {};
 let CEP_ERROR_TO_MESSAGE = {};
 CEP_ERROR_TO_MESSAGE[window.cep.fs.NO_ERROR] = "No error";
@@ -19,7 +22,6 @@ CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_FILE_EXISTS] = "[error] Specified file al
 CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_EXCEED_MAX_NUM_PROCESS] = "[error]  The maximum number of processes has been exceeded.";
 CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_INVALID_URL] = "[error] Invalid URL.";
 CEP_ERROR_TO_MESSAGE[window.cep.fs.DEPRECATED_API] = "[error] deprecated API.";
-const csInterface = new CSInterface();
 
 let audioTrackSelectBox = [];
 let videoTrackSelectBox = [];
