@@ -44,7 +44,7 @@ function mogrtUpdate() {
 }
 
 function importMGT() {
-    const mogrtPathList = window.cep.fs.showOpenDialog(true, false, 'モーショングラフィックステンプレート', '', ['.mogrt']).data;
+    const mogrtPathList = window.cep.fs.showOpenDialogEx(true, false, 'モーショングラフィックステンプレート', '', ['mogrt']).data;
     if(mogrtPathList != '') {
         for(let i = 0; i < mogrtPathList.length; i++){
             let name = path_js.basename(mogrtPathList[i]);
