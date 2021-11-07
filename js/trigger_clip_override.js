@@ -82,6 +82,23 @@ $(document).on('click', '.trigger_clip_trash', function() {
     SettingUpdate(category, id, treePathButton.html());	
 });
 
+function LoadActorStructure(path, index) {
+    const json = window.cep.fs.readFile(path);
+    if(json.err){
+        let script = '';
+        if(json.err == window.cep.fs.ERR_NOT_FOUND) {
+            script = makeEvalScript('MessageWarning', 'ファイルが見つかりません: ' + path.replace(/\\/g, '/'));
+        } else {
+            script = makeEvalScript('MessageError', 'code ' + json.err.toString() + ' :' + CEP_ERROR_TO_MESSAGE[json.err]);
+        }
+        csInterface.evalScript(script);
+        return false;
+    }
+    ActorStructure[index] = ActorStructureVersionConvert(JSON.parse(json.data));
+    ActorStructurePath[index] = path;
+    return true;
+}
+
 function triggerOverriteClip_ExecuteButton() {
     const trackNumElm = $('#trigger_clip_override_target_track');
     if(!trackNumElm.hasClass('tdact_setting_ok')) return;
@@ -96,11 +113,46 @@ function triggerOverriteClip_ExecuteButton() {
     if(endTriggerPathElm.hasClass('tdact_setting_ok')) {
         endTriggerClipTreePath = endTriggerPathElm.html();
     }
+
+    const actorSettingPathElm = $('#trigger_actor_path');
+    let actorSettingTreePath = '';
+    let start_bbox = '';
+    let end_bbox = '';
+    let actor_l = '';
+    let actor_t = '';
+    if(actorSettingPathElm.hasClass('tdact_setting_ok')) {
+        actorSettingTreePath = actorSettingPathElm.html();
+        if(fs.existsSync(actorSettingTreePath)){
+            const json = window.cep.fs.readFile(actorSettingTreePath);
+            if(!json.err){
+                const actor_structure = JSON.parse(json.data);
+                if(actor_structure[ACT_ST_version] && actor_structure[ACT_ST_version] >= 2 && actor_structure[ACT_ST_lightweight]){
+                    const crop_path = actor_structure[ACT_ST_crop_path];
+                    const _getActorKey = function(treePath){
+                        return treePath.substr(treePath.indexOf('/', treePath.indexOf('/') + 1) + 1);
+                    }
+                    const startActorTreePath = _getActorKey(startTriggerClipTreePath);
+                    if(crop_path[startActorTreePath]){
+                        start_bbox = crop_path[startActorTreePath].bbox.join(',');
+                    }
+                    const endActorTreePath = _getActorKey(endTriggerClipTreePath);
+                    if(crop_path[endActorTreePath]){
+                        end_bbox = crop_path[endActorTreePath].bbox.join(',');
+                    }
+                    actor_l = actor_structure[ACT_ST_actor_bbox][0];
+                    actor_t = actor_structure[ACT_ST_actor_bbox][1];
+                }
+            }
+        }
+    }
+
     const trackNum = trackNumElm.val() - 1;
     const targetSequence = $('#trigger_clip_override_target_seq').val();
     const startClipEndFlag = getClipEndFlag(startTriggerPathElm.parent());
     const endClipEndFlag = getClipEndFlag(endTriggerPathElm.parent());
-    csInterface.evalScript('$._PPP_.TriggerClipOverwrite("' + targetSequence + '","' + trackNum + '","' + startTriggerClipTreePath + '","' + endTriggerClipTreePath + '","' + startClipEndFlag + '","' + endClipEndFlag + '")', function() {});
+    const script = makeEvalScript('TriggerClipOverwrite', targetSequence, trackNum, 
+        startTriggerClipTreePath, endTriggerClipTreePath, startClipEndFlag, endClipEndFlag, actor_l, actor_t, start_bbox, end_bbox);
+    csInterface.evalScript(script);
 }
 
 CustomInitialize['trigger_clip_custum_initialize'] = function () {
@@ -134,6 +186,15 @@ CustomInitialize['trigger_clip_custum_initialize'] = function () {
         }
         clipPathInit(category['trigger_clipstart_clippath'], $('#trigger_clipstart_clippath'));
         clipPathInit(category['trigger_clipend_clippath'], $('#trigger_clipend_clippath'));
+        const actorPath = category['trigger_actor_path'];
+        if(actorPath){
+            const actorPathElm = $('#trigger_actor_path');
+            actorPathElm.html(actorPath);
+            if(fs.existsSync(actorPath)){
+                actorPathElm.attr('uk-tooltip', actorPath);
+                setSettingOK(actorPathElm);
+            }
+        }
 
         const merkerInit = function(id) {
             const insert = category[id];

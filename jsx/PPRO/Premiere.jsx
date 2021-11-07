@@ -923,6 +923,13 @@ $._PPP_={
 		}
 		return '';
 	},
+	GetMediaPath_File : function(treePath) {
+		var projectItem = searchItemWithTreePath(treePath, ProjectItemType.FILE);
+		if(projectItem) {
+			return projectItem.getMediaPath();
+		}
+		return '';
+	},
 
 	GetSelectedSequenceTrackNum : function() {
 		var seq = app.project.activeSequence;
@@ -942,7 +949,7 @@ $._PPP_={
 		return '';
 	},
 
-	TriggerClipOverwrite : function(targetSeqFlag, trackIndex, startClipTreePath, endClipTreePath, startTriggerInsertFlag, endTriggerInsertFlag) {
+	TriggerClipOverwrite : function(targetSeqFlag, trackIndex, startClipTreePath, endClipTreePath, startTriggerInsertFlag, endTriggerInsertFlag, actor_l, actor_t, start_bbox, end_bbox) {
 		var seq = app.project.activeSequence;
 		var activeSeq = app.project.activeSequence;
 		if(targetSeqFlag == 0) {
@@ -975,20 +982,44 @@ $._PPP_={
 			}
 			if (ATrackIndex < activeSeq.audioTracks.numTracks) {
 				var sourceAudioTrack = activeSeq.audioTracks[ATrackIndex];
+				var sl = 0;
+				var st = 0;
+				var sw = 0;
+				var sh = 0;
 				if(startClip) {
 					startClip.setOverrideFrameRate(1 / epsTime);
+					if(start_bbox){
+						start_bbox = start_bbox.split(',');
+						sl = Number(start_bbox[0]);
+						st = Number(start_bbox[1]);
+						sw = Number(start_bbox[2]);
+						sh = Number(start_bbox[3]);
 				}
+				}
+				var el = 0;
+				var et = 0;
+				var ew = 0;
+				var eh = 0;
 				if(endClip) {
 					endClip.setOverrideFrameRate(1 / epsTime);
+					if(end_bbox){
+						end_bbox = end_bbox.split(',');
+						el = Number(end_bbox[0]);
+						et = Number(end_bbox[1]);
+						ew = Number(end_bbox[2]);
+						eh = Number(end_bbox[3]);
 				}
+				}
+				if(actor_l) actor_l = Number(actor_l);
+				if(actor_t) actor_t = Number(actor_t);
 
 				for (var sourceClipIndex = 0; sourceClipIndex < sourceAudioTrack.clips.numItems; sourceClipIndex++) {
 					var sourceAudioClip = sourceAudioTrack.clips[sourceClipIndex];
 					if(startClip) {
-						overwriteVideoClip(startClip, seq, targetTrack, sourceAudioClip.start.seconds, startTriggerInsertFlag, activeSeq);
+						overwriteVideoClip(startClip, seq, targetTrack, sourceAudioClip.start.seconds, startTriggerInsertFlag, activeSeq, sl, st, sw, sh, actor_l, actor_t);
 					}
 					if(endClip) {
-						overwriteVideoClip(endClip, seq, targetTrack, sourceAudioClip.end.seconds, endTriggerInsertFlag, activeSeq);
+						overwriteVideoClip(endClip, seq, targetTrack, sourceAudioClip.end.seconds, endTriggerInsertFlag, activeSeq, el, et, ew, eh, actor_l, actor_t);
 					}
 				}
 				if(startClip) {
@@ -2651,8 +2682,7 @@ function overwriteVideoClip(projectItem, sequence, track, startTime, endFlag, en
 	track.overwriteClip(projectItem, startTime);
 	projectItem.setOverrideFrameRate(0);
 
-	if(l !== undefined && t !== undefined){
-		if(l !== 0 || t !== 0) {
+	if(l !== undefined && t !== undefined && w !== undefined && h !== undefined && w > 0 && h > 0){
 			var settings = sequence.getSettings();
 			var seqWidth = settings.videoFrameWidth;
 			var seqHeight = settings.videoFrameHeight;
@@ -2663,7 +2693,6 @@ function overwriteVideoClip(projectItem, sequence, track, startTime, endFlag, en
 				if(Math.abs(track.clips[i].start.seconds - startTime) < halfEpsTime) {
 					anchorUpdate(track.clips[i], l, t, w, h, seqWidth, seqHeight, actor_l, actor_t, 1);
 					break;
-				}
 			}
 		}
 	}

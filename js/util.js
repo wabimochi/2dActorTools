@@ -128,6 +128,22 @@ $(document).on('click', '.get_select_project_clip', function() {
     });
 });
 
+$(document).on('click', '.get_select_project_mediapath', function() {
+    const target = $(this);
+    const treePath = SetectedProjectItemTreePath;
+    const script = makeEvalScript('GetMediaPath_File', treePath);
+    csInterface.evalScript(script, function(result) {
+        if(result) {
+            target.html(result);
+            target.attr('uk-tooltip', result);
+            setSettingOK(target);
+            const category = target.attr('category');
+            const id = target.attr('id');
+            SettingUpdate(category, id, result);
+        }
+    });
+});
+
 $(document).on('click', '.get_select_project_bin', function() {
     const target = $(this);
     const treePath = SetectedProjectItemTreePath;
