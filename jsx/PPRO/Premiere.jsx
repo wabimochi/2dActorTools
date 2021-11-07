@@ -2673,16 +2673,18 @@ function overwriteVideoClip(projectItem, sequence, track, startTime, endFlag, en
 		endTime = getNextMarkerTime(endMarkerSequence.markers, startTime, endTime);
 	}
 	
-	projectItem.setOverrideFrameRate(1/epsTime);
+	if(!projectItem.isSequence()) projectItem.setOverrideFrameRate(1/epsTime);
 
-	var _endTime = new Time();
-	_endTime.seconds = fixTimeError(endTime, epsTime) - epsTime / 100;
+	var correctionTime = epsTime / 100;
 	var _startTime = new Time();
-	_startTime.seconds = fixTimeError(startTime, epsTime) - epsTime / 100;
+	_startTime.seconds = fixTimeError(startTime, epsTime) + correctionTime;
+	var _endTime = new Time();
+	_endTime.seconds = fixTimeError(endTime, epsTime) + correctionTime;
+
 	projectItem.setInPoint(_startTime, 4);
 	projectItem.setOutPoint(_endTime, 4);
 	track.overwriteClip(projectItem, startTime);
-	projectItem.setOverrideFrameRate(0);
+	if(!projectItem.isSequence()) projectItem.setOverrideFrameRate(0);
 
 	if(l !== undefined && t !== undefined && w !== undefined && h !== undefined && w > 0 && h > 0){
 			var settings = sequence.getSettings();
