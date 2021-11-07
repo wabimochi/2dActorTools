@@ -1597,9 +1597,14 @@ $._PPP_={
 		if(changeKey !== ''){
 			changeKey = changeKey.split('\n');
 			changeMediaPath = changeMediaPath.split('\n');
+			var osIsWin = $.os.indexOf('Windows') >= 0;
 			for(var i = 0; i < changeKey.length; i++){
 				var projectItem = getActorClipWithTreePath(actorName, changeKey[i]);
-				projectItem.changeMediaPath(changeMediaPath[i].replace(/\//g, '\\'), false);
+				var path = changeMediaPath[i];
+				if(osIsWin){
+					path = path.replace(/\//g, '\\');
+				}
+				projectItem.changeMediaPath(path, false);
 				progressValueMessage('#busy_progress', i);
 			}
 		}
