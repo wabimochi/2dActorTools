@@ -140,7 +140,7 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                 StartActorSetting();
             }
         } else {
-            if(!LoadActorStructure(actorStructPath, index, actorName)) return;
+            if(!LoadActorStructure(actorStructPath, index)) return;
             SetActorSettingPath(actorName, actorStructPath);
             _setLink();
         }
@@ -738,7 +738,7 @@ async function SetupActorComponent(index, actorName, isSetting=false){
     }
 }
 
-function LoadActorStructure(path, index, actorName) {
+function LoadActorStructure(path, index) {
     const json = window.cep.fs.readFile(path);
     if(json.err){
         let script = '';
@@ -750,7 +750,7 @@ function LoadActorStructure(path, index, actorName) {
         csInterface.evalScript(script);
         return false;
     }
-    ActorStructure[index] = ActorStructureVersionConvert(JSON.parse(json.data), actorName);
+    ActorStructure[index] = ActorStructureVersionConvert(JSON.parse(json.data));
     ActorStructurePath[index] = path;
     return true;
 }
@@ -1165,7 +1165,7 @@ function StartActorSetting() {
             } 
         } else {
             SetActorSettingPath(actorName, actorStructPath);
-            if(LoadActorStructure(actorStructPath, ActorIndexForSetting, actorName)){
+            if(LoadActorStructure(actorStructPath, ActorIndexForSetting)){
                 const structList = struct.split(',');
                 const length = structList.length / ACT_ELM_NUM;
                 let source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
@@ -1380,7 +1380,7 @@ function ThumbnailGenerator(actor_index, bbox=false){
     let script = makeEvalScript('GetActorStructureMediaPath', actorName);
     csInterface.evalScript(script, function(actorStructPath) {
         if(actorStructPath !== '') {
-            if(!LoadActorStructure(actorStructPath, actor_index, actorName)) return;
+            if(!LoadActorStructure(actorStructPath, actor_index)) return;
        
             script = makeEvalScript('GetActorStructure', actorName);
             csInterface.evalScript(script, function(struct){
@@ -1526,7 +1526,7 @@ function UpdateMediaPath(){
         const actorStructPath = result[0];
         const struct = result[1];
 
-        if(!LoadActorStructure(actorStructPath, index, actorName)) return;
+        if(!LoadActorStructure(actorStructPath, index)) return;
 
         // Media pathの変更
         const structList = struct.split(',');
@@ -1562,7 +1562,7 @@ function UpdateMediaPath(){
     });
 }
 
-function ActorStructureVersionConvert(actor_structure, actorName) {
+function ActorStructureVersionConvert(actor_structure) {
     if(!actor_structure.version) {
         actor_structure = ActorStructureVersionConvert1(actor_structure);
     }
@@ -1670,7 +1670,7 @@ function ErrorNotificationClose(){
 
 function ImportActor(actorName, index, callback){
     const actorStructPath = GetActorSettingPath(actorName);
-    if(!LoadActorStructure(actorStructPath, index, actorName)) return;
+    if(!LoadActorStructure(actorStructPath, index)) return;
 
     BusyNotificationOpen('キャラクターのクリップをインポートしています');
     const isLightweight = ActorStructure[index][ACT_ST_lightweight];
@@ -1829,7 +1829,7 @@ function ActorEditInitialize() {
                     if(!imported){
                         actorStructPath = GetActorSettingPath(actorName);
                     }
-                    if(!LoadActorStructure(actorStructPath, ActorIndexForSetting, actorName)) return;
+                    if(!LoadActorStructure(actorStructPath, ActorIndexForSetting)) return;
                     if(confirm('この変更は取り消せません。削除しますか？')){
                         const actorStructure = ActorStructure[ActorIndexForSetting];
                         if(actorStructure){
