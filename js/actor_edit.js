@@ -710,8 +710,8 @@ async function SetupActorComponent(index, actorName, isSetting=false){
                         l = actorObj[ACT_ST_actor_bbox][0] + actorObj[ACT_ST_actor_bbox][2];
                         t = actorObj[ACT_ST_actor_bbox][1] + actorObj[ACT_ST_actor_bbox][3];
                         const crop_path = actorObj[ACT_ST_crop_path];
-                        for(key in crop_path){
-                            const bbox = crop_path[key].bbox;
+                        for(let j = 0; j < treePathList.length; j++){
+                            const bbox = crop_path[treePathList[j]].bbox;
                             if(l > bbox[0]) l = bbox[0];
                             if(t > bbox[1]) t = bbox[1];
                             if(r < bbox[0] + bbox[2]) r = bbox[0] + bbox[2];
