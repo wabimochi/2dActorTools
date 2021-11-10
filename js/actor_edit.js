@@ -98,11 +98,11 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                             button.next().after(button);
                             button.css('margin-right','10px');
                         }
-                        const conf = UIkit.modal.confirm('クリップが選択されていません。シーケンスを作成しますか？', {labels: {cancel: 'キャンセル', ok: 'OK'}, bgClose:true});
-                        _swapButton($(conf.dialog.$el).find('.uk-modal-footer'));
+                        const conf = UIkit.modal.confirm('クリップが選択されていません。シーケンスを作成しますか？', {labels: {cancel: 'キャンセル', ok: '作成する'}, bgClose:true});
+                        if(OSIsWin) _swapButton($(conf.dialog.$el).find('.uk-modal-footer'));
                         conf.then(function() {
                             const prompt = UIkit.modal.prompt('作成するシーケンス名', actorName, {labels: {cancel: 'キャンセル', ok: 'OK'}});
-                            _swapButton($(prompt.dialog.$el).find('.uk-modal-footer'));
+                            if(OSIsWin) _swapButton($(prompt.dialog.$el).find('.uk-modal-footer'));
                             $(prompt.dialog.$el).find('input').addClass('uk-light tdinput');
                             $(prompt.dialog.$el).find('input').css('text-align', 'center');
                             prompt.then(function (seqName) {
