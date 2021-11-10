@@ -265,8 +265,11 @@ hr {
   border: solid 1px var(--main-color1) !important;
   transition: border 0.1s ease-out;
 }
+.actor_clipset::marker{
+  content: none;
+}
 .actor_clipset_root{
-  min-height: 20px !important;
+  min-height: 26px !important;
 }
 
 .actor_component{
@@ -888,4 +891,11 @@ input[type=checkbox]:checked:hover {
 }
 .error_info_text{
   padding-top:20px;
+}
+.key_deco{
+  background-color: var(--element-color1);
+  padding: .2em .4em;
+  border-radius: 6px;
+  color: #D7BA7D;
+  font-size: 85%;
 }

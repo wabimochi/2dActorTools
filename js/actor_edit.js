@@ -25,6 +25,7 @@ let ContextmenuGroupSelectJQElm = null;
 let AnimationEditingGroupJQElm = null;
 let ActorStructure = [];
 let ActorStructurePath = [];
+let IsSettingActor = false;
 let IsAnimationEditing = false;
 let AnimationIndexes = [];
 
@@ -71,17 +72,19 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                         case '2':
                             break;
                         case '3':
-                            errormsg += '複数のシーケンスを選択しています';
-                            elm = $('<div>', {class:'error_info_text', text:'Altキーを押しながら選択すると、リンクされたシーケンスでも一つずつ選択できます。'});
+                            errormsg += '複数のクリップを選択しています';
+                            elm = $('<div>', {class:'error_info_text', text:'キーを押しながら選択すると、リンクされたシーケンスでも一つずつ選択できます。'});
+                            const key = $('<span>', {class:'key_deco', text:`${OSIsWin ? 'Alt' : 'option⌥'}`})
+                            elm.prepend(key);
                             break;
                         case '4':
                             errormsg += 'シーケンス以外のクリップを選択しています';
                             const extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
-                            elm = $('<div>', {style:''});
+                            elm = $('<div>');
                             elm.append($('<div>', {class:'error_info_text', text:'キャラクターのシーケンスがピンク色になっていませんか？'}));
-                            elm.append($('<img>', {src:extPath + '/resource/info1-1.png'}));
+                            elm.append($('<img>', {src:extPath + '/resource/info1-1.png', style:'display: block;margin-left:auto;margin-right: auto;'}));
                             elm.append($('<div>', {class:'error_info_text', text:'シーケンスは通常緑色になります。左上のアイコンをオンにしてから再度メインのシーケンスに乗せてみてください。'}));
-                            elm.append($('<img>', {src:extPath + '/resource/info1-2.png'}));
+                            elm.append($('<img>', {src:extPath + '/resource/info1-2.png', style:'display: block;margin-left:auto;margin-right: auto;'}));
                             break;
                         default:
                             errormsg += 'Unknown';
@@ -341,6 +344,8 @@ function setActorClipSet(shortcutKey) {
     for(let i = 0; i < linkdActor.length; i++) {
         if(linkdActor.eq(i).hasClass('enable')) {
             const seqIndex = linkdActor.eq(i).attr('sequence');
+            const clipset = ActorStructure[seqIndex][ACT_ST_clipset]; 
+            if(!clipset || !clipset[shortcutKey]) return;
             const actorName = linkdActor.eq(i).children('.actor_sequence_link_label').html();
             const actorFlagList = $('#actor_switcher').children('[sequence=' + seqIndex + ']').find('.parts_selector');
             const treePathList = ActorStructure[seqIndex].clipset[shortcutKey].split(',');
@@ -1037,6 +1042,7 @@ function LoadAnimationEdit(target_JQElm){
 let StartSettingActorName = '';
 let BusyNotificationProgress = null;
 function _startActorSetting() {
+    IsSettingActor = true;
     startActorSettingTimeoutId = null;
     const actorName = StartSettingActorName;
 
@@ -1167,7 +1173,7 @@ function StartActorSetting() {
             SetActorSettingPath(actorName, actorStructPath);
             if(LoadActorStructure(actorStructPath, ActorIndexForSetting)){
                 const structList = struct.split(',');
-                const length = structList.length / ACT_ELM_NUM;
+                const length = Math.floor(structList.length / ACT_ELM_NUM);
                 let source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
                 const crop_dir = ActorStructure[ActorIndexForSetting][ACT_ST_crop_dir_path];
 
@@ -1287,12 +1293,13 @@ function SetupActorSettingUI() {
     const actor_component_root = $(".actor_component[sequence='" + ActorIndexForSetting + "']");
 
     const lightweight_elm = $('<label>', {'class':'input_label', 'text':'サムネイルを使用して描画コストを減らす'});
-    const lightweight_check = $('<input>', {'class':'uk-checkbox lightweight_check', 'type':'checkbox'});
+    const lightweight_check = $('<input>', {id:'lightweight_check', 'class':'uk-checkbox', 'type':'checkbox'});
     lightweight_elm.prepend(lightweight_check);
-    actor_component_root.prepend(lightweight_elm);
+    actor_component_root.before(lightweight_elm);
     if(ActorStructure[ActorIndexForSetting][ACT_ST_lightweight]){
         lightweight_check.prop('checked', true);
     }
+    actor_component_root.before(actor_component_root.find('div:has(.actor_clipset_root)'));
 
     let containers = actor_component_root[0].querySelectorAll('.actor_group');
     for (let i = 0; i < containers.length; i++) {
@@ -1349,7 +1356,7 @@ function SaveActorSetting() {
     if(current_actor_structure[ACT_ST_clipset]) {
         const current_clip_set = current_actor_structure[ACT_ST_clipset];
         const new_clip_set = {};
-        actor_root.find('.actor_clipset').each(function(){
+        $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div>.actor_clipset_root>.actor_clipset`).each(function(){
             new_clip_set[$(this).html()] = current_clip_set[$(this).html()];
         });
         new_actor_structure[ACT_ST_clipset] = new_clip_set;
@@ -1358,7 +1365,7 @@ function SaveActorSetting() {
     new_actor_structure[ACT_ST_crop_dir_path] = current_actor_structure[ACT_ST_crop_dir_path];
     new_actor_structure[ACT_ST_src_dir_path] = current_actor_structure[ACT_ST_src_dir_path];
     new_actor_structure[ACT_ST_version] = current_actor_structure[ACT_ST_version];
-    if(actor_root.find('.lightweight_check').prop('checked')){
+    if($('#lightweight_check').prop('checked')){
         new_actor_structure[ACT_ST_lightweight] = 1;
     } else {
         new_actor_structure[ACT_ST_lightweight] = 0;
@@ -1447,6 +1454,8 @@ function ThumbnailGenerator(actor_index, bbox=false){
 }
 
 function ActorSettingEnd(){
+    IsSettingActor = false;
+
     $('#actor_parts_box').attr('hidden', '');
     $('#actor_setting_save_button').attr('hidden', '');
     $('#actor_setting_cancel_button').attr('hidden', '');
@@ -1455,6 +1464,9 @@ function ActorSettingEnd(){
     $('.dragitem').removeClass('.dragitem');
     $('#actor_switcher').removeClass('setting');
     $('#actor_parts_box').html('');
+
+    $('#lightweight_check').parent().remove();
+    $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div:has(.actor_clipset_root)`).remove();
 
     const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
     let actor_sequence_link_icon = target.find('.actor_sequence_link_icon');
@@ -1491,6 +1503,10 @@ function AnimationSettingEnd() {
     if(prevClip.length > 0) {
         SaveAnimationEdit(prevClip);
     }
+
+    if(actorClipDragula) actorClipDragula = [];
+    if(clipsetDragula) clipsetDragula = [];
+    if(groupDragula) groupDragula = [];
 
     AnimationEditingGroupJQElm.find('.anim_selected').removeClass('anim_selected');
     AnimationEditingGroupJQElm.find('.anim_unselect').removeClass('anim_unselect');
@@ -1701,6 +1717,9 @@ function ImportActor(actorName, index, callback){
 function ActorEditInitialize() {
     if(!OSIsWin){
         actorClipDragula = dragula({
+			moves: function(el, container, target) {
+                return IsSettingActor;
+            },
             copy: function (el, source) {
                 return source.classList.contains('actor_parts_container');
             },
@@ -1719,10 +1738,14 @@ function ActorEditInitialize() {
                 }
             }
         });
-        clipsetDragula = dragula();
+        clipsetDragula = dragula({
+            moves: function(el, container, target) {
+                return IsSettingActor;
+            }
+        });
         groupDragula = dragula({
 			moves: function(el, container, target) {
-				return !target.classList.contains('actor_thumb');
+				return !target.classList.contains('actor_thumb') && target.tagName !== 'LABEL' && IsSettingActor;
 			}
 		});
     }
