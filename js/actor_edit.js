@@ -1654,18 +1654,20 @@ function BusyNotificationOpen(text, progress_max=null){
         BusyNotificationProgress.attr('max', progress_max);
     }
     $('#mainfunc').addClass('disable');
-    const notification = $('#busy_notification');
-    UIkit.modal(notification).show();
     const text_elm = $('#busy_text');
     text_elm.html(text);
-}
-function BusyNotificationClose(){
-    $('#mainfunc').removeClass('disable');
-    const notification = $('#busy_notification');
-    notification.removeClass('uk-open');
-    notification.attr('style', '');
+    UIkit.modal($('#busy_notification')).show();
 }
 
+let busyNotificationHandle = null;
+function BusyNotificationClose(){
+    busyNotificationHandle = setTimeout(_BusyNotificationClose, 500);
+}
+function _BusyNotificationClose(){
+    busyNotificationHandle = null;
+    $('#mainfunc').removeClass('disable');
+    UIkit.modal($('#busy_notification')).hide();
+}
 function ErrorNotificationOpen(text, help_content=null){
     const text_elm = $('#error_text');
     text_elm.html(text);
