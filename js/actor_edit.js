@@ -93,16 +93,11 @@ $(document).on('click', '.actor_sequence_link.unlink', function() {
                     if(result !== '2') {
                         ErrorNotificationOpen(errormsg, elm);
                     } else {
-                        function _swapButton(parent) {
-                            const button = parent.children();
-                            button.next().after(button);
-                            button.css('margin-right','10px');
-                        }
                         const conf = UIkit.modal.confirm('クリップが選択されていません。シーケンスを作成しますか？', {labels: {cancel: 'キャンセル', ok: '作成する'}, bgClose:true});
-                        if(OSIsWin) _swapButton($(conf.dialog.$el).find('.uk-modal-footer'));
+                        if(OSIsWin) swapUikitConfirmButton($(conf.dialog.$el));
                         conf.then(function() {
                             const prompt = UIkit.modal.prompt('作成するシーケンス名', actorName, {labels: {cancel: 'キャンセル', ok: 'OK'}});
-                            if(OSIsWin) _swapButton($(prompt.dialog.$el).find('.uk-modal-footer'));
+                            if(OSIsWin) swapUikitConfirmButton($(prompt.dialog.$el));
                             $(prompt.dialog.$el).find('input').addClass('uk-light tdinput');
                             $(prompt.dialog.$el).find('input').css('text-align', 'center');
                             prompt.then(function (seqName) {
@@ -322,7 +317,7 @@ function actorSettingStart(actorName, index) {
             const length = structList.length / ACT_ELM_NUM;
             let prevGroupName = ""
             let prevGroup = null;
-            for(let i = 0; i < length; i++) {
+            for(let i = 0; i < length; i++) {                
                 let currentGroupName = structList[i * ACT_ELM_NUM + ACT_BIN_NAME];
                 if(currentGroupName !== prevGroupName){
                     prevGroup = AddPartsBoxGroup(currentGroupName);
@@ -777,18 +772,22 @@ function cropImageCallback(){
         let actor_b = 0;
         for(key in crop_path){
             const bbox = crop_path[key].bbox;
-            actor_l = bbox[0];
-            actor_t = bbox[1];
-            actor_r = bbox[0] + bbox[2];
-            actor_b = bbox[1] + bbox[3];
-            break;
+            if(bbox){
+                actor_l = bbox[0];
+                actor_t = bbox[1];
+                actor_r = bbox[0] + bbox[2];
+                actor_b = bbox[1] + bbox[3];
+                break;
+            }
         }
         for(key in crop_path){
             const bbox = crop_path[key].bbox;
-            if(actor_l > bbox[0]) actor_l = bbox[0];
-            if(actor_t > bbox[1]) actor_t = bbox[1];
-            if(actor_r < bbox[0] + bbox[2]) actor_r = bbox[0] + bbox[2];
-            if(actor_b < bbox[1] + bbox[3]) actor_b = bbox[1] + bbox[3];
+            if(bbox){
+                if(actor_l > bbox[0]) actor_l = bbox[0];
+                if(actor_t > bbox[1]) actor_t = bbox[1];
+                if(actor_r < bbox[0] + bbox[2]) actor_r = bbox[0] + bbox[2];
+                if(actor_b < bbox[1] + bbox[3]) actor_b = bbox[1] + bbox[3];
+            }
         }
         ActorStructure[ActorIndexForSetting][ACT_ST_actor_bbox] = [actor_l, actor_t, actor_r - actor_l, actor_b - actor_t];
         SaveJson(ActorStructure[ActorIndexForSetting], ActorStructurePath[ActorIndexForSetting]);
@@ -811,7 +810,7 @@ function cropImageCallback(){
             updateMediaPathCallback = false;
             updateMediaPathTimeoutId = setTimeout(UpdateMediaPath, 300);
         }
-        if(CropErrorPathList.length > 0){
+        if(CropErrorPathList.length > 0 || CropFileNotExistList.length > 0){
             const treePathList = [];
             const div = $('<div>', {text:'サムネイルの作成に失敗したファイルがあります。'});
             const details = $('<details>',{style:'padding: 10px 20px;user-select:text'});
@@ -820,45 +819,71 @@ function cropImageCallback(){
                 details.append($('<div>', {text:CropErrorPathList[i].src.replace(/\\/g, '/'), style:'text-align:left'}));
                 treePathList.push(CropErrorPathList[i].tree_path);
             }
+
+            for(let i = 0; i < CropFileNotExistList.length; i++){
+                details.append($('<div>', {text:CropFileNotExistList[i].src.replace(/\\/g, '/'), style:'text-align:left'}));
+            }
+            
             div.append(details);
 
-            const info = $('<div>',{class:'error_info_text', text:'全て透明な画像などがサムネイル作成に失敗します。'});
-            info.append($('<div>', {class:'tdactor_label',text:'必要な差分の場合'}));
-            info.append($('<div>', {text:'元の画像を出力し直してください。上手くいかない場合は出力するアプリを変えてお試しください。'}));
-            info.append($('<div>', {class:'tdactor_label',text:'不要な差分の場合'}));
-            info.append($('<div>', {text:'プロジェクトから取り除いてください。その他に問題はありません。'}));
-            const button_div = $('<div>', {style:'text-align:center; margin-top:10px'});
-            const button = $('<button>',{class:'uk-button uk-button-secondary uk-width-auto', text:'プロジェクトから取り除く(元画像は削除されません)'});
-            const actorName = GetActorName(ActorIndexForSetting);
-            button.click(function(){
-                const script = makeEvalScript('RemoveActorProjectItem', actorName, treePathList.join('\\n'));
-                csInterface.evalScript(script);
-                ErrorNotificationClose();
-            });
-            button_div.append(button);
-            info.append(button_div);
+            const info = $('<div>');
+            if(CropErrorPathList.length > 0){
+                info.append($('<div>', {class:'error_info_text', text:'全て透明な画像などがサムネイル作成に失敗します。'}));
+                info.append($('<div>', {class:'tdactor_label',text:'必要な差分の場合'}));
+                info.append($('<div>', {text:'元の画像を出力し直してください。上手くいかない場合は出力するアプリを変えてお試しください。'}));
+                info.append($('<div>', {class:'tdactor_label',text:'不要な差分の場合'}));
+                info.append($('<div>', {text:'プロジェクトから取り除いてください。その他に問題はありません。'}));
+                const button_div = $('<div>', {style:'text-align:center; margin-top:10px'});
+                const button = $('<button>',{class:'uk-button uk-button-secondary uk-width-auto', text:'プロジェクトから取り除く(元画像は削除されません)'});
+                const actorName = GetActorName(ActorIndexForSetting);
+                button.click(function(){
+                    const script = makeEvalScript('RemoveActorProjectItem', actorName, treePathList.join('\\n'));
+                    csInterface.evalScript(script);
+                    ErrorNotificationClose();
+                });
+                button_div.append(button);
+                info.append(button_div);
+                if(CropFileNotExistList.length > 0){
+                    info.append($('<br>'));
+                }
+            }
+            if(CropFileNotExistList.length > 0){
+                info.append($('<div>', {class:'error_info_text', text:'見つからない画像があります。'}));
+            }
             ErrorNotificationOpen(div, info);
+        } else {
+            const script = makeEvalScript('MessageInfo', cropImageCounter + '個のサムネイルを作成しました。');
+            csInterface.evalScript(script);
         }
     }
 }
 
 let CropErrorPathList = [];
+let CropFileNotExistList = [];
 function save_transparent_crop(crop_info, callback) {
-    Jimp.read(crop_info.src, (err, image) => {
-        if (!err) {
-            image.autocrop = autocrop;
-            const result = image.autocrop(5);
-            if(result === null){
-                CropErrorPathList.push(crop_info);
-                delete ActorStructure[ActorIndexForSetting][ACT_ST_crop_path][crop_info.tree_path]
+    if(fs.existsSync(crop_info.src)){
+        Jimp.read(crop_info.src, (err, image) => {
+            if (!err) {
+                image.autocrop = autocrop;
+                const result = image.autocrop(5);
+                if(result === null){
+                    CropErrorPathList.push(crop_info);
+                    delete ActorStructure[ActorIndexForSetting][ACT_ST_crop_path][crop_info.tree_path];
+                } else {
+                    const crop_list = ActorStructure[ActorIndexForSetting][ACT_ST_crop_path][crop_info.tree_path];
+                    crop_list.bbox = result;
+                    image.write(crop_info.dst);
+                }
+                if(callback) callback();
             } else {
-                const crop_list = ActorStructure[ActorIndexForSetting][ACT_ST_crop_path][crop_info.tree_path];
-                crop_list.bbox = result;
-                image.write(crop_info.dst);
+                CropErrorPathList.push(crop_info);
+                delete ActorStructure[ActorIndexForSetting][ACT_ST_crop_path][crop_info.tree_path];
             }
-            if(callback) callback();
-        }
-    });
+        });
+    } else {
+        CropFileNotExistList.push(crop_info);
+        if(callback) callback();
+    }
 }
 
 $(document).on('click', '.actor_thumb_parent', function(e) {
@@ -1187,25 +1212,28 @@ function StartActorSetting() {
                         source_dir = _source_dir;
                     }
                 }
-                old_source_dir = '';
-                if(source_dir !== ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path]){
-                    old_source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
-                    ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path] = source_dir;
-                }
+
+                old_source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
+                ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path] = source_dir;
 
                 for(let i = 0; i < length; i++) {
                     const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
-                    
-                    if(cropPathList[key]){
+                    if(cropPathList[key] && fs.existsSync(crop_dir + cropPathList[key].path)){
                         if(!cropPathList[key].src){
                             const src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
                             cropPathList[key].src = src_path.replace(source_dir, '');
-                        } else if(old_source_dir !== '') {
+                        } else {
                             const src_path = old_source_dir + cropPathList[key].src;
                             cropPathList[key].src = src_path.replace(source_dir, '');
                         }
                     } else {
-                        const src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                        let src_path = '';
+                        if(cropPathList[key] && fs.existsSync(old_source_dir + cropPathList[key].src)){
+                            src_path = old_source_dir + cropPathList[key].src;
+                        } else {
+                            src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                        }
+
                         const lastIndex = src_path.lastIndexOf(".");
                         const crop_path = structList[i * ACT_ELM_NUM + ACT_NAME] + GetUUID() + src_path.substr(lastIndex);
                         cropPathList[key] = {path:crop_path, src:src_path.replace(source_dir, '')}
@@ -1220,16 +1248,21 @@ function StartActorSetting() {
     });
 }
 
-function MakeThumbnail(crop_list){
+function MakeThumbnail(crop_list, notification=false){
     cropImageCounter = 0;
     cropImageSize = crop_list.length;
     if(cropImageSize > 0) {
         BusyNotificationOpen('サムネイル用画像の処理中', cropImageSize);
         CropErrorPathList = [];
+        CropFileNotExistList = [];
         for(let i = 0; i < cropImageSize; i++) {
             requestIdleCallback(() => save_transparent_crop(crop_list[i], cropImageCallback));
         }
     } else{
+        if(notification){
+            const script = makeEvalScript('MessageInfo', 'サムネイルの作成が完了しました。');
+            csInterface.evalScript(script);
+        }
         if(startActorSettingCallback){
             startActorSettingCallback = false;
             _startActorSetting();
@@ -1382,18 +1415,17 @@ function SaveActorSetting() {
     ThumbnailGenerator(ActorIndexForSetting, true);
 }
 
-function ThumbnailGenerator(actor_index, bbox=false){
+function ThumbnailGenerator(actor_index, bbox=false, notification=false){
     const actorName = GetActorName(actor_index);
     let script = makeEvalScript('GetActorStructureMediaPath', actorName);
     csInterface.evalScript(script, function(actorStructPath) {
         if(actorStructPath !== '') {
-            if(!LoadActorStructure(actorStructPath, actor_index)) return;
-       
+            if(!LoadActorStructure(actorStructPath, actor_index)) return;       
             script = makeEvalScript('GetActorStructure', actorName);
             csInterface.evalScript(script, function(struct){
                 if(!struct) return;
 
-                const srcList = [];    
+                const srcList = {};    
                 const structList = struct.split(',');
                 const length = structList.length / ACT_ELM_NUM;
                 for(let i = 0; i < length; i++) {
@@ -1405,6 +1437,7 @@ function ThumbnailGenerator(actor_index, bbox=false){
                 const actorStructure = ActorStructure[actor_index];
                 const cropPathList = actorStructure[ACT_ST_crop_path];
                 const cropDirPath = actorStructure[ACT_ST_crop_dir_path];
+                const srcDirPath = actorStructure[ACT_ST_src_dir_path];
                 if(!bbox){
                     for(key in cropPathList){
                         const cropPath = cropDirPath + cropPathList[key].path;
@@ -1412,6 +1445,11 @@ function ThumbnailGenerator(actor_index, bbox=false){
                             delete srcList[key];
                             if(crop_dir === null){
                                 crop_dir = cropDirPath;
+                            }
+                        } else {
+                            const srcPath = srcDirPath + cropPathList[key].src;
+                            if(fs.existsSync(srcPath)){
+                                srcList[key][1] = srcPath;
                             }
                         }
                     }
@@ -1432,19 +1470,19 @@ function ThumbnailGenerator(actor_index, bbox=false){
                     }
                 } else {
                     for(key in srcList){
-                        if(cropPathList[key] && !cropPathList[key].bbox){
+                        if(cropPathList[key]){
                             const src_path = srcList[key][1];
                             const cropPath = cropDirPath + cropPathList[key].path;
-                            if(!fs.existsSync(cropPath)){
+                            if(!fs.existsSync(cropPath) || !cropPathList[key].bbox){
                                 const lastIndex = src_path.lastIndexOf(".");
                                 const crop_path = srcList[key][0] + GetUUID() + src_path.substr(lastIndex);
                                 cropPathList[key].path = crop_path;
+                                crop_list.push({tree_path:key, src:src_path, dst:cropDirPath + cropPathList[key].path});
                             }
-                            crop_list.push({tree_path:key, src:src_path, dst:cropDirPath + cropPathList[key].path});
                         }
                     }
                 }
-                MakeThumbnail(crop_list);
+                MakeThumbnail(crop_list, notification);
             });
         } else {
             alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
@@ -1533,17 +1571,23 @@ function AnimationSettingEnd() {
 }
 
 let UpdateMediaPathActorIndex = 0;
-function UpdateMediaPath(){
+function UpdateMediaPath(callback){
     const index = UpdateMediaPathActorIndex;
     const actorName = GetActorName(index);
     const script = makeEvalScript('GetActorStructureAndMediaPath', actorName);
     csInterface.evalScript(script, function(result) {
+        if(!result){
+            callback(false);
+            return;
+        }
         result = result.split('\n');
         const actorStructPath = result[0];
         const struct = result[1];
 
-        if(!LoadActorStructure(actorStructPath, index)) return;
-
+        if(!LoadActorStructure(actorStructPath, index)) {
+            if(callback) callback(false);
+            return;
+        }
         // Media pathの変更
         const structList = struct.split(',');
         const length = structList.length / ACT_ELM_NUM;
@@ -1555,25 +1599,30 @@ function UpdateMediaPath(){
         const change_src_list = [];
         for(let i = 0; i < length; i++) {
             const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
-            const current_src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
-            let correct_src_path = '';
-            if(lightweight){
-                correct_src_path = crop_dir + crop_list[key].path;
-            } else {
-                correct_src_path = source_dir + crop_list[key].src;
-            }
-            if(crop_list[key] && correct_src_path !== current_src_path){
-                change_key_list.push(key);
-                change_src_list.push(correct_src_path);
+            if(crop_list[key]){
+                const current_src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                let correct_src_path = '';
+                if(lightweight){
+                    correct_src_path = crop_dir + crop_list[key].path;
+                } else {
+                    correct_src_path = source_dir + crop_list[key].src;
+                }
+                if(correct_src_path !== current_src_path && fs.existsSync(correct_src_path)){
+                    change_key_list.push(key);
+                    change_src_list.push(correct_src_path);
+                }
             }
         }
 
         if(change_key_list.length > 0){
             BusyNotificationOpen('メディアパスを変更しています', change_key_list.length);
             const script2 = makeEvalScript('ChangeMediaPathForLightweight', actorName, change_key_list.join('\\n'), change_src_list.join('\\n'));
-            csInterface.evalScript(script2, function() {
+            csInterface.evalScript(script2, function(result) {
                 BusyNotificationClose();
+                if(callback) callback(true);
             });
+        }else {
+            if(callback) callback(true);
         }
     });
 }
@@ -1690,30 +1739,78 @@ function ImportActor(actorName, index, callback){
     const actorStructPath = GetActorSettingPath(actorName);
     if(!LoadActorStructure(actorStructPath, index)) return;
 
-    BusyNotificationOpen('キャラクターのクリップをインポートしています');
     const isLightweight = ActorStructure[index][ACT_ST_lightweight];
     const crop_path = ActorStructure[index][ACT_ST_crop_path];
     const src_dir = ActorStructure[index][ACT_ST_src_dir_path];
     const crop_dir = ActorStructure[index][ACT_ST_crop_dir_path];
     const importPathList = [];
     const treePathLiist = [];
+    const notFoundList = [];
     for(key in crop_path){
-        treePathLiist.push(key);
+        let path = '';
         if(isLightweight){
-            importPathList.push(crop_dir + crop_path[key].path);
+            path = crop_dir + crop_path[key].path;
         }else{
-            importPathList.push(src_dir + crop_path[key].src);
+            path = src_dir + crop_path[key].src;
+        }
+        if(fs.existsSync(path)){
+            importPathList.push(path);
+            treePathLiist.push(key);
+        } else {
+            notFoundList.push(path);
         }
     }
-    const script = makeEvalScript('ImportActor', actorName, actorStructPath, treePathLiist.join('\\n'), importPathList.join('\\n'));
-    csInterface.evalScript(script, function (result){
-        BusyNotificationClose();
-        const target = $(".actor_sequence_link[sequence='" + index + "']");
-        target.children('.actor_sequence_link_label').attr('imported', '1');
-        if(callback){
-            callback();
+
+    const _import = function(){
+        BusyNotificationOpen('キャラクターのクリップをインポートしています');
+        const script = makeEvalScript('ImportActor', actorName, actorStructPath, treePathLiist.join('\\n'), importPathList.join('\\n'));
+        csInterface.evalScript(script, function (result){
+            BusyNotificationClose();
+            const target = $(".actor_sequence_link[sequence='" + index + "']");
+            target.children('.actor_sequence_link_label').attr('imported', '1');
+            if(callback){
+                callback();
+            }
+        });
+    }
+
+    if(notFoundList.length > 0){
+        const div = $('<div>', {text:`${Object.keys(crop_path).length}ファイル中、以下の${notFoundList.length}ファイルが見つからないためインポートできませんでした。`});
+        const details = $('<details>',{style:'padding: 10px 20px;user-select:text'});
+        details.append($('<summary>', {class:'td_summary', text:'ファイル一覧', style:'text-align:left'}));
+        for(let i = 0; i < notFoundList.length; i++){
+            details.append($('<div>', {text:notFoundList[i], style:'text-align:left'}));
         }
-    });
+        div.append(details);
+
+        let info = null;
+        if(isLightweight){
+            info = $('<div>',{class:'error_info_text', text:'軽量化中の立ち絵です。設定を変更してオリジナルのファイルをインポートできます。'});
+            const button_div = $('<div>', {style:'text-align:center; margin-top:10px'});
+            const button1 = $('<button>',{class:'uk-button uk-button-secondary uk-width-auto', text:'存在するファイルだけインポートする', style:'margin: 10px 10px'});
+            button1.click(function(){
+                ErrorNotificationClose();
+                _import();
+            });
+            button_div.append(button1);
+
+            const button2 = $('<button>',{class:'uk-button uk-button-secondary uk-width-auto', text:'オリジナルのファイルをインポートする', style:'margin: 10px 10px'});
+            button2.click(function(){
+                ActorStructure[index][ACT_ST_lightweight] = 0;
+                SaveJson(ActorStructure[ActorIndexForSetting], ActorStructurePath[ActorIndexForSetting]);
+                ErrorNotificationClose();
+                ImportActor(actorName, index, callback);
+            });
+            button_div.append(button2);
+            info.append(button_div);
+        } else {
+            _import();
+        }
+
+        ErrorNotificationOpen(div, info);
+    } else {
+        _import();
+    }
 }
 
 function ActorEditInitialize() {
@@ -1766,8 +1863,10 @@ function ActorEditInitialize() {
         if($(this).hasClass('unlink') && !isSetting){
             if(imported){
                 $('#actor_setting_make_thumbnail').removeClass('events_disable');
+                $('#actor_setting_force_medialink').removeClass('events_disable');
             } else {
                 $('#actor_setting_make_thumbnail').addClass('events_disable');
+                $('#actor_setting_force_medialink').addClass('events_disable');
             }
             $('#actor_setting_delete_thumbnail').removeClass('events_disable');
             $('#actor_setting_delink').addClass('events_disable');
@@ -1775,6 +1874,7 @@ function ActorEditInitialize() {
         } else {
             $('#actor_setting_make_thumbnail').addClass('events_disable');
             $('#actor_setting_delete_thumbnail').addClass('events_disable');
+            $('#actor_setting_force_medialink').addClass('events_disable');
             
             if(isSetting){
                 $('#actor_setting_convert_lightweight').addClass('events_disable');
@@ -1839,7 +1939,7 @@ function ActorEditInitialize() {
 
     $('#actor_setting_make_thumbnail').on('mouseup', function(e) {
         if(e.which === 1) {
-            ThumbnailGenerator(ActorIndexForSetting);
+            ThumbnailGenerator(ActorIndexForSetting, false, true);
         }
     });
     $('#actor_setting_delete_thumbnail').on('mouseup', function(e) {
@@ -1855,23 +1955,45 @@ function ActorEditInitialize() {
                         actorStructPath = GetActorSettingPath(actorName);
                     }
                     if(!LoadActorStructure(actorStructPath, ActorIndexForSetting)) return;
-                    if(confirm('この変更は取り消せません。削除しますか？')){
+                    const conf = UIkit.modal.confirm('この変更は取り消せません。削除しますか？', {labels: {cancel: 'サムネイルを削除する', ok: 'キャンセル'}, bgClose:true});
+                    setWarningToUikitConfirmButton($(conf.dialog.$el), 0);
+                    if(!OSIsWin) swapUikitConfirmButton($(conf.dialog.$el));
+                    conf.then(function() {}, function(){
                         const actorStructure = ActorStructure[ActorIndexForSetting];
                         if(actorStructure){
-                            const saveCropPathList = actorStructure[ACT_ST_crop_path];
-                            let count = 0;
-                            const cropDirPath = actorStructure[ACT_ST_crop_dir_path];
-                            for(key in saveCropPathList){
-                                const cropPath = cropDirPath + saveCropPathList[key].path;
-                                if(fs.existsSync(cropPath)){
-                                    window.cep.fs.deleteFile(cropPath);
-                                    count++;
+                            const _deleteFunc = function(){
+                                const saveCropPathList = actorStructure[ACT_ST_crop_path];
+                                let count = 0;
+                                const cropDirPath = actorStructure[ACT_ST_crop_dir_path];
+                                for(key in saveCropPathList){
+                                    const cropPath = cropDirPath + saveCropPathList[key].path;
+                                    if(fs.existsSync(cropPath)){
+                                        window.cep.fs.deleteFile(cropPath);
+                                        count++;
+                                    }
                                 }
+                                const script = makeEvalScript('MessageInfo', count.toString() + '個のサムネイルを削除しました');
+                                csInterface.evalScript(script);
                             }
-                            const script = makeEvalScript('MessageInfo', count.toString() + '個のサムネイルを削除しました');
-                            csInterface.evalScript(script);
+                            if(actorStructure[ACT_ST_lightweight] && IsActorImported(ActorIndexForSetting)){
+                                const conf2 = UIkit.modal.confirm('立ち絵の軽量化を使用中です。削除するためには軽量化を解除する必要があります。', {labels: {cancel: '軽量化を解除してサムネイルを削除する', ok: 'キャンセル'}, bgClose:true});
+                                setWarningToUikitConfirmButton($(conf2.dialog.$el), 0);
+                                if(!OSIsWin) swapUikitConfirmButton($(conf2.dialog.$el));
+                                conf2.then(function() {}, function(){
+                                    UpdateMediaPathActorIndex = ActorIndexForSetting;
+                                    actorStructure[ACT_ST_lightweight] = 0;
+                                    SaveJson(ActorStructure[ActorIndexForSetting], ActorStructurePath[ActorIndexForSetting]);
+                                    UpdateMediaPath(function(result){
+                                        if(result) {
+                                            _deleteFunc();
+                                        }
+                                    });
+                                });
+                            } else {
+                                _deleteFunc();
+                            }
                         }
-                    }
+                    });
                 } else {
                     alert("構成ファイルが見つかりません。立ち絵設定を行ってください");
                     StartActorSetting();
@@ -1924,7 +2046,7 @@ function ActorEditInitialize() {
                 image.src = src_path;
             }
         }
-    });    
+    });
     $('#actor_setting_remove_parts_button').on('mouseup', function(e) {
         if(e.which === 1) {
             DeleteSelectedParts();

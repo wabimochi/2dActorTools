@@ -441,7 +441,7 @@ $._PPP_={
 		if(root) {
 			deepSearchActStructure(root, actorStructure);
 		}
-		return actorStructure;
+		return actorStructure.join(',');
 	},
 
 	GetCurrentActorClipTreePath: function(sequenceIndex, currentTime) {

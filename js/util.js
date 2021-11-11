@@ -217,3 +217,13 @@ function getExtensionVersion(){
     const end = xmlStr.indexOf('"', start);
     return xmlStr.substring(start, end);
 }
+
+function swapUikitConfirmButton(parent) {
+    const button = parent.find('.uk-modal-footer').children();
+    button.next().after(button);
+    button.css('margin-right','10px');
+}
+function setWarningToUikitConfirmButton(parent, index){
+    const button = parent.find('.uk-modal-footer').children();
+    button.eq(index).addClass('tdact_setting_error');
+}
