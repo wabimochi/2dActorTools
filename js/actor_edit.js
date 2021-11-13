@@ -156,10 +156,14 @@ $(document).on('click', '.actor_sequence_link.linked', function(e){
             }
         }
     } else {
+        const index = $(this).attr('sequence');
         $('.actor_sequence_link').removeClass('enable');
         $(this).addClass('enable');
         $('#actor_switcher').find('li').removeClass('uk-active');
-        $('#actor_switcher').find('li[sequence="' + $(this).attr('sequence') + '"]').addClass('uk-active');
+        $('#actor_switcher').find(`li[sequence=${index}]`).addClass('uk-active');
+        if($(`.actor_sequence_link[sequence=${index}]`).find('.actor_sequence_warning_icon')[0]){
+            csInterface.evalScript(makeEvalScript('CheckLinkSequenceFramerate', index));
+        }
     }
 });
 
@@ -238,7 +242,9 @@ function actorDelink(target, skip_linkseq=''){
     $('.actor_sequence_link').removeClass('enable');
     target.removeClass('linked');
     target.addClass('unlink');
-    target.find('.actor_sequence_link_icon').attr('uk-icon', 'ban');;
+    target.find('.actor_sequence_link_icon').attr('uk-icon', 'ban');
+    target.find('.actor_sequence_warning_icon').remove();
+    target.removeAttr('uk-tooltip');
     $('#actor_switcher').find('li').removeClass('uk-active');
     const script = makeEvalScript('DelinkSequence', index, skip_linkseq);
     csInterface.evalScript(script);
@@ -2268,6 +2274,23 @@ function ActorEditInitialize() {
         const id = data[0];
         const value = data[1];
         $(id).attr('max', value);
+    });
+    csInterface.addEventListener('framerateMismatchMessage', function(e){
+        const index = e.data;
+        const parentElm = $(`.actor_sequence_link[sequence=${index}]`);
+        if(!parentElm.find('.actor_sequence_warning_icon')[0]){
+            parentElm.attr('uk-tooltip', 'メイン・キャラクター・アニメーションのシーケンスでフレームレートが一致していません。（設定変更後、再度キャラクター名をクリックするとこの表示は消えます）')
+            const icon = $(`.actor_sequence_link[sequence=${index}]`).find('.actor_sequence_link_icon');
+            const div_icon = $('<div>', {'class':'actor_sequence_warning_icon', 'uk-icon':'warning'});
+            icon.after(div_icon);
+        }
+    });
+    csInterface.addEventListener('framerateMatchMessage', function(e){
+        const index = e.data;
+        const parentElm = $(`.actor_sequence_link[sequence=${index}]`);
+        parentElm.removeAttr('uk-tooltip');
+        const icon = parentElm.find('.actor_sequence_warning_icon');
+        icon.remove();
     });
 }
 

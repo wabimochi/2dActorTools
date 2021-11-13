@@ -547,6 +547,7 @@ $._PPP_={
 
 	SetLinkSequence: function(index) {
 		if(linkSequence[index]){
+			$._PPP_.CheckLinkSequenceFramerate(index);
 			return SEQUENCE_LINK_SUCCESS;
 		}
 		var seq = app.project.activeSequence;
@@ -560,6 +561,7 @@ $._PPP_={
 					if(linkSeq !== null) {
 						linkSequence[index] = linkSeq;
 						linkSequenceParents[index] = seq;
+						$._PPP_.CheckLinkSequenceFramerate(index);
 						return SEQUENCE_LINK_SUCCESS;
 					}
 				} else {
@@ -570,6 +572,35 @@ $._PPP_={
 			}
 		}
 		return LINKERROR_NO_ACTIVE_SEQUENCE;
+	},
+
+	CheckLinkSequenceFramerate: function(index){
+		if(linkSequence[index]){
+			var time1 = linkSequenceParents[index].getSettings().videoFrameRate.seconds;
+			var time2 = linkSequence[index].getSettings().videoFrameRate.seconds;
+			if(time1 !== time2){
+				eventObj.type = "framerateMismatchMessage";
+				eventObj.data = index;
+				eventObj.dispatch();
+				return;
+			}
+
+			if(linkAnimationSequence[index]){
+				for(var i = 0; i < linkAnimationSequence[index].length; i++){
+					if(linkAnimationSequence[index][i]){
+						if(time1 !== linkAnimationSequence[index][i].getSettings().videoFrameRate.seconds){
+							eventObj.type = "framerateMismatchMessage";
+							eventObj.data = index;
+							eventObj.dispatch();
+							return;	
+						}
+					}
+				}
+			}
+			eventObj.type = "framerateMatchMessage";
+			eventObj.data = index;
+			eventObj.dispatch();
+		}
 	},
 
 	DelinkSequence: function(index, skip_linkseq) {
@@ -1108,6 +1139,7 @@ $._PPP_={
 			linkAnimationSequence[linkedSequenceIndex] = [];
 		}
 		linkAnimationSequence[linkedSequenceIndex][animationTrackIndex] = seq;
+		$._PPP_.CheckLinkSequenceFramerate(linkedSequenceIndex);
 
 		var indexes = {};
 		for(var i = 0; i < seq.videoTracks.numTracks; i++) {

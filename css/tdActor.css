@@ -154,10 +154,6 @@ hr {
   margin-left: 10px !important;
 }
 
-.actor_sequence_link_icon{
-  padding-left: 10px !important;
-  padding-right: 10px !important;
-}
 .actor_sequence_link_icon svg{
   transform: translateY(15%);
   margin-bottom: 0px;
