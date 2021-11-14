@@ -205,6 +205,18 @@ function SetMogrtPath(name, path){
     }
 }
 
+function RemoveActorSettingPath(actorName){
+    if(ExtensionSettings[E_SETTING_actors][actorName]){
+        delete ExtensionSettings[E_SETTING_actors][actorName];
+        SaveSettingsTimeout();
+    }
+}
+function RemoveMogrtPath(name){
+    if(ExtensionSettings[E_SETTING_mogrts][name]){
+        delete ExtensionSettings[E_SETTING_mogrts][name];
+        SaveSettingsTimeout();
+    }
+}
 $(document).on('change', '.save_setting_value_on_change', function() {
     SaveSettingValueFromElement($(this));
 });

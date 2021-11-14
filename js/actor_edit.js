@@ -1870,9 +1870,11 @@ function ActorEditInitialize() {
             if(imported){
                 $('#actor_setting_make_thumbnail').removeClass('events_disable');
                 $('#actor_setting_force_medialink').removeClass('events_disable');
+                $('#actor_setting_remove_actor').addClass('events_disable');
             } else {
                 $('#actor_setting_make_thumbnail').addClass('events_disable');
                 $('#actor_setting_force_medialink').addClass('events_disable');
+                $('#actor_setting_remove_actor').removeClass('events_disable');
             }
             $('#actor_setting_delete_thumbnail').removeClass('events_disable');
             $('#actor_setting_delink').addClass('events_disable');
@@ -1881,6 +1883,7 @@ function ActorEditInitialize() {
             $('#actor_setting_make_thumbnail').addClass('events_disable');
             $('#actor_setting_delete_thumbnail').addClass('events_disable');
             $('#actor_setting_force_medialink').addClass('events_disable');
+            $('#actor_setting_remove_actor').addClass('events_disable');
             
             if(isSetting){
                 $('#actor_setting_convert_lightweight').addClass('events_disable');
@@ -2056,6 +2059,12 @@ function ActorEditInitialize() {
     $('#actor_setting_remove_parts_button').on('mouseup', function(e) {
         if(e.which === 1) {
             DeleteSelectedParts();
+        }
+    });
+    $('#actor_setting_remove_actor').on('mouseup', function(e) {
+        if(e.which === 1) {
+            RemoveActorSettingPath(GetActorName(ActorIndexForSetting));
+            $(`.actor_sequence_link[sequence=${ActorIndexForSetting}]`).remove();
         }
     });
     $('#actor_setting_add_group_button').on('mouseup', function(e) {

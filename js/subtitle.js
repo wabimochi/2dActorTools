@@ -6,9 +6,28 @@ $('#subtitle_replace_flag').on('change', function() {
         $(this).val('');
     }
 });
+$(document).on('click', '#mogrt_history_trash', function() {
+    const select_mogrt = $('#select_mogrt');
+    const option = $(select_mogrt).find('option:selected');
+    if(!option.attr('imported')){
+        RemoveMogrtPath(select_mogrt.val());
+        option.remove();
+        select_mogrt.change();
+    }
+});
+$(document).on('change', '#select_mogrt', function() {
+    const select_mogrt = document.getElementById('mogrt_history_trash');
+    const option = $('#select_mogrt').find('option:selected');
+    const mogrt_trash = $('#mogrt_history_trash');
+    if(option.attr('imported')){
+        mogrt_trash.attr('hidden', '');
+    } else {
+        mogrt_trash.removeAttr('hidden');
+    }
+});
 
 function mogrtUpdate() {
-    let select_mogrt = document.getElementById('select_mogrt');
+    const select_mogrt = document.getElementById('select_mogrt');
     csInterface.evalScript('$._PPP_.GetMGTClipName()', function(names) {
         const mogrtHistory = GetMogrtHistory();
         names = names.split(',');
@@ -40,6 +59,7 @@ function mogrtUpdate() {
         while(nameList.length < select_mogrt.childNodes.length) {
             select_mogrt.removeChild(select_mogrt.lastChild);
         }
+        $(select_mogrt).change();
     });
 }
 

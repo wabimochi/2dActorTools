@@ -79,7 +79,12 @@
 						<summary class="td_summary">ソース：Audioと同じフォルダにあるtxtファイル</summary>
 						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
 							<span class="uk-label tdactor_label uk-width-auto">トラックに並べるMOGRTを選択</span>
-							<select class="tdactor_selectbox uk-width-expand uk-select" id="select_mogrt"></select>
+							<div class="uk-flex" style="align-items: baseline;">
+								<select class="tdactor_selectbox uk-width-expand uk-select" id="select_mogrt"></select>
+								<div id="mogrt_history_trash" class="insert_setting_icon" uk-tooltip="履歴から消します" style="padding-left:15px; padding-right:15px" hidden>
+									<a href="#" class="icon_s" uk-icon="icon: trash"></a>
+								</div>
+							</div>
 							<span class="uk-label tdactor_label uk-width-auto">プリセットタグ</span>
 							<input class="uk-input uk-light tdinput save_setting_value_on_change" type="text" category="insert_subtitle" id="preset_tag" value="＞" placeholder="preset tag...">
 							<span class="uk-label tdactor_label uk-width-auto uppercase_disable">Replace（正規表現）</span>
@@ -326,6 +331,7 @@
 						<li id="actor_setting_make_thumbnail">不足しているサムネイルの生成</li>
 						<li id="actor_setting_delete_thumbnail">サムネイルの削除</li>
 						<li id="actor_setting_convert_lightweight" uk-tooltip="リンク中のシーケンスを現在の軽量化モードに合わせて変換します">シーケンスの変換</li>
+						<li id="actor_setting_remove_actor">履歴から消す</li>
 					</ul>
 				</div>
 				<div id="parts_contextmenu" class="contextmenu">
