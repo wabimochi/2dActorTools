@@ -30,7 +30,11 @@ function mogrtUpdate() {
     const select_mogrt = document.getElementById('select_mogrt');
     csInterface.evalScript('$._PPP_.GetMGTClipName()', function(names) {
         const mogrtHistory = GetMogrtHistory();
-        names = names.split(',');
+        if(names.length > 0){
+            names = names.split(',');
+        } else {
+            names = [];
+        }
         for(let i = 0; i < names.length; i++){
             while(true){
                 const index = mogrtHistory.indexOf(names[i]);
