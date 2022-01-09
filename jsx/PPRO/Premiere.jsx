@@ -70,10 +70,6 @@ var linkSequenceParents = [];
 var linkAnimationSequence = [];
 var linkAnimationProperties = [];
 
-var incrementalBakeEnable = [];
-var incrementalBakeSource = [];
-var incrementalBake_clips = [];
-
 var ACT_CLIPEND_START = 1;
 var ACT_CLIPEND_END = 2;
 var ACT_CLIPEND_MARKER = 4;
@@ -109,14 +105,6 @@ var FrameAnimationKey = function(index, duration) {
     this.duration = duration;
 }
 
-var ClipForIncrementalBake = function(trackItem) {
-	this.nodeId = trackItem.nodeId;
-    this.start = trackItem.start.seconds;
-    this.end = trackItem.end.seconds;
-    this.inPoint = trackItem.inPoint.seconds;
-    this.outPoint = trackItem.outPoint.seconds;
-}
-
 $._PPP_={
 	Setup: function(extPath){
 		searchActBin();
@@ -131,8 +119,6 @@ $._PPP_={
 		app.bind('onSourceClipSelectedInProjectPanel', reportProjectItemSelectionChanged);
 		app.unbind('onActiveSequenceSelectionChanged');
 		app.bind('onActiveSequenceSelectionChanged', reportSequenceItemSelectionChanged);
-		// app.unbind('onActiveSequenceChanged');
-		// app.bind('onActiveSequenceChanged', incrementalBake);
 	},
 
 	SequenceStructureChanged : function () {
@@ -610,9 +596,6 @@ $._PPP_={
 		}
 		delete linkAnimationSequence[index];
 		delete linkAnimationProperties[index];
-		delete incrementalBakeEnable[index];
-		delete incrementalBakeSource[index];
-		delete incrementalBake_clips[index];
 	},
 
 	InsertActorClip: function(actorName, sequenceIndex, trackIndex, clipTreePath, l, t, w, h, actor_l, actor_t, startTime, endFlag) {
@@ -1439,37 +1422,6 @@ $._PPP_={
 		bakeFrameAnimation_Random(0, end, false, false, id);
 	},
 
-	SetIncrementalBakeFlag : function(linkedSequenceIndex, animationTrackIndex, sourceIndex, enable){
-		enable = Number(enable);
-
-		if(enable){
-			if(!incrementalBake_clips[linkedSequenceIndex]){
-				incrementalBake_clips[linkedSequenceIndex] = [];
-			}
-			incrementalBake_clips[linkedSequenceIndex][animationTrackIndex] = [];
-
-			if(!incrementalBakeSource[linkedSequenceIndex]){
-				incrementalBakeSource[linkedSequenceIndex] = [];
-			}
-			incrementalBakeSource[linkedSequenceIndex][animationTrackIndex] = sourceIndex;
-
-			var clipList = [];
-			var sourceClips = linkSequenceParents[linkedSequenceIndex].audioTracks[sourceIndex].clips;
-			for(var i = 0; i < sourceClips.length; i++){
-				clipList.push(new ClipForIncrementalBake(sourceClips[i]));
-			}
-			incrementalBake_clips[linkedSequenceIndex][animationTrackIndex] = clipList;
-		}
-		if(!incrementalBakeEnable[linkedSequenceIndex]){
-			incrementalBakeEnable[linkedSequenceIndex] = [];
-		}
-		incrementalBakeEnable[linkedSequenceIndex][animationTrackIndex] = enable;
-
-		eventObj.type = "incrementalBakeNotification";
-		eventObj.data = linkedSequenceIndex.toString() + ',' + animationTrackIndex.toString() + ',' + enable.toString();
-		eventObj.dispatch();
-	},
-
 	ConvertLightweightSequence : function(actorName, linkedSequenceIndex, changeKey, bbox_list, actor_l, actor_t, isLightweight){
 		var seq = app.project.activeSequence;
 		if(seq) {
@@ -1698,14 +1650,6 @@ $._PPP_={
 	}
 };
 
-function getClipLocalTime (clip, time) {
-	return time + clip.inPoint.seconds - clip.start.seconds;
-}
-
-function getActorClipWithTreePath(actorName, treePath) {
-	return searchItemWithTreePath(ActorBinItem.name + '/' + actorName + '/' + treePath, ProjectItemType.CLIP);
-}
-
 function shallowSearch(root, name, projectItemType) {
 	for(var i = 0; i < root.children.numItems; i++) {
 		if(root.children[i].type === projectItemType && root.children[i].name === name) {
@@ -1741,29 +1685,37 @@ function searchItemWithTreePath (treePath, type) {
     return null;
 }
 
-function getDummyClip() {
-	return shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
-}
-
-function fixTimeError(seconds, epsTime) {
-    var mod = (seconds % epsTime);
-    if(mod * 2 < epsTime) {
-        seconds -= mod;
-    } else {
-        seconds += epsTime - mod;
-    }
-    return seconds;
-}
-
-function trackItemToSequence(clip) {
-	if(clip.projectItem){
-		for(var i = 0; i < app.project.sequences.numSequences; i++){
-			if(clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
-				return app.project.sequences[i];
+function searchActBin(){
+	if (app.project && !ActorBinItem) {
+		var projectItems = app.project.rootItem.children;
+		for(var i = 0; i < projectItems.numItems; i++) {
+			if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN_NAME) {
+				ActorBinItem = projectItems[i];
+				break;
 			}
 		}
 	}
-    return null;
+}
+
+function getClipAtTime(trackItemList, time){
+	for(var i = 0; i < trackItemList.length; i++){
+		if(trackItemList[i].start.seconds <= time && time < trackItemList[i].end.seconds){
+			return trackItemList[i];
+		}
+	}
+	return null;
+}
+function getTrackItemAtTime(trackItems, time){
+	for(var i = 0; i < trackItems.numItems; i++) {
+		if(trackItems[i].inPoint.seconds <= time && time < trackItems[i].outPoint.seconds){
+			return trackItems[i];
+		}
+	}
+	return null;
+}
+
+function getClipLocalTime (clip, time) {
+	return time + clip.inPoint.seconds - clip.start.seconds;
 }
 
 function getNextClipTime(clips, endFlag, startSeconds, endSeconds, epsTime) {
@@ -1811,14 +1763,12 @@ function getNextMarkerTime(markers, startSeconds, endSeconds) {
     return endSeconds;
 }
 
-function MessageInfo(message) {
-    app.setSDKEventMessage('2dActorTools:' + message, 'info');
+function getActorClipWithTreePath(actorName, treePath) {
+	return searchItemWithTreePath(ActorBinItem.name + '/' + actorName + '/' + treePath, ProjectItemType.CLIP);
 }
-function MessageWarning(message) {
-	app.setSDKEventMessage('2dActorTools:' + message, 'warning');
-}
-function MessageError(message){
-	app.setSDKEventMessage('2dActorTools:' + message, 'error');
+
+function getDummyClip() {
+	return shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
 }
 
 function getComponentObject(clip, componentName) {
@@ -1845,112 +1795,198 @@ function getPropertyObject (component, propertyNames) {
 	return propertyRoot;
 }
 
-function reportProjectItemSelectionChanged(e) {
-    var projectItems = e;
-    if (projectItems){
-        if (projectItems.length) {
-			projectSelectionItem = projectItems[0].treePath.slice(projectItems[0].treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
-            eventObj.type = "projectItemsSelect";
-            eventObj.data = projectSelectionItem;
-            eventObj.dispatch();
-        }
-    }
-}
-function reportSequenceItemSelectionChanged() {
-    eventObj.type = "sequenceItemsSelectChanged";
-	eventObj.data = '';
-    eventObj.dispatch();
+function getSourceTextParam(mogrtComponent){
+	var sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V1);
+	if(!sourceText) sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V2);
+	return sourceText;
 }
 
-function trackIdToIndex(track){
-	var seq = app.project.activeSequence;
-	if(track.mediaType === 'Audio'){
-		for(var i = 0; i < seq.audioTracks.numTracks; i++){
-			if(seq.audioTracks[i].id === track.id) {
-				return i;
+function getSequenceTrackItemsInSequence(parentSequence, targetSequenceID){
+	var sequenceList = [];
+	for(var i = 0; i < parentSequence.videoTracks.numTracks; i++){
+		var clips = parentSequence.videoTracks[i].clips;
+		for(var j = 0; j < clips.numItems; j++){
+			if(clips[j].projectItem && clips[j].projectItem.isSequence()){
+				var seq = trackItemToSequence(clips[j]);
+				if(seq.sequenceID === targetSequenceID){
+					sequenceList.push(clips[j]);
+				}
 			}
 		}
+	}
+	
+	sequenceList.sort(function(a, b) {
+		return a.start.seconds - b.start.seconds;
+	});
+	return sequenceList;
+}
+
+function getParentBin(projectItem){
+	var treePath = removeRootPath(projectItem.treePath);
+	var index = treePath.lastIndexOf('/');
+	if(index !== -1) {
+		treePath = treePath.slice(0, index);
+		return searchItemWithTreePath(treePath, ProjectItemType.BIN);
 	} else {
-		for(var i = 0; i < seq.videoTracks.numTracks; i++){
-			if(seq.videoTracks[i].id === track.id) {
-				return i;
+		return app.project.rootItem;
+	}
+}
+
+function fixTimeError(seconds, epsTime) {
+    var mod = (seconds % epsTime);
+    if(mod * 2 < epsTime) {
+        seconds -= mod;
+    } else {
+        seconds += epsTime - mod;
+    }
+    return seconds;
+}
+
+function trackItemToSequence(clip) {
+	if(clip.projectItem){
+		for(var i = 0; i < app.project.sequences.numSequences; i++){
+			if(clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
+				return app.project.sequences[i];
 			}
 		}
 	}
-	return -1;
+    return null;
 }
 
-function incrementalBake() {
-	var IsDifferent = function(Ibake, trackItem){
-		return (Ibake.start !== trackItem.start.seconds ||
-				Ibake.end !== trackItem.end.seconds ||
-				Ibake.inPoint !== trackItem.inPoint.seconds ||
-				Ibake.outPoint !== trackItem.outPoint.seconds);
+function overwriteVideoClip(projectItem, sequence, track, startTime, endFlag, endMarkerSequence, l, t, w, h, actor_l, actor_t){
+	var clips = track.clips;
+	var epsTime = sequence.getSettings().videoFrameRate.seconds;
+	var endTime = startTime + 60 * 60;
+	if(sequence.getOutPointAsTime().seconds > 0) {
+		endTime = sequence.getOutPointAsTime().seconds;
 	}
-	for(var i = 0; i < incrementalBakeEnable.length; i++){
-		if(!incrementalBakeEnable[i]) continue;
-		for(var j = 0; j < incrementalBakeEnable[i].length; j++){
-			if(incrementalBakeEnable[i][j] && app.project.activeSequence.sequenceID === linkSequenceParents[i].sequenceID){
-				var oldClipList = incrementalBake_clips[i][j];
-				var sourceIndex = incrementalBakeSource[i][j];
-				var currentClips = linkSequenceParents[i].audioTracks[sourceIndex].clips;
-				var removeList = [];
-				var addList = [];
 
-				var oldIdx = 0;
-				for(var currentIdx = 0; currentIdx < currentClips.numItems; currentIdx++){
-					var clip = currentClips[currentIdx];
-					var itr = oldIdx;
-					for(; itr < oldClipList.length; itr++){
-						if(oldClipList[itr].nodeId === clip.nodeId){
-							if(IsDifferent(oldClipList[itr], clip)){
-								addList.push(clip);
-								removeList.push(oldClipList[itr]);
-							}
-							for(; oldIdx < itr; oldIdx++){
-								removeList.push(oldClipList[oldIdx]);
-							}
-							oldIdx = itr + 1;
-							break;
-						}
-					}
+	endTime = getNextClipTime(clips, endFlag, startTime, endTime, epsTime);
+	if(endFlag & ACT_CLIPEND_MARKER) {
+		endTime = getNextMarkerTime(endMarkerSequence.markers, startTime, endTime);
+	}
+	
+	if(!projectItem.isSequence()) projectItem.setOverrideFrameRate(1/epsTime);
 
-					if(itr === oldClipList.length){
-						addList.push(clip);
-					}
-				}
-				for(; oldIdx < oldClipList.length; oldIdx++){
-					removeList.push(oldClipList[oldIdx]);
-				}
+	var correctionTime = epsTime / 100;
+	var _startTime = new Time();
+	_startTime.seconds = fixTimeError(startTime, epsTime) + correctionTime;
+	var _endTime = new Time();
+	_endTime.seconds = fixTimeError(endTime, epsTime) + correctionTime;
 
-				if(removeList.length > 0){
-					var animationSequence = linkAnimationSequence[i][j];
-					var properties = linkAnimationProperties[i][j];
-					var epsTime = animationSequence.getSettings().videoFrameRate.seconds;
-					var sequenceList = getSequenceTrackItemsInSequence(linkSequenceParents[i], linkSequence[i].sequenceID);
-					for(var k = 0; k < removeList.length; k++){
-						var targetSequence = getClipAtTime(sequenceList, removeList[k].start);
-						var start = getClipLocalTime(targetSequence, removeList[k].start);
-						var end = getClipLocalTime(targetSequence, removeList[k].end);
-						clearFrameAnimation(animationSequence, properties, start, end - epsTime, true);
-					}
-				}
-				if(addList.length > 0){
-					$._PPP_.FrameAnimation_Audio(i, j, sourceIndex, addList)
-				}
+	projectItem.setInPoint(_startTime, 4);
+	projectItem.setOutPoint(_endTime, 4);
+	track.overwriteClip(projectItem, startTime);
+	if(!projectItem.isSequence()) projectItem.setOverrideFrameRate(0);
 
-				if(addList.length !== 0 || removeList.length !== 0){
-					var newClipList = [];
-					for(var k = 0; k < currentClips.length; k++){
-						newClipList.push(new ClipForIncrementalBake(currentClips[k]));
-					}
-					incrementalBake_clips[i][j] = newClipList;
-				}
+	if(l !== undefined && t !== undefined && w !== undefined && h !== undefined && w > 0 && h > 0){
+			var settings = sequence.getSettings();
+			var seqWidth = settings.videoFrameWidth;
+			var seqHeight = settings.videoFrameHeight;
+
+			var searchIndex = track.clips.numItems - 1;
+			var halfEpsTime = epsTime * 0.5;
+			for(var i = searchIndex; i >= 0 ; i--){
+				if(Math.abs(track.clips[i].start.seconds - startTime) < halfEpsTime) {
+					anchorUpdate(track.clips[i], l, t, w, h, seqWidth, seqHeight, actor_l, actor_t, 1);
+					break;
 			}
 		}
 	}
 }
 
+function makeVideoTrack(sequence, trackIndex) {
+	if(trackIndex >= sequence.videoTracks.numTracks) {
+		var lastIndex = sequence.videoTracks.numTracks - 1;
+		var vlocked = sequence.videoTracks[lastIndex].isLocked();
+		if(!vlocked) {
+			sequence.videoTracks[lastIndex].setLocked(1);
+		}
+		var currentTrackNum = sequence.videoTracks.numTracks;
+		var clip = getDummyClip();
+		for(var i = trackIndex - currentTrackNum; i >= 0; i--) {
+			sequence.videoTracks[sequence.videoTracks.numTracks - 1].overwriteClip(clip, 0);
+			sequence.videoTracks[sequence.videoTracks.numTracks - 1].setLocked(1);
+		}
+		for(var i = Number(currentTrackNum); i < sequence.videoTracks.numTracks; i++) {
+			sequence.videoTracks[i].setLocked(0);
+			sequence.videoTracks[i].clips[0].setSelected(true, false);
+			sequence.videoTracks[i].clips[0].remove(false, false);
+		}
+		if(!vlocked) {
+			sequence.videoTracks[lastIndex].setLocked(0);
+		}
+	}
+}
+
+function updateUI(properties){
+	var property = null;
+	for(var i = 0; i < properties.length; i++){
+		if(properties[i] === null) continue;
+		property = properties[i];
+		break;
+	}
+	if(property === null) return;
+
+	if(property.isTimeVarying()){
+		var time = new Time();
+		time.seconds = -1;
+		var keyTime = property.findNextKey(time);
+		var value = property.getValueAtKey(keyTime);
+		property.setValueAtKey(keyTime, value, true);
+	} else {
+		var value = property.getValue();
+		property.setValue(value, true);
+	}
+}
+
+function anchorUpdate(clip, l, t, w, h, sequence_width, sequence_height, actor_l, actor_t, updateUI){
+	var component = getComponentObject(clip, DISPLAY_NAME_MOTION);
+	var property = getPropertyObject(component, [DISPLAY_NAME_ANCHORPOINT]);
+	var newX = (sequence_width * 0.5 - l + actor_l) / w;
+	var newY = (sequence_height * 0.5 - t + actor_t) / h;
+	property.setValue([newX, newY], updateUI);
+}
+
+function initializeActBin(extPath){
+	ActorBinItem = app.project.rootItem.createBin(ACT_BIN_NAME);
+	var dummyClip = shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
+	if(dummyClip === null) app.project.importFiles([extPath + '/resource/dummy.png'], true, ActorBinItem, false);
+}
+
+function getFirstSequenceFromTrackItems(clips) {
+	// todo animation sequence check
+	var seq = null;
+	for(var i = 0; i < clips.numItems; i++) {
+		if(clips[i].projectItem && clips[i].projectItem.isSequence()) {
+			seq = trackItemToSequence(clips[i]);
+		}
+	}
+	return seq;
+}
+
+function getTreePathFromActorClip(clip){
+	var treePath = '';
+	if(clip.projectItem && !clip.projectItem.isSequence()){
+		treePath = clip.projectItem.treePath;
+	}
+	return treePath.slice(1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1)))).replace(/\\/g, '/');
+}
+
+function changeExt(path, new_ext){
+	return path.substring(0, path.lastIndexOf(".")) + new_ext;
+}
+
+function removeRootPath(treePath) {
+	treePath = treePath.replace(/\\/g, '/');
+	var rootPath = app.project.rootItem.treePath.replace(/\\/g, '/');
+	if(treePath.indexOf(rootPath) === 0){
+		treePath = treePath.slice(rootPath.length + 1);
+	}
+	return treePath;
+}
+
+/******************** Animation *********************/
 function getTransition(targetMarker){
 	var transition = [];
 	var infoList = targetMarker.comments.split('\n');
@@ -2200,7 +2236,6 @@ function bakeFrameAnimation_Audio(allDuration, animationKeypoints, animationStar
 	if(allDuration){
 		currentTransition = getTransition(currentMarker);
 		finalKey[Math.round(currentMarker.start.seconds / epsTime)] = currentTransition[0].index;
-		$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 0);
 	}
 
 	var endTimeList = [];
@@ -2380,9 +2415,6 @@ function bakeFrameAnimation_Audio(allDuration, animationKeypoints, animationStar
 
 	updateUI(AnimationProperties);
 
-	// if(allDuration){
-	// 	$._PPP_.SetIncrementalBakeFlag(fLinkedSequenceIndex, fAnimationSequenceIndex, fAnimationSourceIndex, 1);
-	// }
 	if(id){
 		bakeCompleteMessage(id);
 	}
@@ -2559,52 +2591,15 @@ function bakeFrameAnimation_Random(start, end, clearKeyframe, once, id){
 	}
 }
 
-function getFirstSequenceFromTrackItems(clips) {
-	// todo animation sequence check
-	var seq = null;
-	for(var i = 0; i < clips.numItems; i++) {
-		if(clips[i].projectItem && clips[i].projectItem.isSequence()) {
-			seq = trackItemToSequence(clips[i]);
+function getFirstTransitionMarker(markers) {
+	var marker =  markers.getFirstMarker();
+	do {
+		if(isTransitionMarker(marker)) {
+			return marker;
 		}
-	}
-	return seq;
-}
-
-function getTrackItemAtTime(trackItems, time){
-	for(var i = 0; i < trackItems.numItems; i++) {
-		if(trackItems[i].inPoint.seconds <= time && time < trackItems[i].outPoint.seconds){
-			return trackItems[i];
-		}
-	}
+		marker = getNextTransitionMarker(markers, marker);
+	} while(marker !== null);
 	return null;
-}
-
-function getTreePathFromActorClip(clip){
-	var treePath = '';
-	if(clip.projectItem && !clip.projectItem.isSequence()){
-		treePath = clip.projectItem.treePath;
-	}
-	return treePath.slice(1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1 + treePath.indexOf('\\', 1)))).replace(/\\/g, '/');
-}
-
-function getParentBin(projectItem){
-	var treePath = removeRootPath(projectItem.treePath);
-	var index = treePath.lastIndexOf('/');
-	if(index !== -1) {
-		treePath = treePath.slice(0, index);
-		return searchItemWithTreePath(treePath, ProjectItemType.BIN);
-	} else {
-		return app.project.rootItem;
-	}
-}
-
-function removeRootPath(treePath) {
-	treePath = treePath.replace(/\\/g, '/');
-	var rootPath = app.project.rootItem.treePath.replace(/\\/g, '/');
-	if(treePath.indexOf(rootPath) === 0){
-		treePath = treePath.slice(rootPath.length + 1);
-	}
-	return treePath;
 }
 
 function getNextTransitionMarker(markers, currentMarker){
@@ -2616,17 +2611,6 @@ function getNextTransitionMarker(markers, currentMarker){
 			return currentMarker;
 		}
 	}
-	return null;
-}
-
-function getFirstTransitionMarker(markers) {
-	var marker =  markers.getFirstMarker();
-	do {
-		if(isTransitionMarker(marker)) {
-			return marker;
-		}
-		marker = getNextTransitionMarker(markers, marker);
-	} while(marker !== null);
 	return null;
 }
 
@@ -2691,122 +2675,7 @@ function setAnimationSequenceLinkInfo(sequence, info){
 	newMarker.setTypeAsComment();
 	newMarker.setColorByIndex(ANIMATION_SEQUENCE_LINK_MARKER_COLOR);
 }
-
-function overwriteVideoClip(projectItem, sequence, track, startTime, endFlag, endMarkerSequence, l, t, w, h, actor_l, actor_t){
-	var clips = track.clips;
-	var epsTime = sequence.getSettings().videoFrameRate.seconds;
-	var endTime = startTime + 60 * 60;
-	if(sequence.getOutPointAsTime().seconds > 0) {
-		endTime = sequence.getOutPointAsTime().seconds;
-	}
-
-	endTime = getNextClipTime(clips, endFlag, startTime, endTime, epsTime);
-	if(endFlag & ACT_CLIPEND_MARKER) {
-		endTime = getNextMarkerTime(endMarkerSequence.markers, startTime, endTime);
-	}
-	
-	if(!projectItem.isSequence()) projectItem.setOverrideFrameRate(1/epsTime);
-
-	var correctionTime = epsTime / 100;
-	var _startTime = new Time();
-	_startTime.seconds = fixTimeError(startTime, epsTime) + correctionTime;
-	var _endTime = new Time();
-	_endTime.seconds = fixTimeError(endTime, epsTime) + correctionTime;
-
-	projectItem.setInPoint(_startTime, 4);
-	projectItem.setOutPoint(_endTime, 4);
-	track.overwriteClip(projectItem, startTime);
-	if(!projectItem.isSequence()) projectItem.setOverrideFrameRate(0);
-
-	if(l !== undefined && t !== undefined && w !== undefined && h !== undefined && w > 0 && h > 0){
-			var settings = sequence.getSettings();
-			var seqWidth = settings.videoFrameWidth;
-			var seqHeight = settings.videoFrameHeight;
-
-			var searchIndex = track.clips.numItems - 1;
-			var halfEpsTime = epsTime * 0.5;
-			for(var i = searchIndex; i >= 0 ; i--){
-				if(Math.abs(track.clips[i].start.seconds - startTime) < halfEpsTime) {
-					anchorUpdate(track.clips[i], l, t, w, h, seqWidth, seqHeight, actor_l, actor_t, 1);
-					break;
-			}
-		}
-	}
-}
-
-function makeVideoTrack(sequence, trackIndex) {
-	if(trackIndex >= sequence.videoTracks.numTracks) {
-		var lastIndex = sequence.videoTracks.numTracks - 1;
-		var vlocked = sequence.videoTracks[lastIndex].isLocked();
-		if(!vlocked) {
-			sequence.videoTracks[lastIndex].setLocked(1);
-		}
-		var currentTrackNum = sequence.videoTracks.numTracks;
-		var clip = getDummyClip();
-		for(var i = trackIndex - currentTrackNum; i >= 0; i--) {
-			sequence.videoTracks[sequence.videoTracks.numTracks - 1].overwriteClip(clip, 0);
-			sequence.videoTracks[sequence.videoTracks.numTracks - 1].setLocked(1);
-		}
-		for(var i = Number(currentTrackNum); i < sequence.videoTracks.numTracks; i++) {
-			sequence.videoTracks[i].setLocked(0);
-			sequence.videoTracks[i].clips[0].setSelected(true, false);
-			sequence.videoTracks[i].clips[0].remove(false, false);
-		}
-		if(!vlocked) {
-			sequence.videoTracks[lastIndex].setLocked(0);
-		}
-	}
-}
-
-function getSequenceTrackItemsInSequence(parentSequence, targetSequenceID){
-	var sequenceList = [];
-	for(var i = 0; i < parentSequence.videoTracks.numTracks; i++){
-		var clips = parentSequence.videoTracks[i].clips;
-		for(var j = 0; j < clips.numItems; j++){
-			if(clips[j].projectItem && clips[j].projectItem.isSequence()){
-				var seq = trackItemToSequence(clips[j]);
-				if(seq.sequenceID === targetSequenceID){
-					sequenceList.push(clips[j]);
-				}
-			}
-		}
-	}
-	
-	sequenceList.sort(function(a, b) {
-		return a.start.seconds - b.start.seconds;
-	});
-	return sequenceList;
-}
-
-function getClipAtTime(trackItemList, time){
-	for(var i = 0; i < trackItemList.length; i++){
-		if(trackItemList[i].start.seconds <= time && time < trackItemList[i].end.seconds){
-			return trackItemList[i];
-		}
-	}
-	return null;
-}
-
-function updateUI(properties){
-	var property = null;
-	for(var i = 0; i < properties.length; i++){
-		if(properties[i] === null) continue;
-		property = properties[i];
-		break;
-	}
-	if(property === null) return;
-
-	if(property.isTimeVarying()){
-		var time = new Time();
-		time.seconds = -1;
-		var keyTime = property.findNextKey(time);
-		var value = property.getValueAtKey(keyTime);
-		property.setValueAtKey(keyTime, value, true);
-	} else {
-		var value = property.getValue();
-		property.setValue(value, true);
-	}
-}
+/*****************************************/
 
 function bakeTextMessage(id, text){
 	eventObj.type = "bakeTextNotification";
@@ -2828,7 +2697,6 @@ function bakeCompleteMessage(id){
 	eventObj.data = id;
 	eventObj.dispatch();
 }
-
 function progressMaxMessage(id, value){
 	eventObj.type = "progressMaxNotification";
 	eventObj.data = id + ',' + value.toString();
@@ -2840,38 +2708,29 @@ function progressValueMessage(id, value){
 	eventObj.dispatch();
 }
 
-function getSourceTextParam(mogrtComponent){
-	var sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V1);
-	if(!sourceText) sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V2);
-	return sourceText;
+function MessageInfo(message) {
+    app.setSDKEventMessage('2dActorTools:' + message, 'info');
+}
+function MessageWarning(message) {
+	app.setSDKEventMessage('2dActorTools:' + message, 'warning');
+}
+function MessageError(message){
+	app.setSDKEventMessage('2dActorTools:' + message, 'error');
 }
 
-function changeExt(path, new_ext){
-	return path.substring(0, path.lastIndexOf(".")) + new_ext;
+function reportProjectItemSelectionChanged(e) {
+    var projectItems = e;
+    if (projectItems){
+        if (projectItems.length) {
+			projectSelectionItem = projectItems[0].treePath.slice(projectItems[0].treePath.indexOf('\\', 1) + 1).replace(/\\/g, '/');
+            eventObj.type = "projectItemsSelect";
+            eventObj.data = projectSelectionItem;
+            eventObj.dispatch();
+        }
+    }
 }
-
-function searchActBin(){
-	if (app.project && !ActorBinItem) {
-		var projectItems = app.project.rootItem.children;
-		for(var i = 0; i < projectItems.numItems; i++) {
-			if(projectItems[i].type === ProjectItemType.BIN && projectItems[i].name === ACT_BIN_NAME) {
-				ActorBinItem = projectItems[i];
-				break;
-			}
-		}
-	}
-}
-
-function initializeActBin(extPath){
-	ActorBinItem = app.project.rootItem.createBin(ACT_BIN_NAME);
-	var dummyClip = shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
-	if(dummyClip === null) app.project.importFiles([extPath + '/resource/dummy.png'], true, ActorBinItem, false);
-}
-
-function anchorUpdate(clip, l, t, w, h, sequence_width, sequence_height, actor_l, actor_t, updateUI){
-	var component = getComponentObject(clip, DISPLAY_NAME_MOTION);
-	var property = getPropertyObject(component, [DISPLAY_NAME_ANCHORPOINT]);
-	var newX = (sequence_width * 0.5 - l + actor_l) / w;
-	var newY = (sequence_height * 0.5 - t + actor_t) / h;
-	property.setValue([newX, newY], updateUI);
+function reportSequenceItemSelectionChanged() {
+    eventObj.type = "sequenceItemsSelectChanged";
+	eventObj.data = '';
+    eventObj.dispatch();
 }
