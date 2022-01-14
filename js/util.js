@@ -227,3 +227,39 @@ function setWarningToUikitConfirmButton(parent, index){
     const button = parent.find('.uk-modal-footer').children();
     button.eq(index).addClass('tdact_setting_error');
 }
+
+function BusyNotificationOpen(text, progress_max=null){
+    const BusyNotificationProgress = $('#busy_progress');
+    BusyNotificationProgress.val(0);
+    if(progress_max !== null){
+        BusyNotificationProgress.attr('max', progress_max);
+    }
+    $('#mainfunc').addClass('disable');
+    const text_elm = $('#busy_text');
+    text_elm.html(text);
+    UIkit.modal($('#busy_notification')).show();
+}
+function BusyNotificationClose(){
+    setTimeout(_BusyNotificationClose, 500);
+}
+function _BusyNotificationClose(){
+    $('#mainfunc').removeClass('disable');
+    UIkit.modal($('#busy_notification')).hide();
+}
+function ErrorNotificationOpen(text, help_content=null){
+    const text_elm = $('#error_text');
+    text_elm.html(text);
+    const help_elm = $('#error_notification_help');
+    const label = $('#error_help_label');
+    help_elm.empty();
+    if(help_content !== null){
+        label.removeAttr('hidden');
+        help_elm.append(help_content);
+    } else {
+        label.attr('hidden', '');
+    }
+    UIkit.modal($('#error_notification')).show();
+}
+function ErrorNotificationClose(){
+    UIkit.modal($('#error_notification')).hide();
+}

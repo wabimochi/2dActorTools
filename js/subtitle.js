@@ -82,7 +82,6 @@ function importMGT() {
 function insertSubtitleFromTextarea() {
     const mogrt = document.getElementById("select_mogrt");
     const text = document.getElementById("subtitles");
-    const presetTag = $('#preset_tag').val();
     let replaceReg = null;
     if(('#subtitle_replace').val() != '') {
         try {
@@ -91,16 +90,25 @@ function insertSubtitleFromTextarea() {
             alert(e);
         }
     }
+    var newLines = text.value.match(newLineReg);
+    if (newLines == null){
+        count = 1;
+    }else{
+        count = newLines.length;
+    }
+
     const replaceAfter = $('#subtitle_replace_after').val();
     const script = makeEvalScript('InsertSubtitle', mogrt.value, 
-        text.value.slice(text.value.indexOf(presetTag) + 1).replace(/\//g, '').replace(newLineReg, '/').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
+        text.value.replace(/\//g, '').replace(newLineReg, '/').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
+
+    BusyNotificationOpen('字幕を並べています', count);
     if(isMogrtImported(mogrt.value)){
-        csInterface.evalScript(script);
+        csInterface.evalScript(script, function(){BusyNotificationClose();});
     } else {
         const importPath = GetMogrtPath(mogrt.value);
         csInterface.evalScript(makeEvalScript('ImportMOGRTFile', importPath), function(){
             mogrtUpdate();
-            csInterface.evalScript(script);
+            csInterface.evalScript(script, function(){BusyNotificationClose();});
         });
     }
 }
@@ -140,13 +148,15 @@ function insertSubtitleFromTextFile() {
         }
         const mogrt = document.getElementById("select_mogrt");
         const script = makeEvalScript('InsertSubtitle', mogrt.value, textList.join('/'));
+
+        BusyNotificationOpen('字幕を並べています', mediaPathList.length - 1);
         if(isMogrtImported(mogrt.value)){
-            csInterface.evalScript(script);
+            csInterface.evalScript(script, function(){BusyNotificationClose();});
         } else {
             const importPath = GetMogrtPath(mogrt.value);
             csInterface.evalScript(makeEvalScript('ImportMOGRTFile', importPath), function(){
                 mogrtUpdate();
-                csInterface.evalScript(script);
+                csInterface.evalScript(script, function(){BusyNotificationClose();});
             });
         }
     });	
@@ -156,6 +166,7 @@ function insertSubtitleFromPSD() {
     if($('#psd_import_bin').hasClass('tdact_setting_ok')){
         const importBinTree = $('#psd_import_bin').html();
         const script = makeEvalScript('InsertSubtitle_PSD', importBinTree);
+        BusyNotificationOpen('字幕を並べています');
         csInterface.evalScript(script);
     } else {
         setSettingError($('#psd_import_bin'));

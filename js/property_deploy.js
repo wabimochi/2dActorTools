@@ -59,5 +59,6 @@ function propertyDeploy() {
     }
     const wrapper = {components:componentList};
 
-    csInterface.evalScript('$._PPP_.DeployCapturedProperties(' + JSON.stringify(wrapper) + ')');
+    BusyNotificationOpen('プロパティをコピーしています');
+    csInterface.evalScript('$._PPP_.DeployCapturedProperties(' + JSON.stringify(wrapper) + ')', function(){BusyNotificationClose();});
 }

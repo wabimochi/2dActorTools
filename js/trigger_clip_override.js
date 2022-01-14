@@ -152,7 +152,9 @@ function triggerOverriteClip_ExecuteButton() {
     const endClipEndFlag = getClipEndFlag(endTriggerPathElm.parent());
     const script = makeEvalScript('TriggerClipOverwrite', targetSequence, trackNum, 
         startTriggerClipTreePath, endTriggerClipTreePath, startClipEndFlag, endClipEndFlag, actor_l, actor_t, start_bbox, end_bbox);
-    csInterface.evalScript(script);
+
+    BusyNotificationOpen('クリップを並べています');
+    csInterface.evalScript(script, function(){BusyNotificationClose();});
 }
 
 CustomInitialize['trigger_clip_custum_initialize'] = function () {

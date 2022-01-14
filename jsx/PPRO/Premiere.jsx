@@ -165,6 +165,7 @@ $._PPP_={
 						textObj.textEditValue = splitText[i];
 						sourceText.setValue(JSON.stringify(textObj), (i === targetAudioTrack.clips.numItems - 1));
 					}
+					progressValueMessage('#busy_progress', i);
 				}
 			}
 			else {
@@ -193,6 +194,8 @@ $._PPP_={
 			if (VTrackIndex < seq.videoTracks.numTracks && ATrackIndex < seq.audioTracks.numTracks) {
 				var targetVideoTrack = seq.videoTracks[VTrackIndex];
 				var targetAudioTrack = seq.audioTracks[ATrackIndex];
+
+				progressMaxMessage('#busy_progress', targetAudioTrack.clips.numItems - 1);
 
 				var importBin = searchItemWithTreePath(importBinTreePath, ProjectItemType.BIN);
 				var projectItemList = [];
@@ -233,6 +236,7 @@ $._PPP_={
 					projectItem.setOutPoint(outPoint.ticks, 4)
 					targetVideoTrack.overwriteClip(projectItem, clip.start.seconds);
 					projectItem.setOverrideFrameRate(0);
+					progressValueMessage('#busy_progress', i);
 				}
 			}
 			else {
@@ -353,6 +357,7 @@ $._PPP_={
 		if(app.project.activeSequence) {
 			var selectClips = app.project.activeSequence.getSelection();
 			if(selectClips.length) {
+				progressMaxMessage('#busy_progress', selectClips.length - 1);
 				for(var i = 0; i < selectClips.length; i++) {
 					var updateUI = (i === selectClips.length - 1);
 					var components = selectClips[i].components;
@@ -389,6 +394,7 @@ $._PPP_={
 							sourceText.setValue(JSON.stringify(textObj), updateUI); 
 						}
 					}
+					progressValueMessage('#busy_progress', i);
 				}
 			}
 		}
@@ -901,6 +907,7 @@ $._PPP_={
 					marker.setColorByIndex(Number(_markerColorIndex[i]));
 					marker.comments = _textList[i];
 				}
+				progressValueMessage('#busy_progress', i);
 			}
 		}
 	},
@@ -996,6 +1003,8 @@ $._PPP_={
 			}
 			if (ATrackIndex < activeSeq.audioTracks.numTracks) {
 				var sourceAudioTrack = activeSeq.audioTracks[ATrackIndex];
+				progressMaxMessage('#busy_progress', sourceAudioTrack.clips.numItems - 1);
+
 				var sl = 0;
 				var st = 0;
 				var sw = 0;
@@ -1035,6 +1044,7 @@ $._PPP_={
 					if(endClip) {
 						overwriteVideoClip(endClip, seq, targetTrack, sourceAudioClip.end.seconds, endTriggerInsertFlag, activeSeq, el, et, ew, eh, actor_l, actor_t);
 					}
+					progressValueMessage('#busy_progress', sourceClipIndex);
 				}
 				if(startClip) {
 					startClip.setOverrideFrameRate(0);

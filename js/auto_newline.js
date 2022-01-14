@@ -109,7 +109,10 @@ function auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMa
                     processedFlag.push(-1);
                 }
             }
-            csInterface.evalScript('$._PPP_.AutoNewLine_Replace("'+ processedText.join('/').replace(newLineReg, '\\n').replace(/\"/g, '\\"') +'","' + processedFlag.join('/') + '")', function(result) {
+            BusyNotificationOpen('改行しています', textListLength - 1);
+            const script = makeEvalScript('AutoNewLine_Replace', processedText.join('/').replace(newLineReg, '\\n').replace(/\"/g, '\\"'), processedFlag.join('/'));
+            csInterface.evalScript(script, function() {
+                BusyNotificationClose();
             });				
         });
     });
