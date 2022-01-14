@@ -1036,13 +1036,31 @@ $._PPP_={
 				if(actor_l) actor_l = Number(actor_l);
 				if(actor_t) actor_t = Number(actor_t);
 
+				var targetIsActiveSeq = true;
+				if(activeSeq.sequenceID !== seq.sequenceID){
+					var sequenceList = getSequenceTrackItemsInSequence(activeSeq, seq.sequenceID);
+					targetIsActiveSeq = false;
+				}
+				var targetTime = 0
 				for (var sourceClipIndex = 0; sourceClipIndex < sourceAudioTrack.clips.numItems; sourceClipIndex++) {
 					var sourceAudioClip = sourceAudioTrack.clips[sourceClipIndex];
 					if(startClip) {
-						overwriteVideoClip(startClip, seq, targetTrack, sourceAudioClip.start.seconds, startTriggerInsertFlag, activeSeq, sl, st, sw, sh, actor_l, actor_t);
+						if(!targetIsActiveSeq){
+							var targetSequence = getClipAtTime(sequenceList, sourceAudioClip.start.seconds);
+							targetTime = getClipLocalTime(targetSequence, sourceAudioClip.start.seconds);
+						} else {
+							targetTime = sourceAudioClip.start.seconds;
+						}
+						overwriteVideoClip(startClip, seq, targetTrack, targetTime, startTriggerInsertFlag, activeSeq, sl, st, sw, sh, actor_l, actor_t);
 					}
 					if(endClip) {
-						overwriteVideoClip(endClip, seq, targetTrack, sourceAudioClip.end.seconds, endTriggerInsertFlag, activeSeq, el, et, ew, eh, actor_l, actor_t);
+						if(!targetIsActiveSeq){
+							var targetSequence = getClipAtTime(sequenceList, sourceAudioClip.end.seconds);
+							targetTime = getClipLocalTime(targetSequence, sourceAudioClip.end.seconds);
+						} else {
+							targetTime = sourceAudioClip.end.seconds;
+						}
+						overwriteVideoClip(endClip, seq, targetTrack, targetTime, endTriggerInsertFlag, activeSeq, el, et, ew, eh, actor_l, actor_t);
 					}
 					progressValueMessage('#busy_progress', sourceClipIndex);
 				}
