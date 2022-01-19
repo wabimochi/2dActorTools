@@ -711,25 +711,16 @@ async function SetupActorComponent(index, actorName, isSetting=false){
                 }
 
                 if(treePathList.length > 0) {
+                    const bbox_list = [];
                     treePathList = Array.from(new Set(treePathList));
-                    let l = 0;
-                    let t = 0;
-                    let r = -1;
-                    let b = -1;
                     if(actorObj[ACT_ST_lightweight]){
-                        l = actorObj[ACT_ST_actor_bbox][0] + actorObj[ACT_ST_actor_bbox][2];
-                        t = actorObj[ACT_ST_actor_bbox][1] + actorObj[ACT_ST_actor_bbox][3];
                         const crop_path = actorObj[ACT_ST_crop_path];
                         for(let j = 0; j < treePathList.length; j++){
                             const bbox = crop_path[treePathList[j]].bbox;
-                            if(l > bbox[0]) l = bbox[0];
-                            if(t > bbox[1]) t = bbox[1];
-                            if(r < bbox[0] + bbox[2]) r = bbox[0] + bbox[2];
-                            if(b < bbox[1] + bbox[3]) b = bbox[1] + bbox[3];
+                            bbox_list.push(bbox);
                         }
                     }
-                    const script = makeEvalScript('SetupAnimationMarker', actorName, actorObj.actor[i].group, index, group_index, treePathList.join(','),
-                        [l, t, r - l, b - t].join(','));
+                    const script = makeEvalScript('SetupAnimationMarker', actorName, actorObj.actor[i].group, index, group_index, treePathList.join(','), bbox_list.join('\\n'), actorObj[ACT_ST_lightweight]);
                     let mutex = false;
                     csInterface.evalScript(script, function(actorStructPath) {
                         if(!AnimationIndexes[index]) {
