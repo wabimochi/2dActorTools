@@ -5,15 +5,7 @@ function onLoaded () {
 
 	loadJSX();
 
-	var csInterface = new CSInterface();
-	
-	// Good idea from our friends at Evolphin; make the ExtendScript locale match the JavaScript locale!
-	var prefix		= "$._PPP_.setLocale('";
-	var locale	 	= csInterface.hostEnvironment.appUILocale;
-	var postfix		= "');";
 
-	var entireCallWithParams = prefix + locale + postfix;
-	csInterface.evalScript(entireCallWithParams);
 }
 
 /**
@@ -29,11 +21,24 @@ function loadJSX() {
 
 	// load general JSX script independent of appName
 	var extensionRootGeneral = extensionPath + "/jsx/";
-	csInterface.evalScript("$._ext.evalFiles(\"" + extensionRootGeneral + "\")");
+	csInterface.evalScript("$._ext.evalFiles(\"" + extensionRootGeneral + "\")", function(){
 
-	// load JSX scripts based on appName
-	var extensionRootApp = extensionPath + "/jsx/" + appName + "/";
-	csInterface.evalScript("$._ext.evalFiles(\"" + extensionRootApp + "\")");
+		// load JSX scripts based on appName
+		var extensionRootApp = extensionPath + "/jsx/" + appName + "/";
+		csInterface.evalScript("$._ext.evalFiles(\"" + extensionRootApp + "\")", function(){
+			var csInterface = new CSInterface();
+			
+			// Good idea from our friends at Evolphin; make the ExtendScript locale match the JavaScript locale!
+			// var prefix		= "$._PPP_.setLocale('";
+			// var locale	 	= csInterface.hostEnvironment.appUILocale;
+			// var postfix		= "');";
+			
+			var entireCallWithParams = makeEvalScript('setLocale', csInterface.hostEnvironment.appUILocale);
+			csInterface.evalScript(entireCallWithParams, function(){
+				loadSetup();
+			});
+		});
+	});
 }
 
 function evalScript(script, callback) {

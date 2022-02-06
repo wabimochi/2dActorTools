@@ -24,7 +24,7 @@
 	<link id="tdactorstyle" href="node_modules/dragula/dist/dragula.min.css" rel="stylesheet" type="text/css">
 </head>
 
-<body onContextmenu="return false;" onLoad="onLoaded();loadSetup();LoadSettings()" spellcheck="false">
+<body onContextmenu="return false;" onLoad="onLoaded()" spellcheck="false">
 	<div id="extension_version"></div>
 	<div class='uk-flex-center'>
 		<a href="javascript:history.go(0)" uk-icon="icon: refresh" class='uk-margin-remove'></a>
@@ -793,6 +793,7 @@
 		ActorEditInitialize();
 
 		$('#extension_version').html('v' + getExtensionVersion());
+		LoadSettings();
 	}
 </script>
 <script src="./js/image_viewer.js"></script>
