@@ -56,7 +56,7 @@ function autoImportStart(dirPath, matchingPatternList, matchingSourceList, impor
 }
 
 function importExecute() {
-    csInterface.evalScript('$._PPP_.ImportFiles("' + importPathBuffer.join('\\\\') + '","' + importTrackBuffer.join('\\\\') + '","' + importBinBuffer.join('\\\\') + '")');
+    csInterface.evalScript(makeEvalScript('ImportFiles', importPathBuffer.join('\\\\'), importTrackBuffer.join('\\\\'), importBinBuffer.join('\\\\')));
     importPathBuffer = [];
     importTrackBuffer = [];
     importBinBuffer = [];
@@ -213,7 +213,7 @@ function addAutoImportRule(jqTbody) {
         button1.html('選択中のビンをセット');
         button1[0].addEventListener('click', function(e) {
             const treePath = SetectedProjectItemTreePath;
-            csInterface.evalScript('$._PPP_.ExistBinTreePath("' + treePath + '")', function(result) {
+            csInterface.evalScript(makeEvalScript('ExistBinTreePath', treePath), function(result) {
                 if(result) {
                     e = $(e.target);
                     e.html(treePath);
@@ -240,7 +240,7 @@ function addAutoImportRule(jqTbody) {
             }
         });
         audioTrackSelectBox.push(select2);
-        csInterface.evalScript('$._PPP_.SequenceStructureChanged()');
+        csInterface.evalScript(makeEvalScript('SequenceStructureChanged'));
     const td3 = $('<td>', {'class':'uk-text-nowrap uk-table-shrink'});
         td3.append(select2);
     const input = $('<input>', {'class':'uk-input uk-light tdinput auto_import_matching_pattern', type:'text', placeholder:'マッチングパターン'});
@@ -332,7 +332,7 @@ CustomInitialize['auto_import_custum_initialize'] = function () {
                 const binTreePath = rule['import_bin'];
                 const binButton = tdList.children('button').eq(0);
                 binButton.html(binTreePath);
-                csInterface.evalScript('$._PPP_.ExistBinTreePath("' + binTreePath + '")', function(result) {
+                csInterface.evalScript(makeEvalScript('ExistBinTreePath', binTreePath), function(result) {
                     binButton.attr('uk-tooltip', binTreePath);
                     if(result) {
                         binButton.addClass('tdact_setting_ok');

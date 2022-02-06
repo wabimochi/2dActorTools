@@ -6,6 +6,8 @@ const path_js = require('path');
 const dragula = require('dragula');
 const ApplySettingEvent = new CustomEvent('apply_setting');
 const OSIsWin = csInterface.getOSInformation().indexOf('Win') >= 0 ? true : false;
+const apiVersion = csInterface.getCurrentApiVersion();
+const hostEnvironment = csInterface.getHostEnvironment();
 let CustomInitialize = {};
 let CEP_ERROR_TO_MESSAGE = {};
 CEP_ERROR_TO_MESSAGE[window.cep.fs.NO_ERROR] = "No error";
@@ -116,7 +118,7 @@ $(document).on('click', '.merker_color_selector', function() {
 $(document).on('click', '.get_select_project_clip', function() {
     const target = $(this);
     const treePath = SetectedProjectItemTreePath;
-    csInterface.evalScript('$._PPP_.ExistClipTreePath("' + treePath + '")', function(result) {
+    csInterface.evalScript(makeEvalScript('ExistClipTreePath', treePath), function(result) {
         if(result) {
             target.html(treePath);
             target.attr('uk-tooltip', treePath);
@@ -147,7 +149,7 @@ $(document).on('click', '.get_select_project_mediapath', function() {
 $(document).on('click', '.get_select_project_bin', function() {
     const target = $(this);
     const treePath = SetectedProjectItemTreePath;
-    csInterface.evalScript('$._PPP_.ExistBinTreePath("' + treePath + '")', function(result) {
+    csInterface.evalScript(makeEvalScript('ExistBinTreePath', treePath), function(result) {
         if(result) {
             target.html(treePath);
             target.attr('uk-tooltip', treePath);
@@ -204,8 +206,32 @@ function resetSettingFlag(jq_elm) {
     jq_elm.removeClass('tdact_setting_error');
 }
 
+const catch_process = 'catch(e){\
+    var msg = ["2dActorToolsでエラーが発生しました。\\n問題解決のために、この表示を開発者にお知らせください。\\nその際、個人情報や知られたくない内容が含まれないようご注意ください。\\n"];\
+    msg.push("appVer: " + "' + hostEnvironment.appVersion + '");\
+    msg.push("extVer: " + "' + getExtensionVersion() + '");\
+    msg.push("apiVer: " + "' + [apiVersion.major, apiVersion.minor, apiVersion.micro].join('.') + '");\
+    msg.push("appLoc: " + "' + hostEnvironment.appLocale + '");\
+    msg.push("UILoc: " + "' + hostEnvironment.appUILocale + '");\
+    msg.push("number: " + e.number.toString());\
+    msg.push("fileName: " + e.fileName.toString());\
+    msg.push("line: " + e.line.toString());\
+    msg.push("start: " + e.start.toString());\
+    msg.push("end: " + e.end.toString());\
+    msg.push("message: " + e.message.toString());\
+    msg.push("name: " + e.name.toString());\
+    msg.push("description: " + e.description.toString());';
 function makeEvalScript(functionName, ...params){
-    return '$._PPP_.' + functionName + '("' + params.join('","') + '")';
+    return 'try{$._PPP_.' + functionName + '("' + params.join('","') + '")}' + catch_process + 
+    'msg.push("functionName: ' + functionName.toString() + '");\
+    msg.push("params: ' + params.join('","') + '");\
+    alert(msg.join("\\n"));}';
+};
+function makeEvalScriptNoConvertParams(functionName, param){
+    return 'try{$._PPP_.' + functionName + '(' + param + ')}' + catch_process + 
+    'msg.push("functionName: ' + functionName.toString() + '");\
+    msg.push("params: ' + param.replace(/\"/g, "'") + '");\
+    alert(msg.join("\\n"));}';
 };
 
 const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms));

@@ -34,7 +34,7 @@ function LoadSettings()	{
 }
 
 function _LoadSettings() {
-    csInterface.evalScript('$._PPP_.GetSettingsMediaPath()', function(result){
+    csInterface.evalScript(makeEvalScript('GetSettingsMediaPath'), function(result){
         if(result) {
             const json = window.cep.fs.readFile(result);
             if(json.err){
@@ -107,7 +107,7 @@ function NewSettingFile() {
         ExtensionSettingsFilePath = savedir + '/2dActorTools_settings.txt';
         const err = SaveSettings();
         if(err == window.cep.fs.NO_ERROR){
-            csInterface.evalScript('$._PPP_.ImportSettingsFile("' + ExtensionSettingsFilePath + '")');
+            csInterface.evalScript(makeEvalScript('ImportSettingsFile', ExtensionSettingsFilePath));
             $('#setting_file_not_exist_icon').css('visibility','hidden');
             $('#setting_save_modal_close').click();
         } else {
@@ -119,7 +119,7 @@ function NewSettingFile() {
 function ImportSettingFile() {
     const settingFilePath = window.cep.fs.showOpenDialog(false, false, '2dActorTools setting file', '', ['.txt']).data;
     if(settingFilePath != '') {
-        csInterface.evalScript('$._PPP_.ImportSettingsFile("' + settingFilePath + '")', function(e) {
+        csInterface.evalScript(makeEvalScript('ImportSettingsFile', settingFilePath), function(e) {
             _LoadSettings();
         });
         $('#setting_file_not_exist_icon').css('visibility','hidden');

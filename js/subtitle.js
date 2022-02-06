@@ -28,7 +28,7 @@ $(document).on('change', '#select_mogrt', function() {
 
 function mogrtUpdate() {
     const select_mogrt = document.getElementById('select_mogrt');
-    csInterface.evalScript('$._PPP_.GetMGTClipName()', function(names) {
+    csInterface.evalScript(makeEvalScript('GetMGTClipName'), function(names) {
         const mogrtHistory = GetMogrtHistory();
         if(names.length > 0){
             names = names.split(',');
@@ -114,7 +114,7 @@ function insertSubtitleFromTextarea() {
 }
 
 function insertSubtitleFromTextFile() {
-    csInterface.evalScript('$._PPP_.GetTragetAudioClipMediaPath()', function(result){
+    csInterface.evalScript(makeEvalScript('GetTragetAudioClipMediaPath'), function(result){
         let replaceReg = null;
         if($('#subtitle_replace').val() != '') {
             try {

@@ -265,7 +265,7 @@ function actorSelectBoxUpdate() {
     actor_linknav.empty();
     actor_switcher.empty();
 
-    csInterface.evalScript('$._PPP_.GetActorBinName()', function(names) {
+    csInterface.evalScript(makeEvalScript('GetActorBinName'), function(names) {
         const actorHistory = GetActorsHistory();
         if(names.length > 0){
             names = names.split(',');
@@ -320,7 +320,7 @@ function actorSelectBoxUpdate() {
 
 function actorSettingStart(actorName, index) {
     const actorObj = ActorStructure[index];
-    csInterface.evalScript('$._PPP_.GetActorStructure("'+ actorName + '")', function(struct) {
+    csInterface.evalScript(makeEvalScript('GetActorStructure', actorName), function(struct) {
         if(struct) {
             const cropDirPath = actorObj[ACT_ST_crop_dir_path];
             const structList = struct.split(',');
@@ -383,7 +383,7 @@ function getActorClipSet(shortcutKey) {
         if(linkdActor.eq(i).hasClass('enable')) {
             const seqIndex = linkdActor.eq(i).attr('sequence');
             const actorName = linkdActor.eq(i).children('.actor_sequence_link_label').html();
-            csInterface.evalScript('$._PPP_.GetCurrentActorClipTreePath(' + seqIndex + ',-1)', function(treePathList) {
+            csInterface.evalScript(makeEvalScript('GetCurrentActorClipTreePath', seqIndex, -1), function(treePathList) {
                 if(!('clipset' in ActorStructure[seqIndex])){
                     ActorStructure[seqIndex].clipset = {};
                 }
@@ -408,7 +408,7 @@ function getActorClipSet(shortcutKey) {
 
                 ActorStructure[seqIndex].clipset[shortcutKey] = treePathList;
 
-                csInterface.evalScript('$._PPP_.GetActorStructureMediaPath("' + actorName + '")', function(mediaPath) {
+                csInterface.evalScript(makeEvalScript('GetActorStructureMediaPath', actorName), function(mediaPath) {
                     if(mediaPath !== '') {
                         const err = SaveJson(ActorStructure[seqIndex], mediaPath);
                         if(err != window.cep.fs.NO_ERROR) {
@@ -933,7 +933,7 @@ function AnimationPreview_SourceChange(play=false, view_reset=true){
     });
     const index = $('#actor_switcher>.uk-active').attr('sequence');
     const acotr_name = $('#actor_list_root>ul>[sequence="' + index + '"]>.actor_sequence_link_label').html();
-    csInterface.evalScript('$._PPP_.GetActorClipMediaPath("' + acotr_name + '","' + treePath + '")', function(mediaPathList) {
+    csInterface.evalScript(makeEvalScript('GetActorClipMediaPath', acotr_name, treePath), function(mediaPathList) {
         previewMediaPathList = mediaPathList.split(',');
         Jimp.read(previewMediaPathList[0], (err, image) => {
             if (!err) {
@@ -1184,7 +1184,7 @@ function StartActorSetting() {
                 ActorStructure[ActorIndexForSetting] = new_actor_structure;
                 SetActorSettingPath(actorName, ActorStructurePath[ActorIndexForSetting]);
 
-                csInterface.evalScript('$._PPP_.ImportActorStructureFile("' + save_structure_file_path.replace(/\\/g, '/') + '","'+ actorName + '")', function(result) {
+                csInterface.evalScript(makeEvalScript('ImportActorStructureFile', save_structure_file_path.replace(/\\/g, '/'), actorName), function(result) {
                     if(!result) {
                         alert('構成ファイルのインポートに失敗しました');
                         return;

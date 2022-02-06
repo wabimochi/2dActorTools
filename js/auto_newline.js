@@ -52,7 +52,7 @@ function autoNewLineMarkerUIUpdate() {
 }
 
 function auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMarkerColor, asciiIsHalf, initNewLine, autoNewLine) {
-    csInterface.evalScript('$._PPP_.AutoNewLine_GetSourceText()', function(result){
+    csInterface.evalScript(makeEvalScript('AutoNewLine_GetSourceText'), function(result){
         const PROCESSED = 1
         const FAIL = 2
         const textList = result.split('/');
@@ -119,7 +119,7 @@ function auto_new_line(maxCharactorNum, maxLineNum, insertMarkerColor, warningMa
 }
 
 function countSelectedClipTextLength() {
-    csInterface.evalScript('$._PPP_.GetSelectedClipText()', function(result){
+    csInterface.evalScript(makeEvalScript('GetSelectedClipText'), function(result){
         if(result) {
             let charactorCount = result.length;
             if($('#auto_newline_ascii').prop('checked')) {

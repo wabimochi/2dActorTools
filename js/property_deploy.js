@@ -18,7 +18,7 @@ $(document).on('click', '.propertyDeploy>div>div', function(e){
 });
 
 function propertyCapture() {
-    csInterface.evalScript('$._PPP_.CaptureSelectedClipProperties()', function(propertiesNames) {
+    csInterface.evalScript(makeEvalScript('CaptureSelectedClipProperties'), function(propertiesNames) {
         $('#capturedParameters').empty();
         const obj = JSON.parse(propertiesNames);
         for(let i = 0; i < obj.components.length; i++) {
@@ -60,5 +60,5 @@ function propertyDeploy() {
     const wrapper = {components:componentList};
 
     BusyNotificationOpen('プロパティをコピーしています');
-    csInterface.evalScript('$._PPP_.DeployCapturedProperties(' + JSON.stringify(wrapper) + ')', function(){BusyNotificationClose();});
+    csInterface.evalScript(makeEvalScriptNoConvertParams('DeployCapturedProperties', JSON.stringify(wrapper)), function(){BusyNotificationClose();});
 }

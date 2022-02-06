@@ -586,10 +586,10 @@
 		if(!$('#actor_switcher').hasClass('setting')) {
 			if($('#function_actor').hasClass('uk-active')) {
 				if (e.code === KEYCODE_ArrowUp || (altUpKeyElm.val() !== '' && e.code === altUpKeyElm.val())) {
-					csInterface.evalScript('$._PPP_.PrevEditPoint()');
+					csInterface.evalScript(makeEvalScript('PrevEditPoint'));
 					e.preventDefault();
 				} else if (e.code === KEYCODE_ArrowDown || (altDownKeyElm.val() !== '' && e.code === altDownKeyElm.val())) {
-					csInterface.evalScript('$._PPP_.NextEditPoint()');
+					csInterface.evalScript(makeEvalScript('NextEditPoint'));
 					e.preventDefault();
 				} else if (e.code === KEYCODE_ArrowLeft || (altLeftKeyElm.val() !== '' && e.code === altLeftKeyElm.val())) {
 					const linkdActor = $('.actor_sequence_link.linked');
@@ -632,7 +632,7 @@
 	function loadSetup() {
 		var extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
 		sleep(100);
-		csInterface.evalScript('$._PPP_.Setup("' + extPath + '")');
+		csInterface.evalScript(makeEvalScript('Setup', extPath));
 
 		csInterface.addEventListener('numTracksNotification', function(e) {
 			trackNum = e.data.split(',');
@@ -694,7 +694,7 @@
 		});
 
 		csInterface.addEventListener('sequenceItemsSelectChanged', function(e) {
-			csInterface.evalScript('$._PPP_.GetSelectedSequenceTrackNum()', function(result) {
+			csInterface.evalScript(makeEvalScript('GetSelectedSequenceTrackNum'), function(result) {
 				if(result) {
 					trackNum = result.split(',');
 					const videoTrackNum = Number(trackNum[0]);
@@ -776,7 +776,7 @@
 						}
 					}
 				}
-				csInterface.evalScript('$._PPP_.SetFrameAnimationKeypoints_Audio("' + id.toString() + '","' + keys.join(',') + '","' + startTime.join(',') + '")', function(result) {});
+				csInterface.evalScript(makeEvalScript('SetFrameAnimationKeypoints_Audio', id.toString(), keys.join(','), startTime.join(',')), function(result) {});
 			});
 		});
 
