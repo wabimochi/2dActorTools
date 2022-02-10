@@ -378,13 +378,18 @@
 								<option value="EUCJP">EUCJP</option>
 								<option value="AUTO">AUTO</option>
 							</select>
+							<span class="uk-label tdactor_label uk-width-auto">エラーメッセージ</span><br>
+							<span class="uk-label tdactor_label_secondary uk-width-auto">エラーメッセージが頻繁に表示されて作業に支障が出る場合はチェックを入れてください。</span><br>
+							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
+								<label><input id="avoid_catch_exception" category="setting_error" class="uk-flex-center uk-checkbox td_check save_setting_check_on_change" type="checkbox"> エラーをcatchしない</label>
+							</div>
 						</div>
 					</details>
 
 					<details open>
 						<summary class="td_summary">立ち絵</summary>
 						<div class="uk-child-width-expand@ss uk-margin-left uk-margin-right">
-							<span class="uk-label tdactor_label uk-margin-remove-bottom uk-width-auto">方向キーの追加割り当て</span>
+							<span class="uk-label tdactor_label uk-margin-remove-bottom uk-width-auto">方向キーの追加割り当て</span><br>
 							<span class="uk-label tdactor_label_secondary uk-width-auto">設定されたキーは立ち絵変更ショートカットキーとして使用できなくなります。割り当てない場合は空白にしてください。</span>
 							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
 								<div class="uk-width-small uk-text-center">↑</div>
@@ -403,7 +408,7 @@
 								<input class="uk-width-small uk-text-center uk-input uk-light tdinput input_keycode save_setting_value_on_change" type="text" category="setting_actor" id="shortcut_right_arrow" value="" readonly>
 							</div>
 
-							<span class="uk-label tdactor_label uk-margin-remove-bottom uk-width-auto">リップシンクのオーディオ解析フレームレート</span>
+							<span class="uk-label tdactor_label uk-margin-remove-bottom uk-width-auto">リップシンクのオーディオ解析フレームレート</span><br>
 							<span class="uk-label tdactor_label_secondary uk-width-auto">大きいほどパクパクします。シーケンスのフレームレートより大きいと上手くベイクできないかもしれません。</span>
 							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
 								<select type="selectbox" class="tdactor_selectbox uk-width-auto uk-select save_setting_value_on_change" category="setting_actor" id="lipsync_framerate">

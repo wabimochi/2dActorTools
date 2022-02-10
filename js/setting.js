@@ -223,3 +223,10 @@ $(document).on('change', '.save_setting_value_on_change', function() {
 $(document).on('change', '.save_setting_check_on_change', function() {
     SaveSettingCheckFromElement($(this));
 });
+
+CustomInitialize['settings_custum_initialize'] = function () {
+    const category = GetUIParams('setting_error');
+    if(category) {
+        invalid_try_catch = category['avoid_catch_exception'];
+    }
+}

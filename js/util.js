@@ -206,6 +206,11 @@ function resetSettingFlag(jq_elm) {
     jq_elm.removeClass('tdact_setting_error');
 }
 
+let invalid_try_catch = false;
+$(document).on('change', '#avoid_catch_exception', function(e) {
+    invalid_try_catch = e.target.checked;
+});
+
 const catch_process = 'catch(e){\
     var msg = ["2dActorToolsでエラーが発生しました。\\n問題解決のために、この表示を開発者にお知らせください。\\nその際、個人情報や知られたくない内容が含まれないようご注意ください。\\n"];\
     msg.push("appVer: " + "' + hostEnvironment.appVersion + '");\
@@ -221,17 +226,27 @@ const catch_process = 'catch(e){\
     msg.push("message: " + e.message.toString());\
     msg.push("name: " + e.name.toString());\
     msg.push("description: " + e.description.toString());';
+
 function makeEvalScript(functionName, ...params){
-    return 'try{$._PPP_.' + functionName + '("' + params.join('","') + '")}' + catch_process + 
-    'msg.push("functionName: ' + functionName.toString() + '");\
-    msg.push("params: ' + params.join('","') + '");\
-    alert(msg.join("\\n"));}';
+    if(invalid_try_catch){
+        return '$._PPP_.' + functionName + '("' + params.join('","') + '")';
+    } else {
+        return 'try{$._PPP_.' + functionName + '("' + params.join('","') + '")}' + catch_process + 
+        'msg.push("functionName: ' + functionName.toString() + '");\
+        msg.push("params: ' + params.join('","') + '");\
+        alert(msg.join("\\n"));}';
+    }
 };
+
 function makeEvalScriptNoConvertParams(functionName, param){
-    return 'try{$._PPP_.' + functionName + '(' + param + ')}' + catch_process + 
-    'msg.push("functionName: ' + functionName.toString() + '");\
-    msg.push("params: ' + param.replace(/\"/g, "'") + '");\
-    alert(msg.join("\\n"));}';
+    if(invalid_try_catch){
+        return '$._PPP_.' + functionName + '(' + param + ')';
+    } else {
+        return 'try{$._PPP_.' + functionName + '(' + param + ')}' + catch_process + 
+        'msg.push("functionName: ' + functionName.toString() + '");\
+        msg.push("params: ' + param.replace(/\"/g, "'") + '");\
+        alert(msg.join("\\n"));}';
+    }
 };
 
 const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms));
