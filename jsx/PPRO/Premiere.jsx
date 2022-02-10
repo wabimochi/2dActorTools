@@ -960,7 +960,7 @@ $._PPP_={
 				if(selection[0].projectItem && selection[0].projectItem.isSequence) {
 					var targetSequence = selection[0];
 					for(var i = 0; i < app.project.sequences.numSequences; i++){
-						if(targetSequence.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
+						if(app.project.sequences[i].projectItem !== null && targetSequence.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
 							return app.project.sequences[i].videoTracks.numTracks.toString() + ',' + app.project.sequences[i].audioTracks.numTracks.toString();
 						}
 					}
