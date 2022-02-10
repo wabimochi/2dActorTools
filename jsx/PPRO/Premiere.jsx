@@ -981,7 +981,7 @@ $._PPP_={
 					if(selection[0].projectItem && selection[0].projectItem.isSequence) {
 						var targetSequence = selection[0];
 						for(var i = 0; i < app.project.sequences.numSequences; i++){
-							if(targetSequence.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
+							if(app.project.sequences[i].projectItem !== null && targetSequence.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
 								seq = app.project.sequences[i];
 								break;
 							}
@@ -1882,7 +1882,7 @@ function getOuterBBox(bbox_list){
 function trackItemToSequence(clip) {
 	if(clip.projectItem){
 		for(var i = 0; i < app.project.sequences.numSequences; i++){
-			if(clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
+			if(app.project.sequences[i].projectItem !== null && clip.projectItem.nodeId === app.project.sequences[i].projectItem.nodeId){
 				return app.project.sequences[i];
 			}
 		}
