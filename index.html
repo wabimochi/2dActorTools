@@ -54,7 +54,7 @@
 		<div class="uk-modal-dialog uk-modal-body">
 			<button class="uk-modal-close-default" type="button" uk-close></button>
 			<h2 class="uk-modal-title" style="color: #fff;">Error</h2>
-			<div id="error_text" style="text-align:center"></div>
+			<div id="error_text" style="text-align:center; word-break:break-word;"></div>
 			<hr>
 			<div id="error_help_label"style="display: inline-block; border-bottom: solid 1px var(--main-color1); padding:0px 10px">Info</div>
 			<div id="error_notification_help" style="text-align:left"></div>
@@ -426,6 +426,15 @@
 </body>
 
 <script>
+	window.addEventListener('error', function(e){
+		if(!invalid_try_catch){
+			let msg = e.error.stack.toString();
+			let info = $('<div>', {class:'error_info_text'});
+			info.append('不明なエラーが発生しました。<br>問題解決のために、この表示を開発者にお知らせください。<br>その際、個人情報や知られたくない内容が含まれないようご注意ください。');
+			ErrorNotificationOpen(msg, info);
+		}
+	});
+
 	function toArrayBuffer(buf) {
 		return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 	}
