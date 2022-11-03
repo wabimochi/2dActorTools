@@ -108,6 +108,10 @@ function NewSettingFile() {
         const err = SaveSettings();
         if(err == window.cep.fs.NO_ERROR){
             csInterface.evalScript(makeEvalScript('ImportSettingsFile', ExtensionSettingsFilePath));
+            ExtensionSettings[E_SETTING_ui_params] = {};
+            ExtensionSettings[E_SETTING_version] = 1;
+            ExtensionSettings[E_SETTING_actors] = {};
+            ExtensionSettings[E_SETTING_mogrts] = {};
             $('#setting_file_not_exist_icon').css('visibility','hidden');
             $('#setting_save_modal_close').click();
         } else {
