@@ -107,7 +107,9 @@ function NewSettingFile() {
         ExtensionSettingsFilePath = savedir + '/2dActorTools_settings.txt';
         const err = SaveSettings();
         if(err == window.cep.fs.NO_ERROR){
-            csInterface.evalScript(makeEvalScript('ImportSettingsFile', ExtensionSettingsFilePath));
+            csInterface.evalScript(makeEvalScript('ImportSettingsFile', ExtensionSettingsFilePath), function(){
+                _LoadSettings();
+            });
             $('#setting_file_not_exist_icon').css('visibility','hidden');
             $('#setting_save_modal_close').click();
         } else {
