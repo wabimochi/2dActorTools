@@ -31,7 +31,7 @@ function mogrtUpdate() {
     csInterface.evalScript(makeEvalScript('GetMGTClipName'), function(names) {
         const mogrtHistory = GetMogrtHistory();
         if(names.length > 0){
-            names = names.split(',');
+            names = names.split('\n');
         } else {
             names = [];
         }
@@ -69,13 +69,15 @@ function mogrtUpdate() {
 
 function importMGT() {
     const mogrtPathList = window.cep.fs.showOpenDialogEx(true, false, 'モーショングラフィックステンプレート', '', ['mogrt']).data;
+    let nameList = [];
     if(mogrtPathList != '') {
         for(let i = 0; i < mogrtPathList.length; i++){
             let name = path_js.basename(mogrtPathList[i]);
             name = name.substr(0, name.lastIndexOf('.')) || name;
             SetMogrtPath(name, mogrtPathList[i]);
+            nameList.push(name);
         }
-        csInterface.evalScript(makeEvalScript('ImportMOGRTFile', mogrtPathList.join('\\n')), mogrtUpdate);
+        csInterface.evalScript(makeEvalScript('ImportMOGRTFile', mogrtPathList.join('\\n'), nameList.join('\\n')), mogrtUpdate);
     }
 }
 
@@ -106,7 +108,7 @@ function insertSubtitleFromTextarea() {
         csInterface.evalScript(script, function(){BusyNotificationClose();});
     } else {
         const importPath = GetMogrtPath(mogrt.value);
-        csInterface.evalScript(makeEvalScript('ImportMOGRTFile', importPath), function(){
+        csInterface.evalScript(makeEvalScript('ImportMOGRTFile', importPath, mogrt.value), function(){
             mogrtUpdate();
             csInterface.evalScript(script, function(){BusyNotificationClose();});
         });
@@ -154,7 +156,7 @@ function insertSubtitleFromTextFile() {
             csInterface.evalScript(script, function(){BusyNotificationClose();});
         } else {
             const importPath = GetMogrtPath(mogrt.value);
-            csInterface.evalScript(makeEvalScript('ImportMOGRTFile', importPath), function(){
+            csInterface.evalScript(makeEvalScript('ImportMOGRTFile', importPath, mogrt.value), function(){
                 mogrtUpdate();
                 csInterface.evalScript(script, function(){BusyNotificationClose();});
             });
@@ -174,7 +176,7 @@ function insertSubtitleFromPSD() {
 }
 
 function isMogrtImported(value){
-    return $(`#select_mogrt [value=${value}]`).attr('imported');
+    return $(`#select_mogrt [value="${value}"]`).attr('imported');
 }
 
 CustomInitialize['insert_subtitle_initialize'] = function () {

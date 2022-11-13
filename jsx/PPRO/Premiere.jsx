@@ -107,7 +107,7 @@ var FrameAnimationKey = function(index, duration) {
 
 $._PPP_={
 	Setup: function(extPath){
-			initializeActBin(extPath);
+		initializeActBin(extPath);
 		
 		DummyClipNodeID =  getDummyClip().nodeId;
 
@@ -156,6 +156,7 @@ $._PPP_={
 					targetVideoTrack.overwriteClip(mgtClip, clip.start.seconds);
 
 					var mgtComponent = targetVideoTrack.clips[i].getMGTComponent();
+					if(mgtComponent === null) continue;
 					var sourceText = getSourceTextParam(mgtComponent);
 					if(sourceText && i < splitText.length){
 						var textObj = JSON.parse(sourceText.getValue());
@@ -269,7 +270,6 @@ $._PPP_={
 				if (root.children[i]) {
 					if (root.children[i].type === ProjectItemType.BIN) {
 						deepSearchMGT(root.children[i], clipNames);
-
 					}
 					else if (root.children[i].type === ProjectItemType.CLIP) {
 						clipNames.push(root.children[i].name);
@@ -282,7 +282,7 @@ $._PPP_={
 		if(root) {
 			deepSearchMGT(root, clipNames);
 		}
-		return clipNames;
+		return clipNames.join("\n");
 	},
 
 	CaptureSelectedClipProperties: function() {
@@ -474,12 +474,14 @@ $._PPP_={
 		return treePathList;
 	},
 
-	ImportMOGRTFile: function(pathList) {
+	ImportMOGRTFile: function(pathList, nameList) {
 		var dummyClip = getDummyClip()
 		var seq = app.project.createNewSequenceFromClips('importmogrt', [dummyClip], ActorBinItem);
 		var path = pathList.split('\n');
+		var name = nameList.split('\n');
 		for(var i = 0; i < path.length; i++) {
-			seq.importMGT(path[i], 0, 0, 0);
+			var trackItem = seq.importMGT(path[i], 0, 0, 0);
+			trackItem.projectItem.name = name[i];
 		}
 		app.project.deleteSequence(seq);
 	},
