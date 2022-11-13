@@ -22,7 +22,7 @@ function autoImportStart(dirPath, matchingPatternList, matchingSourceList, impor
         disableGlobbing:true
     }).on('add', (path, stat) => {
         const ext = path.substr(path.lastIndexOf('.') + 1);
-        if(!/[wW][aA][vV]|[mM][pP]3|[wW][mM][vV]/.test(ext)) {
+        if(!/[wW][aA][vV]|[mM][pP]3|[wW][mM][aA]/.test(ext)) {
             return;
         }
         const filename = path.substr(path.lastIndexOf('/') + 1);
