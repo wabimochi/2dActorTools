@@ -615,6 +615,7 @@ $._PPP_={
 				var sequenceList = getSequenceTrackItemsInSequence(activeSequence, seq.sequenceID);
 				var playerPosition = activeSequence.getPlayerPosition();
 				var targetSequence = getClipAtTime(sequenceList, playerPosition.seconds);
+				if(targetSequence === null) return;
 				startTime = getClipLocalTime(targetSequence, playerPosition.seconds);
 			}
 		}
