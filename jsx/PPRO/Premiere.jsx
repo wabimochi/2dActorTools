@@ -107,10 +107,8 @@ var FrameAnimationKey = function(index, duration) {
 
 $._PPP_={
 	Setup: function(extPath){
-		searchActBin();
-		if(!ActorBinItem){
 			initializeActBin(extPath);
-		}
+		
 		DummyClipNodeID =  getDummyClip().nodeId;
 
 		app.unbind('onActiveSequenceStructureChanged');
@@ -1985,7 +1983,10 @@ function anchorUpdate(clip, clip_bbox, sequence_bbox, updateUI){
 }
 
 function initializeActBin(extPath){
+	searchActBin();
+	if(!ActorBinItem){
 	ActorBinItem = app.project.rootItem.createBin(ACT_BIN_NAME);
+	}
 	var dummyClip = shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
 	if(dummyClip === null) app.project.importFiles([extPath + '/resource/dummy.png'], true, ActorBinItem, false);
 }
