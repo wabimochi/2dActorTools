@@ -511,7 +511,10 @@ $._PPP_={
 		var _treePathList = treePathCSV.split(',');
 		var mediaPathList = [];
 		for(var i = 0; i < _treePathList.length; i++) {
-			mediaPathList.push(getActorClipWithTreePath(actorName, _treePathList[i]).getMediaPath());
+			var clip = getActorClipWithTreePath(actorName, _treePathList[i]);
+			if(clip !== null){
+				mediaPathList.push(clip.getMediaPath());
+			}
 		}
 		return mediaPathList.join(',');
 	},
@@ -1985,7 +1988,7 @@ function anchorUpdate(clip, clip_bbox, sequence_bbox, updateUI){
 function initializeActBin(extPath){
 	searchActBin();
 	if(!ActorBinItem){
-	ActorBinItem = app.project.rootItem.createBin(ACT_BIN_NAME);
+		ActorBinItem = app.project.rootItem.createBin(ACT_BIN_NAME);
 	}
 	var dummyClip = shallowSearch(ActorBinItem, 'dummy.png', ProjectItemType.CLIP);
 	if(dummyClip === null) app.project.importFiles([extPath + '/resource/dummy.png'], true, ActorBinItem, false);

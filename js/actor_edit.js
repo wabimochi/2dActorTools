@@ -931,23 +931,25 @@ function AnimationPreview_SourceChange(play=false, view_reset=true){
         treePath.push(elm.attr('tree_path'));
         previewDurationList.push(Number(elm.children('input').val()) * 1/60 * 1000);
     });
-    const index = $('#actor_switcher>.uk-active').attr('sequence');
-    const acotr_name = $('#actor_list_root>ul>[sequence="' + index + '"]>.actor_sequence_link_label').html();
-    csInterface.evalScript(makeEvalScript('GetActorClipMediaPath', acotr_name, treePath), function(mediaPathList) {
-        previewMediaPathList = mediaPathList.split(',');
-        Jimp.read(previewMediaPathList[0], (err, image) => {
-            if (!err) {
-                const rect = getCropSize(image, 5);
-                if(rect !== null){
-                    SetAnimationPreviewSource(previewMediaPathList, rect, view_reset);
-                    if(play){
-                        animationPreviewType = $('#select_animation_type').val(); 
-                        AnimationPreview_Play();
+    if(treePath.length > 0){
+        const index = $('#actor_switcher>.uk-active').attr('sequence');
+        const acotr_name = $('#actor_list_root>ul>[sequence="' + index + '"]>.actor_sequence_link_label').html();
+        csInterface.evalScript(makeEvalScript('GetActorClipMediaPath', acotr_name, treePath), function(mediaPathList) {
+            previewMediaPathList = mediaPathList.split(',');
+            Jimp.read(previewMediaPathList[0], (err, image) => {
+                if (!err) {
+                    const rect = getCropSize(image, 5);
+                    if(rect !== null){
+                        SetAnimationPreviewSource(previewMediaPathList, rect, view_reset);
+                        if(play){
+                            animationPreviewType = $('#select_animation_type').val(); 
+                            AnimationPreview_Play();
+                        }
                     }
                 }
-            }
+            });
         });
-    });
+    }
 }
 
 let previewIndex = 0;
@@ -2183,17 +2185,17 @@ function ActorEditInitialize() {
         }
     });
 
-    csInterface.addEventListener('incrementalBakeNotification', function(e) {
-        const data = e.data.split(',');
-        const actor_root = $('.actor_component[sequence="' + data[0] + '"]');
-        const group = actor_root.find('.actor_parts_top[group_index=' + data[1] + ']');
-        const button = group.find('[name="incremental_bake"]');
-        if(data[2] === '0'){
-            setDisable(button);
-        } else {
-            setEnable(button);
-        }
-    });
+    // csInterface.addEventListener('incrementalBakeNotification', function(e) {
+    //     const data = e.data.split(',');
+    //     const actor_root = $('.actor_component[sequence="' + data[0] + '"]');
+    //     const group = actor_root.find('.actor_parts_top[group_index=' + data[1] + ']');
+    //     const button = group.find('[name="incremental_bake"]');
+    //     if(data[2] === '0'){
+    //         setDisable(button);
+    //     } else {
+    //         setEnable(button);
+    //     }
+    // });
 
     csInterface.addEventListener('bakeTextNotification', function(e){
         const data = e.data.split(',');
