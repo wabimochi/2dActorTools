@@ -25,6 +25,12 @@ CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_EXCEED_MAX_NUM_PROCESS] = "[error]  The m
 CEP_ERROR_TO_MESSAGE[window.cep.fs.ERR_INVALID_URL] = "[error] Invalid URL.";
 CEP_ERROR_TO_MESSAGE[window.cep.fs.DEPRECATED_API] = "[error] deprecated API.";
 
+const E_Unknown = -1;
+const E_InvalidIndex = 1;
+const E_InvalidMarker = 2;
+const E_NoAudioClip = 3;
+const E_SequenceNotFound = 4;
+
 let audioTrackSelectBox = [];
 let videoTrackSelectBox = [];
 let SetectedProjectItemTreePath = '';

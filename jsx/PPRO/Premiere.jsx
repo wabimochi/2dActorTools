@@ -100,6 +100,12 @@ var ANIMATION_LINK_INFO_PARENT_SEQUENCE_ID = 0;
 var ANIMATION_LINK_INFO_TRACK_INDEX = 1;
 var ANIMATION_LINK_INFO_BBOX = 2;
 
+var E_Unknown = -1;
+var E_InvalidIndex = 1;
+var E_InvalidMarker = 2;
+var E_NoAudioClip = 3;
+var E_SequenceNotFound = 4;
+
 var FrameAnimationKey = function(index, duration) {
     this.index = index;
     this.duration = duration;
@@ -1379,16 +1385,23 @@ $._PPP_={
 		fAnimationSequence = linkAnimationSequence[fLinkedSequenceIndex][fAnimationSequenceIndex];
 		AnimationProperties = linkAnimationProperties[fLinkedSequenceIndex][fAnimationSequenceIndex];
 		if(fAnimationSequence === null) {
-			alert('assert');
-			return;
+			throw new Error('unknown error');
+			return E_Unknown;
 		}
+
+		if(sourceIndex < 0 || sourceIndex >= linkSequenceParents[fLinkedSequenceIndex].audioTracks.numTracks){
+			return E_InvalidIndex;
+		}
+
+		var markers = fAnimationSequence.markers;
+		if(markers.numMarkers <= 1) return E_InvalidMarker;
 
 		if(sourceClips === undefined || sourceClips === '') {
 			fAnimationSourceClips = linkSequenceParents[fLinkedSequenceIndex].audioTracks[sourceIndex].clips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.numItems;
+			if(fAnimationSourceClipsLength <= 0) return E_NoAudioClip;
+
 			bakeAllDuration = true;
-			var markers = fAnimationSequence.markers;
-			if(markers.numMarkers <= 1) return;
 			var currentMarker = getFirstTransitionMarker(markers);
 			var transition = getTransition(currentMarker);
 			for(var i = 0; i < AnimationProperties.length; i++){
@@ -1402,6 +1415,7 @@ $._PPP_={
 			bakeAllDuration = false;
 			fAnimationSourceClips = sourceClips;
 			fAnimationSourceClipsLength = fAnimationSourceClips.length;
+			if(fAnimationSourceClipsLength <= 0) return E_NoAudioClip;
 		}
 
 		if(id){
@@ -1418,6 +1432,7 @@ $._PPP_={
 			eventObj.data = fAnimationSourceClips[i].projectItem.getMediaPath() + ',' + i.toString();
 			eventObj.dispatch();
 		}
+		return 0;
 	},
 
 	SetFrameAnimationKeypoints_Audio : function(clipIndex, keypoints, startTime) {
@@ -1435,18 +1450,19 @@ $._PPP_={
 		fAnimationSequence = linkAnimationSequence[linkedSequenceIndex][animationTrackIndex];
 		var activeSequence = app.project.activeSequence;
 		var sequenceList = getSequenceTrackItemsInSequence(activeSequence, linkSequence[linkedSequenceIndex].sequenceID);
-		if(sequenceList.length === 0) return;
+		if(sequenceList.length === 0) return E_SequenceNotFound;
 		var end = sequenceList[sequenceList.length - 1].outPoint.seconds;
 
 		if(fAnimationSequence === null) {
-			alert('assert');
-			return;
+			throw new Error('unknown error');
+			return E_Unknown;
 		}
 
 		AnimationProperties = linkAnimationProperties[linkedSequenceIndex][animationTrackIndex];
 
 		var markers = fAnimationSequence.markers;
-		if(markers.numMarkers <= 1) return;
+		if(markers.numMarkers <= 1) return E_InvalidMarker;
+
 		var currentMarker = getFirstTransitionMarker(markers);
 		var transition = getTransition(currentMarker);
 		for(var i = 0; i < AnimationProperties.length; i++){
@@ -1462,6 +1478,7 @@ $._PPP_={
 		}
 
 		bakeFrameAnimation_Random(0, end, false, false, id);
+		return 0;
 	},
 
 	ConvertLightweightSequence : function(actorName, linkedSequenceIndex, changeKey, bbox_list, actor_l, actor_t, isLightweight){

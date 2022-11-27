@@ -2084,7 +2084,8 @@ function ActorEditInitialize() {
         const seq_index = $('.actor_linknav > ul > .enable').attr('sequence');
         const group_index = ContextmenuGroupSelectJQElm.attr('group_index');
         const anim_type = ContextmenuGroupSelectJQElm.attr('anim-type');
-        const source = Number(ContextmenuGroupSelectJQElm.find('.input_source_track').val()) - 1;
+        const sourceElm = ContextmenuGroupSelectJQElm.find('.input_source_track');
+        const source = Number(sourceElm.val()) - 1;
         let script = '';
         
         const progress = ContextmenuGroupSelectJQElm.find('.td_bake_progress');
@@ -2099,7 +2100,21 @@ function ActorEditInitialize() {
         } else if(anim_type == 1){
             script = makeEvalScript('FrameAnimation_Audio', seq_index, group_index, source, '', id);
         }
-        csInterface.evalScript(script);
+        csInterface.evalScript(script, function(e){
+            if(e != 0){
+                bakeProgressBarElms[id].attr('hidden', '');
+                bakeProgressBarElms[id].siblings().removeClass('events_disable');
+            }
+            if(anim_type == 1){
+                if(e == E_InvalidIndex || e == E_NoAudioClip){
+                    sourceElm.addClass('tdact_setting_error');
+                }
+            }
+            if(anim_type == 0){
+                if(e == E_SequenceNotFound) ErrorNotificationOpen("アクティブシーケンス内にキャラクターのシーケンスが見つかりませんでした。");
+            }
+            if(e == E_InvalidMarker) ErrorNotificationOpen("アニメーションクリップが無いためベイクできませんでした。");
+        });
     });
 
     document.body.addEventListener('click', function () {
@@ -2173,6 +2188,7 @@ function ActorEditInitialize() {
     $(document).on('change', '.input_source_track', function() {
         if(this.value.length > 0){
             $(this).addClass('filled');
+            $(this).removeClass('tdact_setting_error');
         } else {
             $(this).removeClass('filled');
         }
@@ -2226,7 +2242,6 @@ function ActorEditInitialize() {
         if(bakeProgressBarElms[id]){
             bakeProgressBarElms[id].attr('hidden', '');
             bakeProgressBarElms[id].siblings().removeClass('events_disable');
-
         }
         delete bakeProgressBarElms[id];
     });
