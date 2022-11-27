@@ -741,7 +741,9 @@
 		});
 
 		csInterface.addEventListener('getAudioAnimKeyPoint', function(e) {
-			const [path, id] = e.data.split(',');
+			const splitIndex = e.data.lastIndexOf(',');
+			const path = e.data.substring(0, splitIndex);
+			const id = e.data.substring(splitIndex + 1);
 			const epsTime = 1 / Number($('#lipsync_framerate').val());
 			const threshold = 0.1;
 			const audioContext = new AudioContext();
