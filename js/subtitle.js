@@ -126,7 +126,7 @@ function insertSubtitleFromTextFile() {
             }
         }
         const replaceAfter = $('#subtitle_replace_after').val();
-        let mediaPathList = result.split(',');
+        let mediaPathList = result.split('\n');
         let textList = [];
         const OSVersion = csInterface.getOSInformation();
         let dirSeparater = '/';
@@ -174,6 +174,143 @@ function insertSubtitleFromPSD() {
         setSettingError($('#psd_import_bin'));
     }
 }
+
+function TimeToSrtTimeString(time){
+	const milliSec = time % 1000;
+	time = (time - milliSec) / 1000;
+	const sec = time % 60;
+	time = (time - sec) / 60;
+	const min = time % 60;
+	const hour = (time - min) / 60;
+
+	return hour.toString().padStart(2, '0') + ":" +
+            min.toString().padStart(2, '0') + ":" +
+            sec.toString().padStart(2, '0') + "," +
+            Math.ceil(milliSec).toFixed().padStart(3, '0');
+}
+
+function textFileToSRT() {
+    let replaceReg = null;
+    if($('#subtitle_replace').val() != '') {
+        try {
+            replaceReg = new RegExp($('#subtitle_replace').val(), $('#subtitle_replace_flag').val());
+        } catch (e) {
+            alert(e);
+        }
+    }
+    const replaceAfter = $('#subtitle_replace_after').val();
+    const OSVersion = csInterface.getOSInformation();
+    let dirSeparater = '/';
+    if(OSVersion.includes('Windows')) {
+        dirSeparater = '\\';
+    }
+    const presetTag = $('#preset_tag').val();
+    const base_path = $('#srt_subtitle_outputpath').val();
+    const enableImport = $('#srt_subtitle_autoimport').prop('checked');
+
+    csInterface.evalScript(makeEvalScript('GetTargetAudioTrackNum'), function(targetTrackList){
+        if(targetTrackList == ""){
+            const script = makeEvalScript('MessageInfo', 'ターゲットオーディオトラックがありません。');
+            csInterface.evalScript(script);
+            return;
+        }
+        const importFilePathList = [];
+        targetTrackList = targetTrackList.split('\n');
+        targetTrackList.forEach((trackNum, itr) => {
+            csInterface.evalScript(makeEvalScript('GetTargetAudioClipTime', trackNum), function(timeList){
+                if(!timeList) return;
+                csInterface.evalScript(makeEvalScript('GetTragetAudioClipMediaPath', trackNum), function(pathList){
+
+                    pathList = pathList.split('\n');
+                    timeList = timeList.split('\n');
+                    let srtText = [];
+
+                    for(let i = 0; i < pathList.length; i++) {
+                        srtText.push(i);
+                        const time = timeList[i].split(',');
+                        srtText.push(TimeToSrtTimeString(Number(time[0] * 1000)) + ' --> ' + TimeToSrtTimeString(Number(time[1] * 1000)));
+                        const path = pathList[i].slice(0, pathList[i].lastIndexOf('.') + 1) + 'txt';
+                        let text = getFileText(path);
+                        if(text != null) {
+                            if(presetTag !== '') {
+                                srtText.push(text.slice(text.indexOf(presetTag) + 1).replace(newLineReg, '\\n').replace(/\//g, '').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
+                            } else {
+                                srtText.push(text.replace(newLineReg, '\\n').replace(/\//g, '').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
+                            }
+                        } else {
+                            const lastDirSepIndex = pathList[i].lastIndexOf(dirSeparater) + 1;
+                            srtText.push(pathList[i].slice(lastDirSepIndex, pathList[i].lastIndexOf('.')).replace(/\//g, ''));
+                        }
+                        srtText.push('');
+                    }
+                    csInterface.evalScript(makeEvalScript('GetProjectPath'), function(projectPath){
+                        let fixedPath = false;
+                        let path = base_path;
+                        if(path === ""){
+                            path = path_js.dirname(projectPath);
+                        }
+
+                        if(fs.existsSync(path)) {
+                            const stat = fs.statSync(path);
+                            if(stat.isDirectory()){
+                                path = path_js.join(path, "caption_A" + trackNum + ".srt");
+                                fixedPath = true;
+                            }
+                        }
+
+                        if(!fixedPath){
+                            let dirname = path;
+                            if(path[path.length - 1] !== '/'){
+                                dirname = path_js.dirname(path);
+                            }
+                            if(!fs.existsSync(dirname)) {
+                                fs.mkdirSync(dirname, { recursive: true }, err => {
+                                   if(err) console.log(err);
+                                });
+                            }
+
+                            const lastIndex = path.lastIndexOf('.');
+                            if(lastIndex >= 0){
+                                if(path.slice(lastIndex) === ".srt"){
+                                    path = path_js.join(path_js.dirname(path), path_js.parse(path).name + "_A" + trackNum + ".srt");
+                                } else {
+                                    path = path_js.join(path_js.dirname(path), path_js.basename(path) + "_A" + trackNum + ".srt");
+                                }
+                            } else {
+                                console.log(path);
+                                if(path[path.length - 1] === '/'){
+                                    path = path_js.join(path, "caption_A" + trackNum + ".srt");
+                                } else {
+                                    path = path + "_A" + trackNum + ".srt";
+                                }
+                            }
+                        }
+
+                        const err = window.cep.fs.writeFile(path, srtText.join('\n')).err;
+                        if(err != window.cep.fs.NO_ERROR){
+                            ErrorNotificationOpen(CEP_ERROR_TO_MESSAGE[err], GetDebugInfo());
+                        }
+                        if(enableImport){
+                            importFilePathList.push(path);
+                        }
+                        if(targetTrackList.length - 1 === itr){
+                            csInterface.evalScript(makeEvalScript('ImportFiles', importFilePathList.join('\\n')));
+                            csInterface.evalScript(makeEvalScript('MessageInfo', targetTrackList.length.toString() + '個のSRTを出力しました。'));
+                        }
+                    });
+                });
+            });
+        });
+    });
+}
+
+$(document).on('click', '#srt_subtitle_open_dialog', function(e) {
+    const watch_dir = window.cep.fs.showOpenDialogEx(false, true, '保存先フォルダの選択', null).data;
+    if(watch_dir == '') return;
+    const pathInput = $(e.target).closest('a').prevAll('input');
+    pathInput.val(watch_dir[0] + '/');
+    pathInput.trigger("change");
+});
 
 function isMogrtImported(value){
     return $(`#select_mogrt [value="${value}"]`).attr('imported');

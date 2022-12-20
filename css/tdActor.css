@@ -888,6 +888,10 @@ input[type=checkbox]:checked:hover {
 .error_info_text{
   padding-top:20px;
 }
+.stack_trace_text{
+  word-break:break-word;
+  font-size: 50%;
+}
 .key_deco{
   background-color: var(--element-color1);
   padding: .2em .4em;

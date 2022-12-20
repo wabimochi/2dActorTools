@@ -98,6 +98,28 @@
 							</div>
 						</div>
 					</details>
+					<details open>
+						<summary class='td_summary'>SRTファイルとして出力</summary>
+						<div class='uk-flex-center uk-child-width-expand@ss uk-margin-left uk-margin-right'>
+							<span class='uk-label tdactor_label uk-width-auto'>プリセットタグ</span>
+							<input class='uk-input uk-light tdinput save_setting_value_on_change' type='text' category='insert_subtitle' id='srt_preset_tag' value='＞' placeholder='preset tag...'>
+							<span class='uk-label tdactor_label uk-width-auto uppercase_disable'>Replace（正規表現）</span>
+							<div class='uk-flex-inline'>
+								<input class='uk-input uk-light tdinput save_setting_value_on_change' type='text' category='insert_subtitle' id='srt_subtitle_replace' value='' placeholder='マッチングパターン'>
+								<input class='uk-input uk-light tdinput save_setting_value_on_change' type='text' category='insert_subtitle' id='srt_subtitle_replace_flag' value='' placeholder='フラグ'>
+								<input class='uk-input uk-light tdinput save_setting_value_on_change' type='text' category='insert_subtitle' id='srt_subtitle_replace_after' value='' placeholder='Replace後'>
+							</div>
+							<span class='uk-label tdactor_label uk-width-auto'>保存先</span>
+							<span class="uk-label tdactor_label_secondary">名前の後ろにトラック番号が付与されます。</span>
+							<div class='uk-flex' style='align-items: baseline;'>
+								<input class='uk-input uk-padding-small uk-light uk-width-expand tdinput input_path save_setting_value_on_change' type='text' category='insert_subtitle' id='srt_subtitle_outputpath' placeholder='未入力の場合プロジェクトファイルと同じ場所に出力されます。'>
+								<a class='uk-width-auto grid_icon' id='srt_subtitle_open_dialog' uk-icon='icon:folder'></a>
+							</div>
+							<div class="uk-margin"><label><input class="uk-checkbox td_check save_setting_check_on_change" type="checkbox" category="insert_subtitle" id="srt_subtitle_autoimport" checked> 保存後に選択中のビンにインポートする</label></div>
+							<span class="uk-label tdactor_label_secondary">ターゲットオーディオトラックが対象です。ファイル保存の上書き確認はされないのでご注意ください。</span>
+							<button class='uk-button uk-button-secondary uk-button-small uk-margin-small-right' style='margin-top:8px;' onClick='textFileToSRT()'>保存</button>
+						</div>
+					</details>
 					<details>
 						<summary class="td_summary">ソース：PSD</summary>
 						<span class="uk-label tdactor_label_secondary uk-width-auto">対象のクリップを選択してコピー/ペーストボタンをクリック</span>

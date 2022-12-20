@@ -56,7 +56,7 @@ function autoImportStart(dirPath, matchingPatternList, matchingSourceList, impor
 }
 
 function importExecute() {
-    csInterface.evalScript(makeEvalScript('ImportFiles', importPathBuffer.join('\\\\'), importTrackBuffer.join('\\\\'), importBinBuffer.join('\\\\')));
+    csInterface.evalScript(makeEvalScript('ImportFilesAndSetToTrack', importPathBuffer.join('\\\\'), importTrackBuffer.join('\\\\'), importBinBuffer.join('\\\\')));
     importPathBuffer = [];
     importTrackBuffer = [];
     importBinBuffer = [];

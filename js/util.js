@@ -103,6 +103,12 @@ $(document).on('change', '.input_num_only', function() {
         target.val('');
     }
 });
+$(document).on('change', '.input_path', function() {
+    const target = $(this);
+    let path = target.val().replace(/[\\\¥]/g, '/');
+    path = path.replace(/\/+/g, '/');
+    target.val(path);
+});
 
 $(document).on('click', '.merker_color_selector', function() {
     const target = $(this);
@@ -309,4 +315,18 @@ function ErrorNotificationOpen(text, help_content=null){
 }
 function ErrorNotificationClose(){
     UIkit.modal($('#error_notification')).hide();
+}
+
+function GetDebugInfo(){
+    var e = new Error();
+    if (!e.stack) try {
+      throw e;
+    } catch (e) {
+    }
+
+    const info = $('<div>');
+    info.append($('<div>', {class:'', text:"以下はデバッグ用の情報です。"}));
+    info.append($('<div>', {class:'stack_trace_text', text:e.stack}));
+
+    return info;
 }

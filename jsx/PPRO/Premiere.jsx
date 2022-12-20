@@ -134,6 +134,13 @@ $._PPP_={
 		}
 	},
 
+	GetProjectPath : function(){
+		if(app.project){
+			return app.project.path;
+		}
+		return "";
+	},
+
 	InsertSubtitle : function (mgtName, text){
 		var mgtClip = searchItemWithTreePath(MGT_BIN_NAME + '/' + mgtName, ProjectItemType.CLIP);
 		var seq = app.project.activeSequence;
@@ -253,21 +260,58 @@ $._PPP_={
 		}
 	},
 
-	GetTragetAudioClipMediaPath: function() {
+	GetTragetAudioClipMediaPath: function(targetTrack) {
 		var seq = app.project.activeSequence;
 		var mediaPathList = [];
 		if(seq) {
-			for(var i = 0; i < seq.audioTracks.numTracks; i++) {
-				if (seq.audioTracks[i].isTargeted()) {
-					var clips = seq.audioTracks[i].clips;
-					for(var j = 0; j < clips.numItems; j++){
-						mediaPathList.push(clips[j].projectItem.getMediaPath());
-					}
-					break;
+			var ATrackIndex = 0;
+			if(targetTrack && targetTrack >= 0) {
+				ATrackIndex = Number(targetTrack);
+			} else {
+				for(; ATrackIndex < seq.audioTracks.numTracks; ATrackIndex++) {
+					if (seq.audioTracks[ATrackIndex].isTargeted()) break;
+				}
+				if (ATrackIndex >= seq.audioTracks.numTracks) {
+					MessageWarning("Track target is unset.");
+					return;
 				}
 			}
+			var clips = seq.audioTracks[ATrackIndex].clips;
+			for(var j = 0; j < clips.numItems; j++){
+				mediaPathList.push(clips[j].projectItem.getMediaPath());
+			}
+		} else {
+			MessageWarning("No active sequence.");
+			return;
 		}
-		return mediaPathList.join(',');
+		return mediaPathList.join('\n');
+	},
+
+	GetTargetAudioClipTime : function (targetTrack){
+		var seq = app.project.activeSequence;
+		var timeList = [];
+		if(seq) {
+			var ATrackIndex = 0;
+			if(targetTrack && targetTrack >= 0) {
+				ATrackIndex = Number(targetTrack);
+			} else {
+				for(; ATrackIndex < seq.audioTracks.numTracks; ATrackIndex++) {
+					if (seq.audioTracks[ATrackIndex].isTargeted()) break;
+				}
+				if (ATrackIndex >= seq.audioTracks.numTracks) {
+					MessageWarning("Track target is unset.");
+					return;
+				}
+			}
+			var clips = seq.audioTracks[ATrackIndex].clips;
+			for(var i = 0; i < clips.numItems; i++){
+				timeList.push(clips[i].start.seconds.toString() + "," + clips[i].end.seconds.toString());
+			}
+			return timeList.join('\n');
+		} else {
+			MessageWarning("No active sequence.");
+			return;
+		}
 	},
 
 	GetMGTClipName: function () {
@@ -546,6 +590,29 @@ $._PPP_={
 		return false;
 	},
 
+	ImportFiles: function(path) {
+		path = path.split('\n');
+		if(app.project){
+			var bin = app.project.rootItem;
+			if(checkAppVersion("15.4.0")){
+				var selectedItems = app.getCurrentProjectViewSelection();
+				if (selectedItems){
+					if(selectedItems[0].type === ProjectItemType.BIN){
+						bin = selectedItems[0];
+					} else if(selectedItems[0].type === ProjectItemType.CLIP || selectedItems[0].type === ProjectItemType.FILE){
+						var treePath = selectedItems[0].treePath.replace(/\\/g, '/');
+					    var sepIndex = treePath.indexOf('/', 1);
+						treePath = treePath.slice(sepIndex + 1);
+						sepIndex = treePath.lastIndexOf('/');
+						treePath = treePath.slice(0, sepIndex);
+						bin = searchItemWithTreePath(treePath, ProjectItemType.BIN);
+					}
+				}
+			}
+			return app.project.importFiles(path, true, bin, false);
+		}
+	},
+
 	SetLinkSequence: function(index) {
 		if(linkSequence[index]){
 			$._PPP_.CheckLinkSequenceFramerate(index);
@@ -807,7 +874,7 @@ $._PPP_={
 		}
 	},
 
-	ImportFiles : function (path, trackIndex, importBinTreePath) {
+	ImportFilesAndSetToTrack : function (path, trackIndex, importBinTreePath) {
 		var pathList = path.split('\\');
 		var trackIndexList = trackIndex.split('\\');
 		var binTreePathList = importBinTreePath.split('\\');
@@ -978,6 +1045,26 @@ $._PPP_={
 			}
 		}
 		return '';
+	},
+
+	GetTargetVideoTrackNum : function(){
+		var seq = app.project.activeSequence;
+		if(!seq) return '';
+		var track = [];
+		for(var i = 0; i < seq.videoTracks.numTracks; i++) {
+			if (seq.videoTracks[i].isTargeted()) track.push(i);
+		}
+		return track.join('\n');
+	},
+
+	GetTargetAudioTrackNum : function(){
+		var seq = app.project.activeSequence;
+		if(!seq) return '';
+		var track = [];
+		for(var i = 0; i < seq.audioTracks.numTracks; i++) {
+			if (seq.audioTracks[i].isTargeted()) track.push(i);
+		}
+		return track.join('\n');
 	},
 
 	TriggerClipOverwrite : function(targetSeqFlag, trackIndex, startClipTreePath, endClipTreePath, startTriggerInsertFlag, endTriggerInsertFlag, actor_l, actor_t, start_bbox, end_bbox) {
@@ -2793,4 +2880,19 @@ function reportSequenceItemSelectionChanged() {
     eventObj.type = "sequenceItemsSelectChanged";
 	eventObj.data = '';
     eventObj.dispatch();
+}
+
+function checkAppVersion(lowerVersion){
+	lowerVersion = lowerVersion.split('.');
+	var currentVersion = app.version.split('.');
+	for(var i = 0; i < currentVersion.length; i++){
+		var c = Number(currentVersion[i]);
+		var l = 0;
+		if(i < lowerVersion.length){
+			l = Number(lowerVersion[i]);
+		}
+		if(c > l) return true;
+		if(c < l) return false;
+	}
+	return true;
 }
