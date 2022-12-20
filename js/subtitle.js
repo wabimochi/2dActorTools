@@ -191,20 +191,20 @@ function TimeToSrtTimeString(time){
 
 function textFileToSRT() {
     let replaceReg = null;
-    if($('#subtitle_replace').val() != '') {
+    if($('#srt_subtitle_replace').val() != '') {
         try {
-            replaceReg = new RegExp($('#subtitle_replace').val(), $('#subtitle_replace_flag').val());
+            replaceReg = new RegExp($('#srt_subtitle_replace').val(), $('#srt_subtitle_replace_flag').val());
         } catch (e) {
             alert(e);
         }
     }
-    const replaceAfter = $('#subtitle_replace_after').val();
+    const replaceAfter = $('#srt_subtitle_replace_after').val();
     const OSVersion = csInterface.getOSInformation();
     let dirSeparater = '/';
     if(OSVersion.includes('Windows')) {
         dirSeparater = '\\';
     }
-    const presetTag = $('#preset_tag').val();
+    const presetTag = $('#srt_preset_tag').val();
     const base_path = $('#srt_subtitle_outputpath').val();
     const enableImport = $('#srt_subtitle_autoimport').prop('checked');
 
@@ -220,7 +220,6 @@ function textFileToSRT() {
             csInterface.evalScript(makeEvalScript('GetTargetAudioClipTime', trackNum), function(timeList){
                 if(!timeList) return;
                 csInterface.evalScript(makeEvalScript('GetTragetAudioClipMediaPath', trackNum), function(pathList){
-
                     pathList = pathList.split('\n');
                     timeList = timeList.split('\n');
                     let srtText = [];
