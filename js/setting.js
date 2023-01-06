@@ -3,7 +3,7 @@ const E_SETTING_ui_params = 'uiparams';
 const E_SETTING_actors = 'actors';
 const E_SETTING_mogrts = 'mogrts';
 
-let ExtensionSettings = {};
+let ExtensionSettings = ExtensionSettingsVersionConvert({});
 let ExtensionSettingsFilePath = null;
 let loadSettingsTimeoutId = null;
 let retryLoadingCount = 0;
