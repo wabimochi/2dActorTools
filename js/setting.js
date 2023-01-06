@@ -119,7 +119,7 @@ function NewSettingFile() {
 }
 
 function ImportSettingFile() {
-    const settingFilePath = window.cep.fs.showOpenDialog(false, false, '2dActorTools setting file', '', ['.txt']).data;
+    const settingFilePath = window.cep.fs.showOpenDialogEx(false, false, '2dActorTools setting file', '', ['txt']).data;
     if(settingFilePath != '') {
         csInterface.evalScript(makeEvalScript('ImportSettingsFile', settingFilePath), function(e) {
             _LoadSettings();
