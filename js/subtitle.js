@@ -85,7 +85,7 @@ function insertSubtitleFromTextarea() {
     const mogrt = document.getElementById("select_mogrt");
     const text = document.getElementById("subtitles");
     let replaceReg = null;
-    if(('#subtitle_replace').val() != '') {
+    if($('#subtitle_replace').val() != '') {
         try {
             replaceReg = new RegExp($('#subtitle_replace').val(), $('#subtitle_replace_flag').val());
         } catch (e) {
