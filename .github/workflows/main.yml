@@ -1,0 +1,51 @@
+# manifest.xmlからバージョンを取得して、タグ付けして、draft releaseを作成して, 署名したzxpをアップロードするワークフロー
+name: Release
+on:
+  push:
+    branches: release
+env:
+  zxp_name : 2dActorTools.zxp
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
+        
+      - name: Cleaning
+        run: |
+          Remove-Item -Path .github -Recurse -Force
+          Remove-Item -Path .git -Recurse -Force
+
+      - name: Get version
+        run: |
+          $manifest = [xml](Get-Content ./CSXS/manifest.xml)
+          $ver = $manifest.ExtensionManifest.ExtensionList.Extension.Version
+          echo "version=$ver" >> $Env:GITHUB_ENV
+          echo "Version is $ver."
+
+      - name: Sign ZXP
+        run: |
+          cd ${{ github.workspace }}/../
+          git clone --filter=blob:none --no-checkout --depth 1 --sparse https://github.com/Adobe-CEP/CEP-Resources.git
+          cd CEP-Resources
+          git sparse-checkout add ZXPSignCMD/4.1.103/win64/
+          git checkout HEAD
+          cd ZXPSignCMD/4.1.103/win64
+          ./ZXPSignCmd.exe -selfSignedCert JP Tokyo wabimochi wabimochi ${{ secrets.P12_PASSWORD }} cert.p12
+          ./ZXPSignCmd.exe -sign ${{ github.workspace }} ${{ github.workspace }}/${{ env.zxp_name }} cert.p12 ${{ secrets.P12_PASSWORD }}
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          artifactErrorsFailBuild: true
+          artifacts: ./${{ env.zxp_name }}
+          artifactContentType: application/zip
+          commit: ${{ github.ref_name }}
+          draft: true
+          name: "v${{ env.version }}"
+          tag: "v${{ env.version }}"
+          generateReleaseNotes: true
