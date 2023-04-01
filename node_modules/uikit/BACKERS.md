@@ -2,4 +2,4 @@
 
 Thank you so much! ❤️
 
-- [Alexandr Malozemov](https://github.com/amverdo)
+- [SimonWayne](https://github.com/SimonWayne)

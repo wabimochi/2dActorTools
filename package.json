@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "dragula": "^3.7.3",
+    "encoding-japanese": "^2.0.0",
+    "fs-ext": "^2.0.0",
+    "jimp": "^0.22.7",
+    "kuromoji": "^0.1.2",
+    "sortablejs": "^1.15.0",
+    "uikit": "^3.16.13"
+  },
+  "devDependencies": {
+    "babel": "^6.23.0"
+  }
+}

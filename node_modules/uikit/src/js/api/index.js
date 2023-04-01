@@ -1,24 +1,8 @@
-import globalAPI from './global';
-import hooksAPI from './hooks';
-import stateAPI from './state';
-import instanceAPI from './instance';
-import componentAPI from './component';
-import * as util from 'uikit-util';
+import App from './app';
+import globalApi from './global';
+import instanceApi from './instance';
 
-const UIkit = function (options) {
-    this._init(options);
-};
+globalApi(App);
+instanceApi(App);
 
-UIkit.util = util;
-UIkit.data = '__uikit__';
-UIkit.prefix = 'uk-';
-UIkit.options = {};
-UIkit.version = VERSION;
-
-globalAPI(UIkit);
-hooksAPI(UIkit);
-stateAPI(UIkit);
-componentAPI(UIkit);
-instanceAPI(UIkit);
-
-export default UIkit;
+export default App;

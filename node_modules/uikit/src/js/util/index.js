@@ -1,4 +1,3 @@
-export * from './ajax';
 export * from './animation';
 export * from './attr';
 export * from './class';
@@ -10,10 +9,9 @@ export * from './fastdom';
 export * from './filter';
 export * from './lang';
 export * from './mouse';
-export * from './options';
+export * from './observer';
 export * from './player';
-export * from './promise';
-export * from './intersection';
+export * from './position';
 export * from './selector';
 export * from './style';
 export * from './viewport';
