@@ -4,6 +4,7 @@ let watcherList = [];
 let importPathBuffer = [];
 let importTrackBuffer = [];
 let importBinBuffer = [];
+let importFileClosed = [];
 let importExecuteId = null;
 
 function autoImportStart(dirPath, matchingPatternList, matchingSourceList, importBinList, trackList) {
@@ -44,6 +45,7 @@ function autoImportStart(dirPath, matchingPatternList, matchingSourceList, impor
                     importPathBuffer.push(path.replace(/\\/g, '/'));
                     importTrackBuffer.push(_trackList[i] - 1);
                     importBinBuffer.push(_importBinList[i]);
+                    importFileClosed.push(false);
                     importExecuteId = setTimeout(importExecute, 500);
                     break;
                 }
@@ -54,12 +56,66 @@ function autoImportStart(dirPath, matchingPatternList, matchingSourceList, impor
     watcherList[watcherId] = watcher;
     return watcherId;
 }
+function closeImportWaitModal(normalClose){
+    importInfoModalOpen = false;
+    if(!forceImport && !normalClose){
+        if(importExecuteId != null) {
+            clearTimeout(importExecuteId);
+        }
+        importExecuteId = null;
+        importPathBuffer = [];
+        importTrackBuffer = [];
+        importBinBuffer = [];
+        importFileClosed = [];
+    }
+}
 
+function isFileOpened(filePath) {
+    try {
+        const fd = fs.openSync(filePath, "a");
+        fs.closeSync(fd);
+        return false;
+    } catch (err) {
+        return true;
+    }  
+}
+
+let forceImport = false;
+let importInfoModalOpen = false;
 function importExecute() {
+    let anyFileOpen = false;
+    for(let i = 0; i < importPathBuffer.length; i++)
+    {
+        if(importFileClosed[i]) continue;
+        const open = isFileOpened(importPathBuffer[i])
+        anyFileOpen = anyFileOpen || open;
+        importFileClosed[i] = !open;
+    }
+    if(anyFileOpen && !forceImport){
+        if(!importInfoModalOpen){
+            const info = $('<div>');
+            const button = $('<button>',{class:'uk-button uk-button-secondary uk-width-auto', text:'今すぐ開始する', style:'margin-left:auto; margin-right:0; display: block'});
+            info.append(button);
+            button.click(function(){
+                forceImport = true;
+                InfoNotificationClose();
+            });
+            AddInfoModalCloseCallback(closeImportWaitModal);   
+            InfoNotificationOpen("自動インポート：ファイルが作成されるのを待っています。", info)
+        }
+        importExecuteId = setTimeout(importExecute, 500);
+        return;
+    }
+    RemoveInfoModalCloseCallback(closeImportWaitModal);
+    closeImportWaitModal(true);
+    InfoNotificationClose();
+    forceImport = false;
+
     csInterface.evalScript(makeEvalScript('ImportFilesAndSetToTrack', importPathBuffer.join('\\\\'), importTrackBuffer.join('\\\\'), importBinBuffer.join('\\\\')));
     importPathBuffer = [];
     importTrackBuffer = [];
     importBinBuffer = [];
+    importFileClosed = [];
     importExecuteId = null;
 }
 

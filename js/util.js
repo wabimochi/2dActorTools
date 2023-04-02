@@ -35,6 +35,8 @@ let audioTrackSelectBox = [];
 let videoTrackSelectBox = [];
 let SetectedProjectItemTreePath = '';
 
+const InfoModalCloseEvent = [];
+
 function GetUUID() {
     let uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".split("");
     const length = uuid.length;
@@ -316,6 +318,36 @@ function ErrorNotificationOpen(text, help_content=null){
 function ErrorNotificationClose(){
     UIkit.modal($('#error_notification')).hide();
 }
+function InfoNotificationOpen(text, help_content=null){
+    const text_elm = $('#info_text');
+    text_elm.html(text);
+    const help_elm = $('#info_notification_help');
+    help_elm.empty();
+    if(help_content !== null){
+        help_elm.append(help_content);
+    }
+    UIkit.modal($('#info_notification')).show();
+}
+function InfoNotificationClose(){
+    UIkit.modal($('#info_notification')).hide();
+}
+
+
+function AddInfoModalCloseCallback(func){
+    InfoModalCloseEvent.push(func);
+}
+function RemoveInfoModalCloseCallback(func){
+    const index = InfoModalCloseEvent.indexOf(func);
+    if (index !== -1) {
+        InfoModalCloseEvent.splice(index, 1);
+    }
+}
+
+UIkit.util.on('#info_notification', 'hidden', function () {
+    for(f in InfoModalCloseEvent){
+        f();
+    }
+});
 
 function GetDebugInfo(){
     var e = new Error();
