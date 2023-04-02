@@ -1,0 +1,27 @@
+{
+    "root": true,
+    "env": {
+        "es6": true,
+        "browser": true
+    },
+    "extends": ["eslint:recommended", "prettier"],
+    "parserOptions": {
+        "sourceType": "module",
+        "ecmaVersion": 2022
+    },
+    "globals": {
+        "VERSION": true,
+        "LOG": true,
+        "ICONS": true,
+        "NAME": true
+    },
+    "rules": {
+        "sort-imports": [
+            "error",
+            {
+                "ignoreCase": true,
+                "ignoreDeclarationSort": true
+            }
+        ]
+    }
+}

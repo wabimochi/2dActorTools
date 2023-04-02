@@ -107,15 +107,21 @@ button.uk-icon:not(:disabled) { cursor: pointer; }
 
 /*
  * Display images in icon dimensions
+ * 1. Required for `span` with background image
+ * 2. Required for `image`
  */
 
 .uk-icon-image {
     width: $icon-image-size;
     height: $icon-image-size;
+    /* 1 */
     background-position: 50% 50%;
     background-repeat: no-repeat;
     background-size: contain;
     vertical-align: middle;
+    /* 2 */
+    object-fit: scale-down;
+    max-width: none;
 }
 
 
@@ -124,17 +130,18 @@ button.uk-icon:not(:disabled) { cursor: pointer; }
 
 /*
  * Link
+ * 1. Allow text within link
  */
 
 .uk-icon-link {
     color: $icon-link-color;
+    /* 1 */
+    text-decoration: none !important;
     @if(mixin-exists(hook-icon-link)) {@include hook-icon-link();}
 }
 
-.uk-icon-link:hover,
-.uk-icon-link:focus {
+.uk-icon-link:hover {
     color: $icon-link-hover-color;
-    outline: none;
     @if(mixin-exists(hook-icon-link-hover)) {@include hook-icon-link-hover();}
 }
 
@@ -165,12 +172,10 @@ button.uk-icon:not(:disabled) { cursor: pointer; }
     @if(mixin-exists(hook-icon-button)) {@include hook-icon-button();}
 }
 
-/* Hover + Focus */
-.uk-icon-button:hover,
-.uk-icon-button:focus {
+/* Hover */
+.uk-icon-button:hover {
     background-color: $icon-button-hover-background;
     color: $icon-button-hover-color;
-    outline: none;
     @if(mixin-exists(hook-icon-button-hover)) {@include hook-icon-button-hover();}
 }
 
@@ -205,9 +210,9 @@ $inverse-icon-link-hover-color:                 $inverse-global-color !default;
 $inverse-icon-link-active-color:                $inverse-global-color !default;
 $inverse-icon-button-background:                $inverse-global-muted-background !default;
 $inverse-icon-button-color:                     $inverse-global-muted-color !default;
-$inverse-icon-button-hover-background:          darken($inverse-icon-button-background, 5%) !default;
+$inverse-icon-button-hover-background:          fade-in($inverse-icon-button-background, 0.05) !default;
 $inverse-icon-button-hover-color:               $inverse-global-color !default;
-$inverse-icon-button-active-background:         darken($inverse-icon-button-background, 10%) !default;
+$inverse-icon-button-active-background:         fade-in($inverse-icon-button-background, 0.1) !default;
 $inverse-icon-button-active-color:              $inverse-global-color !default;
 
 

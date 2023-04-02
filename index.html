@@ -7,7 +7,6 @@
 	<script src="./lib/jquery-1.9.1.js"></script>
 	<script src="./node_modules/uikit/dist/js/uikit.min.js"></script>
 	<script src="./node_modules/uikit/dist/js/uikit-icons.min.js"></script>
-	<script src="./node_modules/sortablejs/dist/sortable.umd.js"></script>
 	<script src="./lib/Vulcan.js"></script>
 	<script src="./js/svg.js"></script>
 	<script src="./js/util.js"></script>
@@ -58,6 +57,16 @@
 			<hr>
 			<div id="error_help_label"style="display: inline-block; border-bottom: solid 1px var(--main-color1); padding:0px 10px">Info</div>
 			<div id="error_notification_help" style="text-align:left"></div>
+		</div>
+	</div>
+
+	<div id="info_notification" uk-modal>
+		<div class="uk-modal-dialog uk-modal-body">
+			<button class="uk-modal-close-default" type="button" uk-close></button>
+			<h2 class="uk-modal-title" style="color: #fff;">Info</h2>
+			<div id="info_text" style="text-align:center; word-break:break-word;"></div>
+			<hr>
+			<div id="info_notification_help" style="text-align:left"></div>
 		</div>
 	</div>
 

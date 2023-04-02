@@ -76,6 +76,11 @@ $base-pre-line-height:                           1.5 !default;
 $base-pre-font-family:                           $base-code-font-family !default;
 $base-pre-color:                                 $global-color !default;
 
+$base-focus-outline-width:                       2px !default;
+$base-focus-outline-style:                       dotted !default;
+$base-focus-outline:                             $global-emphasis-color !default;
+$base-focus-outline-offset:                      1px !default;
+
 $base-selection-background:                      #39f !default;
 $base-selection-color:                           $global-inverse-color !default;
 
@@ -86,7 +91,6 @@ $base-selection-color:                           $global-inverse-color !default;
 
 /*
  * 1. Set `font-size` to support `rem` units
- *    Not using `font` property because a leading hyphen (e.g. -apple-system) causes the font to break in IE11 and Edge
  * 2. Prevent adjustments of font size after orientation changes in iOS.
  * 3. Style
  */
@@ -116,13 +120,6 @@ body { margin: 0; }
  ========================================================================== */
 
 /*
- * Remove the outline on focused links when they are also active or hovered
- */
-
-a:active,
-a:hover { outline: none; }
-
-/*
  * Style
  */
 
@@ -136,8 +133,7 @@ a,
 
 a:hover,
 .uk-link:hover,
-.uk-link-toggle:hover .uk-link,
-.uk-link-toggle:focus .uk-link {
+.uk-link-toggle:hover .uk-link {
     color: $base-link-hover-color;
     text-decoration: $base-link-hover-text-decoration;
     @if(mixin-exists(hook-base-link-hover)) {@include hook-base-link-hover();}
@@ -242,7 +238,7 @@ sub { bottom: -0.25em; }
  ========================================================================== */
 
 /*
- * Remove the gap between embedded content and the bottom of their containers.
+ * Remove the gap between the element and the bottom of its parent container.
  */
 
 audio,
@@ -253,14 +249,14 @@ svg,
 video { vertical-align: middle; }
 
 /*
- * 1. Add responsiveness.
- * 2. Auto-scale the height. Only needed if `height` attribute is present.
- * 3. Corrects responsive `max-width` behavior if padding and border are used.
- * 4. Exclude SVGs for IE11 because they don't preserve their aspect ratio.
+ * 1. Constrain the element to its parent width.
+ * 2. Preserve the intrinsic aspect ratio and auto-scale the height of an image if the `height` attribute is present.
+ * 3. Take border and padding into account.
  */
 
 canvas,
 img,
+svg,
 video {
     /* 1 */
     max-width: 100%;
@@ -270,34 +266,17 @@ video {
     box-sizing: border-box;
 }
 
-/* 4 */
-@supports (display: block) {
-
-   svg {
-        max-width: 100%;
-        height: auto;
-        box-sizing: border-box;
-    }
-
-}
-
 /*
- * Hide the overflow in IE.
- */
-
-svg:not(:root) { overflow: hidden; }
-
-/*
- * 1. Fix lazy loading images if parent element is set to `display: inline` and has `overflow: hidden`.
- * 2. Hide `alt` text for lazy loading images.
- * Note: Selector for background while loading img[data-src*='.jpg'][src*='data:image'] { background: grey; }
+ * Deprecated: only needed for `img` elements with `uk-img`
+ * 1. Hide `alt` text for lazy load images.
+ * 2. Fix lazy loading images if parent element is set to `display: inline` and has `overflow: hidden`.
  */
 
 img:not([src]) {
     /* 1 */
-    min-width: 1px;
-    /* 2 */
     visibility: hidden;
+    /* 2 */
+    min-width: 1px;
 }
 
 /*
@@ -522,6 +501,14 @@ pre {
 pre code { font-family: $base-pre-font-family; }
 
 
+/* Focus
+ ========================================================================== */
+
+:focus { outline: none; }
+
+:focus-visible { outline: $base-focus-outline-width $base-focus-outline-style $base-focus-outline; }
+
+
 /* Selection pseudo-element
  ========================================================================== */
 
@@ -565,11 +552,6 @@ template { display: none; }
  * Breakpoints
  */
 
-.uk-breakpoint-s::before  { content: '#{$breakpoint-small}'; }
-.uk-breakpoint-m::before  { content: '#{$breakpoint-medium}'; }
-.uk-breakpoint-l::before  { content: '#{$breakpoint-large}'; }
-.uk-breakpoint-xl::before { content: '#{$breakpoint-xlarge}'; }
-
 :root {
     --uk-breakpoint-s: #{$breakpoint-small};
     --uk-breakpoint-m: #{$breakpoint-medium};
@@ -610,6 +592,7 @@ $inverse-base-code-color:                       $inverse-global-color !default;
 $inverse-base-em-color:                         $inverse-global-emphasis-color !default;
 $inverse-base-heading-color:                    $inverse-global-emphasis-color !default;
 $inverse-base-hr-border:                        $inverse-global-border !default;
+$inverse-base-focus-outline:                    $inverse-global-emphasis-color !default;
 
 
 

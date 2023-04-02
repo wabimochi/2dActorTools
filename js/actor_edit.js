@@ -1,4 +1,5 @@
 const Jimp = require('jimp');
+const Sortable = require('sortablejs');
 
 const ACT_ST_actor = 'actor';
 const ACT_ST_crop_path = 'crop_path';

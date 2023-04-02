@@ -23,13 +23,14 @@ $search-placeholder-color:                           $global-muted-color !defaul
 
 $search-icon-color:                                  $global-muted-color !default;
 
-$search-default-width:                               180px !default;
+$search-default-width:                               240px !default;
 $search-default-height:                              $global-control-height !default;
-$search-default-padding-horizontal:                  6px !default;
+$search-default-padding-horizontal:                  10px !default;
 $search-default-background:                          $global-muted-background !default;
-$search-default-focus-background:                    $search-default-background !default;
+$search-default-focus-background:                    darken($search-default-background, 5%) !default;
 
 $search-default-icon-width:                          $global-control-height !default;
+$search-default-icon-padding:                        0 !default;
 
 $search-navbar-width:                                400px !default;
 $search-navbar-height:                               40px !default;
@@ -37,6 +38,7 @@ $search-navbar-background:                           transparent !default;
 $search-navbar-font-size:                            $global-large-font-size !default;
 
 $search-navbar-icon-width:                           40px !default;
+$search-navbar-icon-padding:                         0 !default;
 
 $search-large-width:                                 500px !default;
 $search-large-height:                                80px !default;
@@ -44,6 +46,7 @@ $search-large-background:                            transparent !default;
 $search-large-font-size:                             $global-2xlarge-font-size !default;
 
 $search-large-icon-width:                            80px !default;
+$search-large-icon-padding:                          0 !default;
 
 $search-toggle-color:                                $global-muted-color !default;
 $search-toggle-hover-color:                          $global-color !default;
@@ -126,18 +129,11 @@ $search-toggle-hover-color:                          $global-color !default;
 .uk-search-input:focus { outline: none; }
 
 /* Placeholder */
-.uk-search-input:-ms-input-placeholder { color: $search-placeholder-color !important; }
 .uk-search-input::placeholder { color: $search-placeholder-color; }
 
 
 /* Icon (Adopts `uk-icon`)
  ========================================================================== */
-
-/*
- * Remove default focus style
- */
-
-.uk-search-icon:focus { outline: none; }
 
 /*
  * Position above input
@@ -158,6 +154,7 @@ $search-toggle-hover-color:                          $global-color !default;
     align-items: center;
     /* 3 */
     color: $search-icon-color;
+    @if(mixin-exists(hook-search-icon)) {@include hook-search-icon();}
 }
 
 /*
@@ -211,8 +208,8 @@ $search-toggle-hover-color:                          $global-color !default;
 
 .uk-search-default .uk-search-icon { width: $search-default-icon-width; }
 
-.uk-search-default .uk-search-icon:not(.uk-search-icon-flip) ~ .uk-search-input { padding-left: ($search-default-icon-width); }
-.uk-search-default .uk-search-icon-flip ~ .uk-search-input { padding-right: ($search-default-icon-width); }
+.uk-search-default .uk-search-icon:not(.uk-search-icon-flip) ~ .uk-search-input { padding-left: ($search-default-icon-width + $search-default-icon-padding); }
+.uk-search-default .uk-search-icon-flip ~ .uk-search-input { padding-right: ($search-default-icon-width + $search-default-icon-padding); }
 
 
 /* Navbar modifier
@@ -231,14 +228,19 @@ $search-toggle-hover-color:                          $global-color !default;
     @if(mixin-exists(hook-search-navbar-input)) {@include hook-search-navbar-input();}
 }
 
+/* Focus */
+.uk-search-navbar .uk-search-input:focus {
+    @if(mixin-exists(hook-search-navbar-input-focus)) {@include hook-search-navbar-input-focus();}
+}
+
 /*
  * Icon
  */
 
 .uk-search-navbar .uk-search-icon { width: $search-navbar-icon-width; }
 
-.uk-search-navbar .uk-search-icon:not(.uk-search-icon-flip) ~ .uk-search-input { padding-left: ($search-navbar-icon-width); }
-.uk-search-navbar .uk-search-icon-flip ~ .uk-search-input { padding-right: ($search-navbar-icon-width); }
+.uk-search-navbar .uk-search-icon:not(.uk-search-icon-flip) ~ .uk-search-input { padding-left: ($search-navbar-icon-width + $search-navbar-icon-padding); }
+.uk-search-navbar .uk-search-icon-flip ~ .uk-search-input { padding-right: ($search-navbar-icon-width + $search-navbar-icon-padding); }
 
 
 /* Large modifier
@@ -257,14 +259,19 @@ $search-toggle-hover-color:                          $global-color !default;
     @if(mixin-exists(hook-search-large-input)) {@include hook-search-large-input();}
 }
 
+/* Focus */
+.uk-search-large .uk-search-input:focus {
+    @if(mixin-exists(hook-search-large-input-focus)) {@include hook-search-large-input-focus();}
+}
+
 /*
  * Icon
  */
 
 .uk-search-large .uk-search-icon { width: $search-large-icon-width; }
 
-.uk-search-large .uk-search-icon:not(.uk-search-icon-flip) ~ .uk-search-input { padding-left: ($search-large-icon-width); }
-.uk-search-large .uk-search-icon-flip ~ .uk-search-input { padding-right: ($search-large-icon-width); }
+.uk-search-large .uk-search-icon:not(.uk-search-icon-flip) ~ .uk-search-input { padding-left: ($search-large-icon-width + $search-large-icon-padding); }
+.uk-search-large .uk-search-icon-flip ~ .uk-search-input { padding-right: ($search-large-icon-width + $search-large-icon-padding); }
 
 
 /* Toggle
@@ -275,9 +282,8 @@ $search-toggle-hover-color:                          $global-color !default;
     @if(mixin-exists(hook-search-toggle)) {@include hook-search-toggle();}
 }
 
-/* Hover + Focus */
-.uk-search-toggle:hover,
-.uk-search-toggle:focus {
+/* Hover */
+.uk-search-toggle:hover {
     color: $search-toggle-hover-color;
     @if(mixin-exists(hook-search-toggle-hover)) {@include hook-search-toggle-hover();}
 }
@@ -289,10 +295,13 @@ $search-toggle-hover-color:                          $global-color !default;
 @if(mixin-exists(hook-search-misc)) {@include hook-search-misc();}
 
 // @mixin hook-search-input(){}
+// @mixin hook-search-icon(){}
 // @mixin hook-search-default-input(){}
 // @mixin hook-search-default-input-focus(){}
 // @mixin hook-search-navbar-input(){}
+// @mixin hook-search-navbar-input-focus(){}
 // @mixin hook-search-large-input(){}
+// @mixin hook-search-large-input-focus(){}
 
 // @mixin hook-search-toggle(){}
 // @mixin hook-search-toggle-hover(){}
@@ -309,7 +318,7 @@ $inverse-search-placeholder-color:              $inverse-global-muted-color !def
 $inverse-search-icon-color:                     $inverse-global-muted-color !default;
 
 $inverse-search-default-background:             $inverse-global-muted-background !default;
-$inverse-search-default-focus-background:       $inverse-search-default-background !default;
+$inverse-search-default-focus-background:       fade-in($inverse-search-default-background, 0.05) !default;
 
 $inverse-search-navbar-background:              transparent !default;
 
@@ -323,6 +332,8 @@ $inverse-search-toggle-hover-color:             $inverse-global-color !default;
 // @mixin hook-inverse-search-default-input(){}
 // @mixin hook-inverse-search-default-input-focus(){}
 // @mixin hook-inverse-search-navbar-input(){}
+// @mixin hook-inverse-search-navbar-input-focus(){}
 // @mixin hook-inverse-search-large-input(){}
+// @mixin hook-inverse-search-large-input-focus(){}
 // @mixin hook-inverse-search-toggle(){}
 // @mixin hook-inverse-search-toggle-hover(){}
