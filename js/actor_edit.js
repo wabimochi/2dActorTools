@@ -1203,49 +1203,79 @@ function StartActorSetting() {
             if(LoadActorStructure(actorStructPath, ActorIndexForSetting)){
                 const structList = struct.split(',');
                 const length = Math.floor(structList.length / ACT_ELM_NUM);
-                let source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
+                const source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
                 const crop_dir = ActorStructure[ActorIndexForSetting][ACT_ST_crop_dir_path];
+                const isLightweight = ActorStructure[ActorIndexForSetting][ACT_ST_lightweight];
 
                 const cropPathList = ActorStructure[ActorIndexForSetting][ACT_ST_crop_path];
                 const append_crop_list = [];
 
+                let crop_media_dir = null;
+                let new_media_dir = source_dir;
+
+                const getSamePath = function(path1, path2) {
+                    if(path1 === null || path2 === null) {
+                        return path1 ?? path2;
+                    }
+                    const length = Math.min(path1.length, path2.length);
+                    for(let i = 0; i < length; i++){
+                        if(path1.charAt(i) !== path2.charAt(i)){
+                            return path1.substring(0, i);
+                        }
+                    }
+                    return path1.substring(0, length);
+                }
+
                 for(let i = 0; i < length; i++) {
-                    const src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
-                    const _source_dir = path_js.dirname(src_path) + '/';
-                    if(!source_dir || _source_dir.length < source_dir.length){
-                        source_dir = _source_dir;
+                    const media_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
+                    const media_dir = path_js.dirname(media_path) + '/';
+                    const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
+
+                    if(cropPathList[key] && fs.existsSync(crop_dir + cropPathList[key].path)){
+                        crop_media_dir = getSamePath(crop_media_dir, media_dir);
+                    } else {
+                        new_media_dir = getSamePath(new_media_dir, media_dir);
                     }
                 }
 
-                old_source_dir = ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path];
-                ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path] = source_dir;
+                // update dir path
+                if(isLightweight == 0){
+                    new_media_dir = getSamePath(new_media_dir, source_dir);
+                    ActorStructure[ActorIndexForSetting][ACT_ST_src_dir_path] = new_media_dir;
+                    // update src path
+                    for(let i = 0; i < length; i++) {
+                        const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
+                        if(cropPathList[key]){
+                            cropPathList[key].src = (source_dir + cropPathList[key].src).replace(new_media_dir, '');
+                        }
+                    }
+                }
 
                 for(let i = 0; i < length; i++) {
                     const key = structList[i * ACT_ELM_NUM + ACT_TREE_PATH];
-                    if(cropPathList[key] && fs.existsSync(crop_dir + cropPathList[key].path)){
-                        if(!cropPathList[key].src){
-                            const src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
-                            cropPathList[key].src = src_path.replace(source_dir, '');
-                        } else {
-                            const src_path = old_source_dir + cropPathList[key].src;
-                            cropPathList[key].src = src_path.replace(source_dir, '');
-                        }
-                    } else {
+                    if(!cropPathList[key] || !fs.existsSync(crop_dir + cropPathList[key].path)){
                         let src_path = '';
-                        if(cropPathList[key] && fs.existsSync(old_source_dir + cropPathList[key].src)){
-                            src_path = old_source_dir + cropPathList[key].src;
+                        if(cropPathList[key] && fs.existsSync(source_dir + cropPathList[key].src)){
+                            src_path = source_dir + cropPathList[key].src;
                         } else {
                             src_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
                         }
 
                         const lastIndex = src_path.lastIndexOf(".");
-                        const crop_path = structList[i * ACT_ELM_NUM + ACT_NAME] + GetUUID() + src_path.substr(lastIndex);
-                        cropPathList[key] = {path:crop_path, src:src_path.replace(source_dir, '')}
+                        const crop_path = structList[i * ACT_ELM_NUM + ACT_NAME] + GetUUID() + src_path.substring(lastIndex);
+                        cropPathList[key] = {path:crop_path, src:src_path.replace(new_media_dir, '')}
                         append_crop_list.push({tree_path:key, src:src_path, dst:crop_dir + crop_path});
                     }
                 }
 
                 startActorSettingCallback = true;
+                if(isLightweight == 1) {
+                    crop_media_dir = getSamePath(crop_media_dir, crop_dir);
+                    if(crop_media_dir !== null){
+                        ActorStructure[ActorIndexForSetting][ACT_ST_crop_dir_path] = crop_media_dir;
+                    }
+                    updateMediaPathCallback = true;
+                }
                 MakeThumbnail(append_crop_list);
             }
         }
