@@ -1441,7 +1441,7 @@ function SaveActorSetting() {
 
     ActorStructure[ActorIndexForSetting] = new_actor_structure;
     SaveJson(ActorStructure[ActorIndexForSetting], ActorStructurePath[ActorIndexForSetting]);
-    UpdateGroupIndex();
+    UpdateGroupIndex(ActorIndexForSetting);
     ActorSettingEnd();
 
     updateMediaPathCallback = true;
@@ -1709,8 +1709,8 @@ function ActorStructureVersionConvert2(version1_structure) {
     return version2;
 }
 
-function UpdateGroupIndex() {
-    const groupList = $('#actor_switcher .actor_parts_top');
+function UpdateGroupIndex(sequenceIndex) {
+    const groupList = $(`#actor_switcher [sequence=${sequenceIndex}] .actor_parts_top`);
     for(let i = 0; i < groupList.length; i++) {
         const groupElm = groupList.eq(i);
         const clips = groupElm.find('.actor_thumb_parent');
