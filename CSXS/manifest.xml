@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="7.0" ExtensionBundleId="com.mochi.2dActorTools" ExtensionBundleVersion="1.3.6"
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.mochi.2dActorTools" ExtensionBundleVersion="1.3.7"
 ExtensionBundleName="2D Actor Tools" 
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<ExtensionList>
-		<Extension Id="com.mochi.2dActorTools" Version="1.3.6" />
+		<Extension Id="com.mochi.2dActorTools" Version="1.3.7" />
 	</ExtensionList>
 	<ExecutionEnvironment>
 		<HostList>
