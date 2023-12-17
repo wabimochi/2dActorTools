@@ -264,7 +264,7 @@ hr {
 .actor_clipset::marker{
   content: none;
 }
-.actor_clipset_root{
+.actor_clipset_container{
   min-height: 26px !important;
 }
 

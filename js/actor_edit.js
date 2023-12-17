@@ -391,7 +391,7 @@ function getActorClipSet(shortcutKey) {
 
                 if(!ActorStructure[seqIndex].clipset[shortcutKey]) {
                     const li = $('<li>', {'class':'actor_clipset', text:shortcutKey.toString()});
-                    $('#actor_switcher>.uk-active').find('.actor_clipset_root').eq(0).append(li);
+                    $('#actor_switcher>.uk-active').find('.actor_clipset_container').eq(0).append(li);
                 }
 
                 let animIndex;
@@ -521,8 +521,8 @@ function HorizontalScroll(e) {
         e.preventDefault();
 }
 
-function MakeThumbnav(){
-    const thumbnav = $('<div>', {'class':'td-thumbnav uk-width-expand'});
+function MakeThumbnav(additionalClass){
+    const thumbnav = $('<div>', {'class':'td-thumbnav uk-width-expand' + (additionalClass ? ' ' + additionalClass : '')});
     thumbnav[0].addEventListener('mousewheel', HorizontalScroll, { passive: false });
     return thumbnav;
 }
@@ -644,8 +644,8 @@ async function SetupActorComponent(index, actorName, isSetting=false){
     if(actorObj) {
         actor_root = $('.actor_component[sequence="' + index + '"]');
 
-        const thumbnav = MakeThumbnav();
-        const ul = $('<ul>', {'class':'uk-flex actor_clipset_root'});
+        const thumbnav = MakeThumbnav('actor_clipset_root');
+        const ul = $('<ul>', {'class':'uk-flex actor_clipset_container'});
         const clipset = actorObj.clipset;
         for(shortcutKey in clipset){
             if(shortcutKey.length === 1){
@@ -1368,7 +1368,7 @@ function SetupActorSettingUI() {
     if(ActorStructure[ActorIndexForSetting][ACT_ST_lightweight]){
         lightweight_check.prop('checked', true);
     }
-    actor_component_root.before(actor_component_root.find('div:has(.actor_clipset_root)'));
+    actor_component_root.before(actor_component_root.find('div:has(.actor_clipset_container)'));
 
     let containers = actor_component_root[0].querySelectorAll('.actor_group');
     for (let i = 0; i < containers.length; i++) {
@@ -1425,7 +1425,7 @@ function SaveActorSetting() {
     if(current_actor_structure[ACT_ST_clipset]) {
         const current_clip_set = current_actor_structure[ACT_ST_clipset];
         const new_clip_set = {};
-        $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div>.actor_clipset_root>.actor_clipset`).each(function(){
+        $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div>.actor_clipset_container>.actor_clipset`).each(function(){
             new_clip_set[$(this).html()] = current_clip_set[$(this).html()];
         });
         new_actor_structure[ACT_ST_clipset] = new_clip_set;
@@ -1540,7 +1540,7 @@ function ActorSettingEnd(){
     $('#actor_parts_box').html('');
 
     $('#lightweight_check').parent().remove();
-    $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div:has(.actor_clipset_root)`).remove();
+    $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div:has(.actor_clipset_container)`).remove();
 
     const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
     let actor_sequence_link_icon = target.find('.actor_sequence_link_icon');
@@ -1599,6 +1599,8 @@ function AnimationSettingEnd() {
     $('#actor_setting_save_button').removeAttr('hidden');
     $('#actor_setting_cancel_button').removeAttr('hidden');
     $('#actor_setting_animation_end_button').attr('hidden', '');
+    $('#lightweight_check').parent().removeAttr('hidden');
+    AnimationEditingGroupJQElm.closest('.actor_component').siblings('.actor_clipset_root').removeAttr('hidden');
     IsAnimationEditing = false;
 }
 
@@ -2098,6 +2100,8 @@ function ActorEditInitialize() {
             $('#actor_setting_save_button').attr('hidden','');
             $('#actor_setting_cancel_button').attr('hidden','');
             $('#actor_setting_animation_end_button').removeAttr('hidden');
+            $('#lightweight_check').parent().attr('hidden','');
+            AnimationEditingGroupJQElm.closest('.actor_component').siblings('.actor_clipset_root').attr('hidden','');
         }
     });
 
