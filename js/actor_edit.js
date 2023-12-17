@@ -899,6 +899,8 @@ $(document).on('click', '.actor_thumb_parent', function(e) {
                 const prevClip = target.siblings('.anim_selected');
                 if(prevClip.length > 0) {
                     SaveAnimationEdit(prevClip);
+                } else if(target.hasClass('anim_selected')) {
+                    SaveAnimationEdit(target);
                 }
                 $('#animation_editor_thumbnav>ul>li').remove();
                 $('.anim_selected').not(this).removeClass('anim_selected');
