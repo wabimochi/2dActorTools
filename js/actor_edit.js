@@ -1578,10 +1578,6 @@ function AnimationSettingEnd() {
         SaveAnimationEdit(prevClip);
     }
 
-    if(actorClipDragula) actorClipDragula = [];
-    if(clipsetDragula) clipsetDragula = [];
-    if(groupDragula) groupDragula = [];
-
     AnimationEditingGroupJQElm.find('.anim_selected').removeClass('anim_selected');
     AnimationEditingGroupJQElm.find('.anim_unselect').removeClass('anim_unselect');
     AnimationEditingGroupJQElm.find('.selected').removeClass('selected');
@@ -1836,12 +1832,12 @@ function ActorEditInitialize() {
         });
         clipsetDragula = dragula({
             moves: function(el, container, target) {
-                return IsSettingActor;
+                return IsSettingActor && !IsAnimationEditing;
             }
         });
         groupDragula = dragula({
 			moves: function(el, container, target) {
-				return !target.classList.contains('actor_thumb') && target.tagName !== 'LABEL' && IsSettingActor;
+				return !target.classList.contains('actor_thumb') && target.tagName !== 'LABEL' && IsSettingActor && !IsAnimationEditing;
 			}
 		});
     }
