@@ -349,10 +349,10 @@ $._PPP_={
 					var propertyObject = {componentName: component.displayName, propertyNames : [], propertyValues: []};
 					for(var j = 0; j < component.properties.numItems; j++){
 						var properties = component.properties[j];
-						if(properties.displayName !== DISPLAY_NAME_SRC_TEXT_V1 && properties.displayName !== DISPLAY_NAME_SRC_TEXT_V2) {
+						if(!isTextProperty(properties)) {
 							propertyNames.properties.push({name:properties.displayName});
 							propertyObject.propertyNames.push(properties.displayName);
-							if(properties.displayName.indexOf(LABEL_COLOR) !== -1) {
+							if(isColorProperty(properties)) {
 								propertyObject.propertyValues.push(properties.getColorValue());									
 							} else {
 								propertyObject.propertyValues.push(properties.getValue());	
@@ -412,28 +412,27 @@ $._PPP_={
 					for(var j = 0; j < deployObj.components.length; j++) {
 						var deployComponetName = deployObj.components[j].componentName;
 						var deployProperties = deployObj.components[j].properties;
-						if(deployComponetName !== DISPLAY_NAME_SRC_TEXT_V1 && deployComponetName !== DISPLAY_NAME_SRC_TEXT_V2) {
-							for(var k = 0; k < components.length; k++) {
-								if(components[k].displayName === deployComponetName) {
-									var properties = selectClips[i].components[k].properties;
-									for(var l = 0; l < deployProperties.length; l++) {
-										for(var m = 0; m < properties.length; m++) {
-											if(deployProperties[l] === properties[m].displayName) {
-												if(properties[m].displayName.indexOf(LABEL_COLOR) !== -1) {
-													var color = deployObj.components[j].values[l];
-													properties[m].setColorValue(color[0], color[1], color[2], color[3], updateUI);
-												} else {
-													properties[m].setValue(deployObj.components[j].values[l], updateUI);
-												}
-												break;
+						for(var k = 0; k < components.length; k++) {
+							if(components[k].displayName === deployComponetName) {
+								var properties = selectClips[i].components[k].properties;
+								for(var l = 0; l < deployProperties.length; l++) {
+									for(var m = 0; m < properties.length; m++) {
+										if(deployProperties[l] === properties[m].displayName) {
+											if(isColorProperty(properties[m])) {
+												var color = deployObj.components[j].values[l];
+												properties[m].setColorValue(color[0], color[1], color[2], color[3], updateUI);													
+											} else {
+												properties[m].setValue(deployObj.components[j].values[l], updateUI);
 											}
+											break;
 										}
 									}
-									break;
 								}
+								break;
 							}
-						} else {
-							var mgtComponent =  selectClips[i].getMGTComponent();
+						}
+						var mgtComponent = selectClips[i].getMGTComponent();
+						if(mgtComponent) {
 							var sourceText = getSourceTextParam(mgtComponent);
 							var textObj = JSON.parse(sourceText.getValue());
 							for(var k = 0; k < deployProperties.length; k++) {
@@ -1913,9 +1912,12 @@ function getPropertyObject (component, propertyNames) {
 }
 
 function getSourceTextParam(mogrtComponent){
-	var sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V1);
-	if(!sourceText) sourceText = mogrtComponent.properties.getParamForDisplayName(DISPLAY_NAME_SRC_TEXT_V2);
-	return sourceText;
+	for(var i = 0; i < mogrtComponent.properties.numItems; i++) {
+		if(isTextProperty(mogrtComponent.properties[i])) {
+			return mogrtComponent.properties[i];
+		}
+	}
+	return null;
 }
 
 function getSequenceTrackItemsInSequence(parentSequence, targetSequenceID){
@@ -2895,4 +2897,21 @@ function checkAppVersion(lowerVersion){
 		if(c < l) return false;
 	}
 	return true;
+}
+
+function isColorProperty(property) {
+	try {
+		property.getColorValue();
+	} catch(e) {
+		return false;
+	}
+	return true;
+}
+
+function isTextProperty(property) {
+	var val = property.getValue().toString();
+	if(val.indexOf(DISPLAY_NAME_SRC_TEXT) >= 0) {
+		return true;
+	}
+	return false;
 }
