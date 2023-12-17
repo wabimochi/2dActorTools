@@ -22,6 +22,7 @@ function autoImportStart(dirPath, matchingPatternList, matchingSourceList, impor
         depth:0,
         disableGlobbing:true
     }).on('add', (path, stat) => {
+        const encode = $('#select_encoding').val();
         const ext = path.substr(path.lastIndexOf('.') + 1);
         if(!/[wW][aA][vV]|[mM][pP]3|[wW][mM][aA]/.test(ext)) {
             return;
@@ -32,7 +33,7 @@ function autoImportStart(dirPath, matchingPatternList, matchingSourceList, impor
             let text = null;
             if(_matchingSourceList[i] == 1) {
                 const txt_filnename = path.slice(0, path.lastIndexOf('.') + 1) + 'txt';
-                text = getFileText(txt_filnename);
+                text = getFileText(txt_filnename, encode);
             } else {
                 text = filename;
             }
