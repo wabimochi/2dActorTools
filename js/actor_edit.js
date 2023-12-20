@@ -1058,6 +1058,7 @@ function LoadAnimationEdit(target_JQElm){
         clone.append(input);
         input.val(frame[i]);
         clone.removeAttr('uk-tooltip');
+        clone.addClass('delete_allowed');
     }
     $('#animation_editor_thumbnail>ul>li').remove();
     const thumbParts = partBoxRoot.find('[tree_path="' + target_JQElm.attr('tree_path') + '"]');
@@ -1561,6 +1562,7 @@ function ActorSettingEnd(){
 function OnAddAnimationSetting(evt){
     if(IsAnimationEditing){
         const target = $(evt.item);
+        target.find('input').remove();
         target.removeClass('dragitem');
         target.attr('data-type', CLIP_TYPE_Animation);
         target.trigger('click');
@@ -1888,7 +1890,7 @@ function ActorEditInitialize() {
         let parts_contextmenu = $('#parts_contextmenu');
         parts_contextmenu.css('left', e.pageX-window.scrollX + 'px');
         parts_contextmenu.css('top', e.pageY-window.scrollY + 'px');
-        if($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0) {
+        if(($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0) || $(this).hasClass('delete_allowed')) {
             parts_contextmenu.addClass('contextmenu_show');
             ContextmenuPartsSelectJQElm = $(this);
         }
@@ -2161,12 +2163,14 @@ function ActorEditInitialize() {
         const jqElm = $(evt.item);
         jqElm.filter(':not(:has(input))').append($('<input>', { class: 'input_integer_only uk-light tdinput', type: 'text', placeholder: 'f(60fps)', style: 'display: block; width:56px', onfocus: 'this.select();' }));
         jqElm.siblings(':not(:has(input))').append($('<input>', { class: 'input_integer_only uk-light tdinput', type: 'text', placeholder: 'f(60fps)', style: 'display: block; width:56px', onfocus: 'this.select();' }));
+        jqElm.addClass('delete_allowed');
         $('#animation_editor_help1').attr('hidden', '');
     });
     SortableCreateActor($('#animation_editor_thumbnail>ul')[0], 'clone', function(evt) {
         const jqElm = $(evt.item);
         jqElm.siblings().remove();
         jqElm.find('input').remove();
+        jqElm.removeClass('delete_allowed');
         const selectItem = AnimationEditingGroupJQElm.find('.anim_selected');
         selectItem.attr('tree_path', jqElm.attr('tree_path'));
         selectItem.find('img').attr('src', jqElm.find('img').attr('src'));
