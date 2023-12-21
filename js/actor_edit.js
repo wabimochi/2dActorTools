@@ -1110,6 +1110,19 @@ function _startActorSetting() {
     actorSettingStart(actorName, ActorIndexForSetting);
 }
 
+const getSamePath = function(path1, path2) {
+    if(path1 === null || path2 === null) {
+        return path1 ?? path2;
+    }
+    const length = Math.min(path1.length, path2.length);
+    for(let i = 0; i < length; i++){
+        if(path1.charAt(i) !== path2.charAt(i)){
+            return path1.substring(0, i);
+        }
+    }
+    return path1.substring(0, length);
+}
+
 function StartActorSetting() {
     const actorName = GetActorName(ActorIndexForSetting);
     StartSettingActorName = actorName;
@@ -1164,9 +1177,7 @@ function StartActorSetting() {
                     saveCropPathList[key] = {path:crop_path};
                     if(source_dir !== ''){
                         const _source_dir = path_js.dirname(src_path) + '/';
-                        if(_source_dir.length < source_dir.length){
-                            source_dir = _source_dir;
-                        }
+                        source_dir = getSamePath(source_dir, _source_dir);
                     }else{
                         source_dir = path_js.dirname(src_path) + '/';
                     }
@@ -1221,19 +1232,6 @@ function StartActorSetting() {
 
                 let crop_media_dir = null;
                 let new_media_dir = source_dir;
-
-                const getSamePath = function(path1, path2) {
-                    if(path1 === null || path2 === null) {
-                        return path1 ?? path2;
-                    }
-                    const length = Math.min(path1.length, path2.length);
-                    for(let i = 0; i < length; i++){
-                        if(path1.charAt(i) !== path2.charAt(i)){
-                            return path1.substring(0, i);
-                        }
-                    }
-                    return path1.substring(0, length);
-                }
 
                 for(let i = 0; i < length; i++) {
                     const media_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
