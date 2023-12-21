@@ -134,9 +134,10 @@ function insertSubtitleFromTextFile() {
             dirSeparater = '\\';
         }
         const presetTag = $('#preset_tag').val();
+        const encode = $('#select_encoding').val();
         for(let i = 0; i < mediaPathList.length; i++) {
             const path = mediaPathList[i].slice(0, mediaPathList[i].lastIndexOf('.') + 1) + 'txt';
-            let text = getFileText(path);
+            let text = getFileText(path, encode);
             if(text != null) {
                 if(presetTag !== '') {
                     textList.push(text.slice(text.indexOf(presetTag) + 1).replace(newLineReg, '\\n').replace(/\//g, '').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));
@@ -223,13 +224,14 @@ function textFileToSRT() {
                     pathList = pathList.split('\n');
                     timeList = timeList.split('\n');
                     let srtText = [];
+                    const encode = $('#select_encoding').val();
 
                     for(let i = 0; i < pathList.length; i++) {
                         srtText.push(i);
                         const time = timeList[i].split(',');
                         srtText.push(TimeToSrtTimeString(Number(time[0] * 1000)) + ' --> ' + TimeToSrtTimeString(Number(time[1] * 1000)));
                         const path = pathList[i].slice(0, pathList[i].lastIndexOf('.') + 1) + 'txt';
-                        let text = getFileText(path);
+                        let text = getFileText(path, encode);
                         if(text != null) {
                             if(presetTag !== '') {
                                 srtText.push(text.slice(text.indexOf(presetTag) + 1).replace(newLineReg, '\\n').replace(/\//g, '').replace(/\"/g, '\\"').replace(replaceReg, replaceAfter));

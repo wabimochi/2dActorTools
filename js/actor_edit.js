@@ -391,7 +391,7 @@ function getActorClipSet(shortcutKey) {
 
                 if(!ActorStructure[seqIndex].clipset[shortcutKey]) {
                     const li = $('<li>', {'class':'actor_clipset', text:shortcutKey.toString()});
-                    $('#actor_switcher>.uk-active').find('.actor_clipset_root').eq(0).append(li);
+                    $('#actor_switcher>.uk-active').find('.actor_clipset_container').eq(0).append(li);
                 }
 
                 let animIndex;
@@ -521,8 +521,8 @@ function HorizontalScroll(e) {
         e.preventDefault();
 }
 
-function MakeThumbnav(){
-    const thumbnav = $('<div>', {'class':'td-thumbnav uk-width-expand'});
+function MakeThumbnav(additionalClass){
+    const thumbnav = $('<div>', {'class':'td-thumbnav uk-width-expand' + (additionalClass ? ' ' + additionalClass : '')});
     thumbnav[0].addEventListener('mousewheel', HorizontalScroll, { passive: false });
     return thumbnav;
 }
@@ -644,8 +644,8 @@ async function SetupActorComponent(index, actorName, isSetting=false){
     if(actorObj) {
         actor_root = $('.actor_component[sequence="' + index + '"]');
 
-        const thumbnav = MakeThumbnav();
-        const ul = $('<ul>', {'class':'uk-flex actor_clipset_root'});
+        const thumbnav = MakeThumbnav('actor_clipset_root');
+        const ul = $('<ul>', {'class':'uk-flex actor_clipset_container'});
         const clipset = actorObj.clipset;
         for(shortcutKey in clipset){
             if(shortcutKey.length === 1){
@@ -899,6 +899,8 @@ $(document).on('click', '.actor_thumb_parent', function(e) {
                 const prevClip = target.siblings('.anim_selected');
                 if(prevClip.length > 0) {
                     SaveAnimationEdit(prevClip);
+                } else if(target.hasClass('anim_selected')) {
+                    SaveAnimationEdit(target);
                 }
                 $('#animation_editor_thumbnav>ul>li').remove();
                 $('.anim_selected').not(this).removeClass('anim_selected');
@@ -1026,7 +1028,13 @@ function SaveAnimationEdit(target_JQElm){
     let treePath = [];
     let frame = [];
     root.find('li').each(function() { treePath.push($(this).attr('tree_path'))});
-    root.find('input').each(function() { frame.push($(this).val())});
+    root.find('input').each(function() { 
+        if($(this).val() > 0) {
+            frame.push($(this).val())
+        } else {
+            frame.push(1)
+        }
+    });
     target_JQElm.attr('anim_clips', treePath.join(','));
     target_JQElm.attr('frame', frame.join(','));
 
@@ -1056,6 +1064,7 @@ function LoadAnimationEdit(target_JQElm){
         clone.append(input);
         input.val(frame[i]);
         clone.removeAttr('uk-tooltip');
+        clone.addClass('delete_allowed');
     }
     $('#animation_editor_thumbnail>ul>li').remove();
     const thumbParts = partBoxRoot.find('[tree_path="' + target_JQElm.attr('tree_path') + '"]');
@@ -1099,6 +1108,19 @@ function _startActorSetting() {
 
     SetupActorSettingUI();
     actorSettingStart(actorName, ActorIndexForSetting);
+}
+
+const getSamePath = function(path1, path2) {
+    if(path1 === null || path2 === null) {
+        return path1 ?? path2;
+    }
+    const length = Math.min(path1.length, path2.length);
+    for(let i = 0; i < length; i++){
+        if(path1.charAt(i) !== path2.charAt(i)){
+            return path1.substring(0, i);
+        }
+    }
+    return path1.substring(0, length);
 }
 
 function StartActorSetting() {
@@ -1155,9 +1177,7 @@ function StartActorSetting() {
                     saveCropPathList[key] = {path:crop_path};
                     if(source_dir !== ''){
                         const _source_dir = path_js.dirname(src_path) + '/';
-                        if(_source_dir.length < source_dir.length){
-                            source_dir = _source_dir;
-                        }
+                        source_dir = getSamePath(source_dir, _source_dir);
                     }else{
                         source_dir = path_js.dirname(src_path) + '/';
                     }
@@ -1212,19 +1232,6 @@ function StartActorSetting() {
 
                 let crop_media_dir = null;
                 let new_media_dir = source_dir;
-
-                const getSamePath = function(path1, path2) {
-                    if(path1 === null || path2 === null) {
-                        return path1 ?? path2;
-                    }
-                    const length = Math.min(path1.length, path2.length);
-                    for(let i = 0; i < length; i++){
-                        if(path1.charAt(i) !== path2.charAt(i)){
-                            return path1.substring(0, i);
-                        }
-                    }
-                    return path1.substring(0, length);
-                }
 
                 for(let i = 0; i < length; i++) {
                     const media_path = structList[i * ACT_ELM_NUM + ACT_MEDIA_PATH];
@@ -1366,7 +1373,7 @@ function SetupActorSettingUI() {
     if(ActorStructure[ActorIndexForSetting][ACT_ST_lightweight]){
         lightweight_check.prop('checked', true);
     }
-    actor_component_root.before(actor_component_root.find('div:has(.actor_clipset_root)'));
+    actor_component_root.before(actor_component_root.find('div:has(.actor_clipset_container)'));
 
     let containers = actor_component_root[0].querySelectorAll('.actor_group');
     for (let i = 0; i < containers.length; i++) {
@@ -1423,7 +1430,7 @@ function SaveActorSetting() {
     if(current_actor_structure[ACT_ST_clipset]) {
         const current_clip_set = current_actor_structure[ACT_ST_clipset];
         const new_clip_set = {};
-        $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div>.actor_clipset_root>.actor_clipset`).each(function(){
+        $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div>.actor_clipset_container>.actor_clipset`).each(function(){
             new_clip_set[$(this).html()] = current_clip_set[$(this).html()];
         });
         new_actor_structure[ACT_ST_clipset] = new_clip_set;
@@ -1538,7 +1545,7 @@ function ActorSettingEnd(){
     $('#actor_parts_box').html('');
 
     $('#lightweight_check').parent().remove();
-    $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div:has(.actor_clipset_root)`).remove();
+    $(`#actor_switcher>[sequence=${ActorIndexForSetting}]>div:has(.actor_clipset_container)`).remove();
 
     const target = $(".actor_sequence_link[sequence='" + ActorIndexForSetting + "']");
     let actor_sequence_link_icon = target.find('.actor_sequence_link_icon');
@@ -1559,13 +1566,47 @@ function ActorSettingEnd(){
 function OnAddAnimationSetting(evt){
     if(IsAnimationEditing){
         const target = $(evt.item);
+        target.find('input').remove();
         target.removeClass('dragitem');
         target.attr('data-type', CLIP_TYPE_Animation);
         target.trigger('click');
     }
 }
 
-function AnimationSettingEnd() {
+function StartAnimationSetting(groupJQElm) {
+    IsAnimationEditing = true;
+    AnimationEditingGroupJQElm = groupJQElm;
+    AnimationEditingGroupJQElm.siblings().attr('hidden', '');
+    const clips = AnimationEditingGroupJQElm.find('.dragitem');
+    clips.removeClass('dragitem');
+    clips.filter('[data-type!=' + CLIP_TYPE_Animation + ']').attr('hidden', '');
+    const type = AnimationEditingGroupJQElm.attr('anim-type') ? AnimationEditingGroupJQElm.attr('anim-type') : 0;
+    const select_animation_type = $('#select_animation_type'); 
+    select_animation_type.val(type);
+    select_animation_type.change();
+
+    const firstAnimClip = clips.filter('[data-type=' + CLIP_TYPE_Animation + ']:first');
+    if(firstAnimClip.length > 0) {
+        $('#animation_editor_help1').attr('hidden', '');
+        firstAnimClip.trigger('click');
+    } else {
+        $('#animation_editor_help1').removeAttr('hidden');
+        $('#animation_editor_root').addClass('events_disable');
+    }
+
+    AnimationEditingGroupJQElm.removeClass('dragitem');
+    AnimationEditingGroupJQElm.find('.td-thumbnav').addClass('dragdrop-area-bg');
+    $('#actor_setting_add_animation_clip_button').removeAttr('hidden');
+    $('#animation_editor_root').removeAttr('hidden');
+    $('#animation_type_root').removeAttr('hidden');
+    $('#actor_setting_save_button').attr('hidden','');
+    $('#actor_setting_cancel_button').attr('hidden','');
+    $('#actor_setting_animation_end_button').removeAttr('hidden');
+    $('#lightweight_check').parent().attr('hidden','');
+    AnimationEditingGroupJQElm.closest('.actor_component').siblings('.actor_clipset_root').attr('hidden','');
+}
+
+function EndAnimationSetting() {
     AnimationPreview_Stop();
 
     const type = $('#select_animation_type').val();
@@ -1576,15 +1617,17 @@ function AnimationSettingEnd() {
         SaveAnimationEdit(prevClip);
     }
 
-    if(actorClipDragula) actorClipDragula = [];
-    if(clipsetDragula) clipsetDragula = [];
-    if(groupDragula) groupDragula = [];
-
     AnimationEditingGroupJQElm.find('.anim_selected').removeClass('anim_selected');
     AnimationEditingGroupJQElm.find('.anim_unselect').removeClass('anim_unselect');
     AnimationEditingGroupJQElm.find('.selected').removeClass('selected');
     AnimationEditingGroupJQElm.siblings().removeAttr('hidden');
     const clips = AnimationEditingGroupJQElm.find('.actor_thumb_parent');
+    // フレームクリップがないアニメーションクリップは消す
+    clips.filter('[data-type=' + CLIP_TYPE_Animation + ']').each(function(index, elm) {
+        if($(elm).attr('anim_clips') === '') {
+            $(elm).remove();
+        }
+    });
     clips.addClass('dragitem');
     clips.filter('[data-type!=' + CLIP_TYPE_Animation + ']:not(.trash_icon)').removeAttr('hidden');
     AnimationEditingGroupJQElm.addClass('dragitem');
@@ -1601,6 +1644,8 @@ function AnimationSettingEnd() {
     $('#actor_setting_save_button').removeAttr('hidden');
     $('#actor_setting_cancel_button').removeAttr('hidden');
     $('#actor_setting_animation_end_button').attr('hidden', '');
+    $('#lightweight_check').parent().removeAttr('hidden');
+    AnimationEditingGroupJQElm.closest('.actor_component').siblings('.actor_clipset_root').removeAttr('hidden');
     IsAnimationEditing = false;
 }
 
@@ -1834,12 +1879,12 @@ function ActorEditInitialize() {
         });
         clipsetDragula = dragula({
             moves: function(el, container, target) {
-                return IsSettingActor;
+                return IsSettingActor && !IsAnimationEditing;
             }
         });
         groupDragula = dragula({
 			moves: function(el, container, target) {
-				return !target.classList.contains('actor_thumb') && target.tagName !== 'LABEL' && IsSettingActor;
+				return !target.classList.contains('actor_thumb') && target.tagName !== 'LABEL' && IsSettingActor && !IsAnimationEditing;
 			}
 		});
     }
@@ -1888,9 +1933,25 @@ function ActorEditInitialize() {
         let parts_contextmenu = $('#parts_contextmenu');
         parts_contextmenu.css('left', e.pageX-window.scrollX + 'px');
         parts_contextmenu.css('top', e.pageY-window.scrollY + 'px');
-        if($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0) {
+        if(($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0) || $(this).hasClass('delete_allowed')) {
             parts_contextmenu.addClass('contextmenu_show');
             ContextmenuPartsSelectJQElm = $(this);
+            if(IsAnimationEditing) {
+                // 違う置き場所のクリップの選択を解除する
+                if($(this).closest('#animation_editor_thumbnav').length > 0) {
+                    $('.selected').each(function(index, elm) {
+                        if($(elm).closest('#animation_editor_thumbnav').length === 0) {
+                            $(elm).removeClass('selected');
+                        }
+                    });
+                } else {
+                    $('.selected').each(function(index, elm) {
+                        if($(elm).closest('#animation_editor_thumbnav').length > 0) {
+                            $(elm).removeClass('selected');
+                        }
+                    });
+                }
+            }
         }
         return false;
     });
@@ -2071,35 +2132,7 @@ function ActorEditInitialize() {
     });
     $('#actor_setting_add_animation_clip_on_group').on('mouseup', function(e) {
         if(e.which === 1 && ContextmenuGroupSelectJQElm) {
-            // #AnimationEditStart
-            IsAnimationEditing = true;
-            AnimationEditingGroupJQElm = ContextmenuGroupSelectJQElm;
-            AnimationEditingGroupJQElm.siblings().attr('hidden', '');
-            const clips = AnimationEditingGroupJQElm.find('.dragitem');
-            clips.removeClass('dragitem');
-            clips.filter('[data-type!=' + CLIP_TYPE_Animation + ']').attr('hidden', '');
-            const type = AnimationEditingGroupJQElm.attr('anim-type') ? AnimationEditingGroupJQElm.attr('anim-type') : 0;
-            const select_animation_type = $('#select_animation_type'); 
-            select_animation_type.val(type);
-            select_animation_type.change();
-
-            const firstAnimClip = clips.filter('[data-type=' + CLIP_TYPE_Animation + ']:first');
-            if(firstAnimClip.length > 0) {
-                $('#animation_editor_help1').attr('hidden', '');
-                firstAnimClip.trigger('click');
-            } else {
-                $('#animation_editor_help1').removeAttr('hidden');
-                $('#animation_editor_root').addClass('events_disable');
-            }
-
-            AnimationEditingGroupJQElm.removeClass('dragitem');
-            AnimationEditingGroupJQElm.find('.td-thumbnav').addClass('dragdrop-area-bg');
-            $('#actor_setting_add_animation_clip_button').removeAttr('hidden');
-            $('#animation_editor_root').removeAttr('hidden');
-            $('#animation_type_root').removeAttr('hidden');
-            $('#actor_setting_save_button').attr('hidden','');
-            $('#actor_setting_cancel_button').attr('hidden','');
-            $('#actor_setting_animation_end_button').removeAttr('hidden');
+            StartAnimationSetting(ContextmenuGroupSelectJQElm);
         }
     });
 
@@ -2159,12 +2192,14 @@ function ActorEditInitialize() {
         const jqElm = $(evt.item);
         jqElm.filter(':not(:has(input))').append($('<input>', { class: 'input_integer_only uk-light tdinput', type: 'text', placeholder: 'f(60fps)', style: 'display: block; width:56px', onfocus: 'this.select();' }));
         jqElm.siblings(':not(:has(input))').append($('<input>', { class: 'input_integer_only uk-light tdinput', type: 'text', placeholder: 'f(60fps)', style: 'display: block; width:56px', onfocus: 'this.select();' }));
+        jqElm.addClass('delete_allowed');
         $('#animation_editor_help1').attr('hidden', '');
     });
     SortableCreateActor($('#animation_editor_thumbnail>ul')[0], 'clone', function(evt) {
         const jqElm = $(evt.item);
         jqElm.siblings().remove();
         jqElm.find('input').remove();
+        jqElm.removeClass('delete_allowed');
         const selectItem = AnimationEditingGroupJQElm.find('.anim_selected');
         selectItem.attr('tree_path', jqElm.attr('tree_path'));
         selectItem.find('img').attr('src', jqElm.find('img').attr('src'));

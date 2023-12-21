@@ -296,7 +296,7 @@
 					<div id="actor_parts_box" class="uk-width-1-3 actor_parts_top" style="height:100vh; position: sticky; top:0; overflow:scroll; margin-right: 5px; min-width:64px;" hidden>
 					</div>
 					<div>
-						<button id="actor_setting_animation_end_button" class="uk-button uk-button-secondary highlight uk-animation-slide-right-medium uk-width-auto" onClick="AnimationSettingEnd()" style="margin-left:5px;" hidden>アニメーションの設定を終了</button>
+						<button id="actor_setting_animation_end_button" class="uk-button uk-button-secondary highlight uk-animation-slide-right-medium uk-width-auto" onClick="EndAnimationSetting()" style="margin-left:5px;" hidden>アニメーションの設定を終了</button>
 						<div id="animation_type_root" style="margin-bottom:10px" hidden>
 							<label>
 								グループのアニメーションタイプ
@@ -442,7 +442,7 @@
 							<span class="uk-label tdactor_label uk-margin-remove-bottom uk-width-auto">リップシンクのオーディオ解析フレームレート</span><br>
 							<span class="uk-label tdactor_label_secondary uk-width-auto">大きいほどパクパクします。シーケンスのフレームレートより大きいと上手くベイクできないかもしれません。</span>
 							<div class="uk-grid-small uk-flex-center" uk-grid style="align-items: center;">
-								<select type="selectbox" class="tdactor_selectbox uk-width-auto uk-select save_setting_value_on_change" category="setting_actor" id="lipsync_framerate">
+								<select type="selectbox" size="3" class="tdactor_selectbox uk-width-auto uk-select save_setting_value_on_change" style="resize: none; overflow-y: visible;" category="setting_actor" id="lipsync_framerate">
 									<option value="15">15fps</option>
 									<option value="30">30fps</option>
 									<option value="60">60fps</option>
