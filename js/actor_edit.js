@@ -1893,6 +1893,22 @@ function ActorEditInitialize() {
         if(($('#actor_switcher').hasClass('setting') && $(this).closest('#actor_switcher').length > 0) || $(this).hasClass('delete_allowed')) {
             parts_contextmenu.addClass('contextmenu_show');
             ContextmenuPartsSelectJQElm = $(this);
+            if(IsAnimationEditing) {
+                // 違う置き場所のクリップの選択を解除する
+                if($(this).closest('#animation_editor_thumbnav').length > 0) {
+                    $('.selected').each(function(index, elm) {
+                        if($(elm).closest('#animation_editor_thumbnav').length === 0) {
+                            $(elm).removeClass('selected');
+                        }
+                    });
+                } else {
+                    $('.selected').each(function(index, elm) {
+                        if($(elm).closest('#animation_editor_thumbnav').length > 0) {
+                            $(elm).removeClass('selected');
+                        }
+                    });
+                }
+            }
         }
         return false;
     });
