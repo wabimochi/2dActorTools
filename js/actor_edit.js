@@ -1028,7 +1028,13 @@ function SaveAnimationEdit(target_JQElm){
     let treePath = [];
     let frame = [];
     root.find('li').each(function() { treePath.push($(this).attr('tree_path'))});
-    root.find('input').each(function() { frame.push($(this).val())});
+    root.find('input').each(function() { 
+        if($(this).val() > 0) {
+            frame.push($(this).val())
+        } else {
+            frame.push(1)
+        }
+    });
     target_JQElm.attr('anim_clips', treePath.join(','));
     target_JQElm.attr('frame', frame.join(','));
 
@@ -1569,7 +1575,40 @@ function OnAddAnimationSetting(evt){
     }
 }
 
-function AnimationSettingEnd() {
+function StartAnimationSetting(groupJQElm) {
+    IsAnimationEditing = true;
+    AnimationEditingGroupJQElm = groupJQElm;
+    AnimationEditingGroupJQElm.siblings().attr('hidden', '');
+    const clips = AnimationEditingGroupJQElm.find('.dragitem');
+    clips.removeClass('dragitem');
+    clips.filter('[data-type!=' + CLIP_TYPE_Animation + ']').attr('hidden', '');
+    const type = AnimationEditingGroupJQElm.attr('anim-type') ? AnimationEditingGroupJQElm.attr('anim-type') : 0;
+    const select_animation_type = $('#select_animation_type'); 
+    select_animation_type.val(type);
+    select_animation_type.change();
+
+    const firstAnimClip = clips.filter('[data-type=' + CLIP_TYPE_Animation + ']:first');
+    if(firstAnimClip.length > 0) {
+        $('#animation_editor_help1').attr('hidden', '');
+        firstAnimClip.trigger('click');
+    } else {
+        $('#animation_editor_help1').removeAttr('hidden');
+        $('#animation_editor_root').addClass('events_disable');
+    }
+
+    AnimationEditingGroupJQElm.removeClass('dragitem');
+    AnimationEditingGroupJQElm.find('.td-thumbnav').addClass('dragdrop-area-bg');
+    $('#actor_setting_add_animation_clip_button').removeAttr('hidden');
+    $('#animation_editor_root').removeAttr('hidden');
+    $('#animation_type_root').removeAttr('hidden');
+    $('#actor_setting_save_button').attr('hidden','');
+    $('#actor_setting_cancel_button').attr('hidden','');
+    $('#actor_setting_animation_end_button').removeAttr('hidden');
+    $('#lightweight_check').parent().attr('hidden','');
+    AnimationEditingGroupJQElm.closest('.actor_component').siblings('.actor_clipset_root').attr('hidden','');
+}
+
+function EndAnimationSetting() {
     AnimationPreview_Stop();
 
     const type = $('#select_animation_type').val();
@@ -1585,6 +1624,12 @@ function AnimationSettingEnd() {
     AnimationEditingGroupJQElm.find('.selected').removeClass('selected');
     AnimationEditingGroupJQElm.siblings().removeAttr('hidden');
     const clips = AnimationEditingGroupJQElm.find('.actor_thumb_parent');
+    // フレームクリップがないアニメーションクリップは消す
+    clips.filter('[data-type=' + CLIP_TYPE_Animation + ']').each(function(index, elm) {
+        if($(elm).attr('anim_clips') === '') {
+            $(elm).remove();
+        }
+    });
     clips.addClass('dragitem');
     clips.filter('[data-type!=' + CLIP_TYPE_Animation + ']:not(.trash_icon)').removeAttr('hidden');
     AnimationEditingGroupJQElm.addClass('dragitem');
@@ -2089,37 +2134,7 @@ function ActorEditInitialize() {
     });
     $('#actor_setting_add_animation_clip_on_group').on('mouseup', function(e) {
         if(e.which === 1 && ContextmenuGroupSelectJQElm) {
-            // #AnimationEditStart
-            IsAnimationEditing = true;
-            AnimationEditingGroupJQElm = ContextmenuGroupSelectJQElm;
-            AnimationEditingGroupJQElm.siblings().attr('hidden', '');
-            const clips = AnimationEditingGroupJQElm.find('.dragitem');
-            clips.removeClass('dragitem');
-            clips.filter('[data-type!=' + CLIP_TYPE_Animation + ']').attr('hidden', '');
-            const type = AnimationEditingGroupJQElm.attr('anim-type') ? AnimationEditingGroupJQElm.attr('anim-type') : 0;
-            const select_animation_type = $('#select_animation_type'); 
-            select_animation_type.val(type);
-            select_animation_type.change();
-
-            const firstAnimClip = clips.filter('[data-type=' + CLIP_TYPE_Animation + ']:first');
-            if(firstAnimClip.length > 0) {
-                $('#animation_editor_help1').attr('hidden', '');
-                firstAnimClip.trigger('click');
-            } else {
-                $('#animation_editor_help1').removeAttr('hidden');
-                $('#animation_editor_root').addClass('events_disable');
-            }
-
-            AnimationEditingGroupJQElm.removeClass('dragitem');
-            AnimationEditingGroupJQElm.find('.td-thumbnav').addClass('dragdrop-area-bg');
-            $('#actor_setting_add_animation_clip_button').removeAttr('hidden');
-            $('#animation_editor_root').removeAttr('hidden');
-            $('#animation_type_root').removeAttr('hidden');
-            $('#actor_setting_save_button').attr('hidden','');
-            $('#actor_setting_cancel_button').attr('hidden','');
-            $('#actor_setting_animation_end_button').removeAttr('hidden');
-            $('#lightweight_check').parent().attr('hidden','');
-            AnimationEditingGroupJQElm.closest('.actor_component').siblings('.actor_clipset_root').attr('hidden','');
+            StartAnimationSetting(ContextmenuGroupSelectJQElm);
         }
     });
 
