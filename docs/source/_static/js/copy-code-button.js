@@ -14,13 +14,8 @@ async function copyCodeToClipboard(button, highlightDiv) {
     }
     const codeToCopy = highlightDiv.innerText.slice(0, lastIndex);
     try {
-        result = await navigator.permissions.query({ name: "clipboard-write" });
-        if (result.state == "granted" || result.state == "prompt") {
-            await navigator.clipboard.writeText(codeToCopy);
-            codeWasCopied(button);
-        } else {
-            copyFail(button);
-        }
+        await navigator.clipboard.writeText(codeToCopy);
+        codeWasCopied(button);
     } catch (_) {
         copyFail(button);
     }
