@@ -1,0 +1,10 @@
+# ライセンス
+## エクステンションの利用
+商用、非商用に関わらずインターネットおよびその他の場所で自由に使用、変更、複製が可能です。
+
+## ソースコードの利用
+[MITライセンス](https://github.com/wabimochi/2dActorTools/blob/main/LICENSE){.new_tab}です。
+
+## クレジットの記載について
+クレジットの記載はしてもしなくても構いません。ニコニコ動画に投稿する場合でもコンテンツツリーへの登録は自由です。（してもらえるのはもちろん嬉しいです！）  
+コンテンツツリーへ登録される方はコモンズをご活用ください。[https://commons.nicovideo.jp/material/nc236697](https://commons.nicovideo.jp/material/nc236697)

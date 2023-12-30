@@ -1,0 +1,58 @@
+@import url("theme.css");
+
+.wy-nav-content {
+    max-width: 2000px;
+}
+.wy-table-responsive table td, .wy-table-responsive table th {
+    white-space: normal;
+}
+
+.half-width {
+    width:50%;
+    min-width: 400px;
+}
+.restrict-height {
+    max-height: 400px;
+}
+.icon-img {
+    max-height: 60px;
+}
+h2 {
+    margin-right: 1em;
+    border-bottom: 2px solid #7CCEF4;
+}
+h3 {
+    padding-left: 0.5em;
+    border-left: 0.5em solid #7ccef4;
+}
+h3:has(.troubleshooting-issues) {
+    font-size: 1.1em;
+    margin-bottom: 4px;
+}
+
+.mac-deco{ display: none; }
+.mac .win-deco { display: none; }
+.iphone .win-deco { display: none; }
+.ipad .win-deco{ display: none; }
+.mac .mac-deco { display: inline; }
+.iphone .mac-deco { display: inline; }
+.ipad .mac-deco{ display: inline; }
+
+.copy-code-button {
+    display: block;
+    margin:0 0 0 auto;
+    width: 83px;
+    color: #222;
+    background-color: #7CCEF4;
+    border: 0;
+    border-radius: 5px 5px 0 0;
+    white-space: nowrap;
+    padding: 4px;
+    margin-bottom: -1px;
+    cursor: pointer;
+}
+
+.copy-code-button:hover {
+    background-color: #a0d9f4;
+}
+
