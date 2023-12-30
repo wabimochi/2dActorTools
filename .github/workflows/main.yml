@@ -17,9 +17,9 @@ jobs:
         
       - name: Cleaning
         run: |
-          Remove-Item -Path .github -Recurse -Force
-          Remove-Item -Path .git -Recurse -Force
-          Remove-Item -Path .docs -Recurse -Force
+          Remove-Item -Path .github -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path .git -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path .docs -Recurse -Force -ErrorAction SilentlyContinue
 
       - name: Get version
         run: |
