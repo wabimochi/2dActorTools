@@ -19,6 +19,7 @@ jobs:
         run: |
           Remove-Item -Path .github -Recurse -Force
           Remove-Item -Path .git -Recurse -Force
+          Remove-Item -Path .docs -Recurse -Force
 
       - name: Get version
         run: |
