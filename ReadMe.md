@@ -1,53 +1,16 @@
 # 2dActorTools
-Adobe Premiere Proの立ち絵編集と字幕入力をサポートするエクステンションです。WindowsとMacで使用できます。
-このエクステンションはCC2022の日本語環境でのみ動作確認してます。
-
-※現在日本版のExManCmdが消えてます。末尾のjpを消したものはダウンロードできるのでそちらをお試しください
-https://www.adobe.com/go/ExManCmdWin
+Adobe Premiere Proの立ち絵編集と字幕入力をサポートするエクステンションです。WindowsとMacで使用できます。  
+このエクステンションは最新のPremiere Proで動作することを目指しています。
 
 # 使い方
-https://www.nicovideo.jp/watch/sm37711233
+（ユーザーガイド）https://wabimochi.github.io/2dActorTools/index.html  
+（動画）https://www.nicovideo.jp/watch/sm37711233
 
 # インストール方法
-[コマンドラインツールでエクステンションをインストールする](https://helpx.adobe.com/jp/creative-cloud/kb/installingextensionsandaddons.html#Install_extensions_command_line_tool)に書いてある手順を参考にしてください。
-zxpファイルは[Release](https://github.com/wabimochi/2dActorTools/releases)からダウンロードできます。
-サンプルのMGTファイルは[こちら](https://github.com/wabimochi/2dActorTools/releases/tag/v1.0)
-
-## Mac版のインストール補足
-- `xattr`で始まるコマンドは不要です。ExManBridgeTalkCmdはありません。
-- ExManCmdをダブルクリックする作業は不要です。
-- エラーが発生する場合、`sudo`を付けて試してみてください。
+[ユーザーガイドのインストール](https://wabimochi.github.io/2dActorTools/src/installation.html)をご覧ください
 
 # 注意事項
-## プロジェクト
 「2dActorTools」と「モーショングラフィックステンプレートメディア」というビンは移動させたり、名前を変更したりしないでください。動作しなくなります。
-
-## 字幕
-### プロパティー名
-色のプロパティー名には「カラー」という名前が含まれている必要があります。
-逆に色以外のプロパティー名に「カラー」が含まれないようにしてください。
-Aeのほうでプロパティー名が変更できるのでこの点にご注意ください。
-
-### 字幕クリップがしましまになって字幕が表示されない
-コンポジションの長さが関係してます。
-サンプルのMGTファイルは3分になってるので、一つのクリップで3分以上は表示できません。
-
-## 立ち絵
-### clip not foundと出る
-ビンやクリップの名前を変更した可能性があります。
-
-### サムネイルが？マークになる
-サムネイル画像を移動したり消したりした可能性があります。
-立ち絵設定で設定開始してそのまま保存すると、再度サムネイルの保存先を尋ねられるので、もう一度生成してください。
-
-### 立ち絵の表示タイミングがおかしい
-### 何のエラーも出ないのに立ち絵が表示されない
-Premiereのバージョンによってクリップのフレームがズレることがあります。
-バージョンや再現手順をIssueの方にお願いします。
-
-### 立ち絵構成の変更について
-編集途中でグループ内のクリップの順番を変えるのは問題ありません。
-グループの順番を変えたり追加、削除したりするとちょっとおかしくなるかもしれません。
 
 # 未署名のエクステンションを使用する
 zxpファイルに取り込まれていない修正などを使用したいときは、未署名のエクステンションを使用します。参考：https://github.com/Adobe-CEP/Samples/tree/master/PProPanel  
