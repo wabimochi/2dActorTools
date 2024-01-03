@@ -34,6 +34,10 @@ cd "/Library/Application Support/Adobe/Adobe Desktop Common/RemoteComponents/UPI
 ./UnifiedPluginInstallerAgent --install "/Users/(ユーザー名)/Downloads/2dActorTools.zxp"
 ```
 
+## アップデート方法
+インストールと同じ手順を実行してください。
+
+
 ## エクステンションの開き方
 1. Premiere Proを開きます。
 2. ツールバーから`ウィンドウ` > `エクステンション` > `2D Actor Tools`を選択します。
